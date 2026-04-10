@@ -1,0 +1,47 @@
+<div class="inline_row d-flex align-items-center gap-3 px-3 py-2 border-bottom {$bgcolor}{$thread_type_class}">
+<div class="d-none d-md-flex align-items-center justify-content-center" style="width:32px;height:32px;flex-shrink:0">
+	<span class="thread_status {$folder}" title="{$folder_label}"></span>
+</div>
+<div class="flex-grow-1 min-w-0">
+	<div class="d-flex align-items-center gap-1 flex-wrap">
+		<span class="thread_status {$folder} d-md-none" title="{$folder_label}"></span>
+		{$gotounread}{$prefix}{$thread['threadprefix']}
+		<span class="{$inline_edit_class} {$new_class}" id="tid_{$inline_edit_tid}">
+			<a href="{$thread['threadlink']}" class="fw-semibold">{$thread['subject']}</a>
+		</span>
+		{$attachment_count}
+	</div>
+	<div class="small text-muted mt-1">
+		<span>{$thread['profilelink']}</span>
+		<span class="mx-1">&middot;</span>
+		<span>{$thread['start_datetime']}</span>
+		{$thread['multipage']}
+	</div>
+	<!-- Mobile: show stats + lastpost inline -->
+	<div class="d-md-none small text-muted mt-1">
+		<span class="me-2"><i class="bi bi-reply"></i> {$thread['replies']}</span>
+		<span class="me-2"><i class="bi bi-eye"></i> {$thread['views']}</span>
+		<span>&middot; <a href="{$thread['lastpostlink']}">{$lang->lastpost}</a> {$lang->by} {$lastposterlink} &middot; {$lastpostdate}</span>
+	</div>
+</div>
+<!-- Desktop: columnar stats -->
+<div class="d-none d-md-flex gap-3 align-items-center" style="flex-shrink:0">
+	<div class="text-center" style="min-width:60px">
+		<div class="fw-semibold"><a href="javascript:MyBB.whoPosted({$thread['tid']});">{$thread['replies']}</a>{$unapproved_posts}</div>
+		<div class="text-muted small">{$lang->replies}</div>
+	</div>
+	<div class="text-center" style="min-width:60px">
+		<div class="fw-semibold">{$thread['views']}</div>
+		<div class="text-muted small">{$lang->views}</div>
+	</div>
+	{$rating}
+</div>
+<div class="d-none d-md-flex small align-items-center text-end" style="width:180px;flex-shrink:0">
+	<span data-moderation="{$ismod}" class="min-w-0 flex-grow-1">
+		<a href="{$thread['lastpostlink']}" class="text-truncate d-block">{$lastpostdate}</a>
+		<span class="text-muted">{$lang->by} {$lastposterlink}</span>
+	</span>
+	{$fmz_thread_lastposter_avatar}
+</div>
+<div class="d-none d-md-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0">{$modbit}</div>
+</div>

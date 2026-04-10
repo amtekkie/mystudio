@@ -1,0 +1,40 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->ban_banned}</title>
+{$headerinclude}
+</head>
+<body>
+	{$header}
+	<div>
+		
+			{$modcp_nav}
+			<div class="col-md-9">
+				<div>
+					
+						<div class="thead">
+							<div class="float_right smalltext"><a href="modcp.php?action=banuser">{$lang->ban_user}</a></div>
+						{$lang->ban_banned}</div>
+					
+
+<div class="tcat rowbit">
+  
+<span class="threadbit_main modcpbit_bansusername" data-width="25%">{$lang->username} </span>
+  
+<span class="modcpbit_bansbannedby threadbit_stats" data-width="25%">{$lang->ban_bannedby}</span>
+  
+<span class="modcpbit_banslenght threadbit_stats" data-width="25%">{$lang->ban_length}</span>
+  
+<span class="modcpbit_bansreason threadbit_stats" data-width="25%">{$lang->reason}</span>
+  
+
+</div>  
+					
+					{$bannedusers}
+				</div>
+				{$multipage}
+			</div>
+		
+	</div>
+	{$footer}
+</body>
+</html>

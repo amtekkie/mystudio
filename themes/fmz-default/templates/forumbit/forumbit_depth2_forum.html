@@ -1,0 +1,25 @@
+<div class="d-flex align-items-center gap-3 px-3 py-2 {$bgcolor}">
+<div class="d-none d-md-flex align-items-center justify-content-center rounded-2 bg-body-secondary forum_{$lightbulb['folder']} ajax_mark_read ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}" style="width:42px;height:42px;flex-shrink:0">
+	<i class="bi bi-chat-left-fill fs-5"></i>
+</div>
+<div class="flex-grow-1 min-w-0">
+	<div class="d-flex align-items-center gap-1 flex-wrap">
+		<span class="d-md-none forum_{$lightbulb['folder']} ajax_mark_read ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}"><i class="bi bi-chat-left-fill"></i></span>
+		<a href="{$forum_url}" class="fw-semibold">{$forum['name']}</a>
+	</div>
+	<div class="text-muted small mt-1">{$forum['description']}</div>
+	<div class="d-md-none small text-muted mt-1">
+		<span class="me-2"><i class="bi bi-chat-square-text"></i> {$threads} {$lang->forumbit_threads}</span>
+		<span><i class="bi bi-chat-square-dots"></i> {$posts} {$lang->forumbit_posts}</span>
+	</div>
+	<div class="d-md-none small text-muted mt-1">{$lastpost}</div>
+	{$forum_viewers_text}{$modlist}{$subforums}
+</div>
+<div class="d-none d-md-flex flex-column align-items-center text-center small" style="width:120px;flex-shrink:0">
+	<span><strong>{$threads}</strong> {$lang->forumbit_threads}</span>
+	<span>{$posts}{$unapproved['unapproved_posts']} {$lang->forumbit_posts}</span>
+</div>
+<div class="d-none d-md-block small text-end" style="width:220px;flex-shrink:0">
+	{$lastpost}
+</div>
+</div>

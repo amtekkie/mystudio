@@ -1,0 +1,19 @@
+<ul class="list_style">
+<li>{$lang->report_reason}</li>
+<li>
+		<select name="reason" id="report_reason">
+
+{$reasonslist}		
+
+		</select>
+  </li>
+
+<li id="reason">
+  <ul class="list_style">
+<li>{$lang->report_reason_other_description}</li>
+<li><input type="text" class="textbox" name="comment" size="40" maxlength="250" /></li>
+</ul>
+</li>
+
+</ul><br />
+<div class="align_center"><input type="submit" class="button" value="{$report_title}" /></div>

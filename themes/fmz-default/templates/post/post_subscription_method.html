@@ -1,0 +1,9 @@
+<div class="{$bgcolor} rowbit">
+<div class="formbit_label col-md-2 strong"><span title="{$lang->thread_subscription_method_desc}">Subscription method:</span></div>
+  
+<div class="formbit_field col-md-10">
+	<label><input type="radio" name="postoptions[subscriptionmethod]" {$subscribe}value="" /> {$lang->no_subscribe}</label><br />
+	<label><input type="radio" name="postoptions[subscriptionmethod]" {$nonesubscribe}value="none" /> {$lang->no_subscribe_notification}</label><br />
+	<label><input type="radio" name="postoptions[subscriptionmethod]" {$emailsubscribe}value="email" /> {$lang->instant_email_subscribe}</label><br />
+	<label><input type="radio" name="postoptions[subscriptionmethod]" {$pmsubscribe}value="pm" /> {$lang->instant_pm_subscribe}</label></div>
+</div>

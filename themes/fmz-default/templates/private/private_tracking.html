@@ -1,0 +1,82 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->pm_tracking}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+{$usercpnav}
+<div class="col-md-9">
+{$read_multipage}
+<form action="private.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_tracking" />
+<div class="tborder">
+
+<div class="thead">{$lang->read_messages}</div>
+
+
+<div class="tcat rowbit">
+  
+<span class="threadbit_main pmbit_main" data-width="50%">
+{$lang->message_title} 
+</span>
+
+<span class="threadbit_stats pmbit_author align_center" data-width="25%">
+{$lang->sentto}
+</span>
+
+
+<span class="threadbit_lastpost pmbit_date" data-width="25%">
+
+<span data-moderation="1">{$lang->dateread}</span>
+</span>
+<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ps-2"><input name="allbox" title="{$lang->check_all}" type="checkbox" class="form-check-input checkall" value="{$lang->check_all}" /></span>
+
+</div>
+
+{$readmessages}
+{$stoptrackingread}
+</div>
+</form>
+<br />
+{$unread_multipage}
+<form action="private.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_tracking" />
+<div class="tborder">
+
+<div class="thead">{$lang->unread_messages}</div>
+
+  
+
+<div class="tcat rowbit">
+ 
+  
+<span class="threadbit_main pmbit_main" data-width="50%">
+{$lang->message_title} 
+</span>
+
+<span class="threadbit_stats pmbit_author align_center" data-width="25%">
+{$lang->sentto}
+</span>
+
+
+<span class="threadbit_lastpost pmbit_date" data-width="25%">
+
+<span data-moderation="1">{$lang->datesent}</span>
+</span>
+<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ps-2"><input name="allbox" title="{$lang->check_all}" type="checkbox" class="form-check-input checkall" value="{$lang->check_all}" /></span>
+
+</div>
+
+{$unreadmessages}
+{$stoptrackingunread}
+</div>
+</form>
+</div>
+</div>
+{$footer}
+</body>
+</html>

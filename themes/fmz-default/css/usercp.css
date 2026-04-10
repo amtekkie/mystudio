@@ -1,0 +1,52 @@
+.cp_options td:first-child{width:230px}
+.list_style,.cp_menu ul{list-style:none;margin:0;padding:0}
+.usercp_options{margin:0;padding:0;list-style:none}
+.usercp_options>li{margin:0;padding:8px 0}
+.usercp_options>li>span{display:inline-block;text-align:right}
+.usercp_nav_item{display:block}
+.usercp_nav_item:before{font-size:16px;font-family:'bootstrap-icons';width:28px;margin-right:3px;text-align:center;display:inline-block;padding:2px 0;vertical-align:-2px}
+.usercp_nav_location:before{content:"\f4c8"}
+.usercp_nav_ustyle:before{content:"\f3e5"}
+.usercp_nav_emailservice:before{content:"\f32f"}
+.usercp_nav_composepm:before{content:"\f6b9"}
+.usercp_nav_changename:before{content:"\f5f7"}
+.usercp_nav_pmfolder:before{content:"\f42c"}
+.usercp_nav_sub_pmfolder{padding-left:20px}
+.usercp_nav_sub_pmfolder:before{content:"\f3d7"}
+.usercp_nav_trash_pmfolder:before{content:"\f5de"}
+.usercp_nav_pmtracking:before{content:"\f341"}
+.usercp_nav_pmfolders:before{content:"\f3d3"}
+.usercp_nav_profile:before{content:"\f4e1"}
+.usercp_nav_email:before{content:"\f32f"}
+.usercp_nav_password:before{content:"\f44e"}
+.usercp_nav_username:before{content:"\f5f7"}
+.usercp_nav_editsig:before{content:"\f4c8"}
+.usercp_nav_avatar:before{content:"\f42a"}
+.usercp_nav_options:before{content:"\f3e5"}
+.usercp_nav_usergroups:before{content:"\f4d0"}
+.usercp_nav_editlists:before{content:"\f4d6"}
+.usercp_nav_attachments:before{content:"\f4b3"}
+.usercp_nav_drafts:before{content:"\f392"}
+.usercp_nav_subscriptions:before{content:"\f18a"}
+.usercp_nav_fsubscriptions:before{content:"\f19f"}
+.usercp_nav_notepad:before{content:"\f58c"}
+.usercp_nav_viewprofile:before{content:"\f341"}
+.usercp_nav_home:before{content:"\f422"}
+.usercp_nav_statusfeed:before{content:"\f264"}
+.usercp_nav_award:before{content:"\f5e6"}
+.usercp_notepad{width:99%}
+#usercpalerts_e td[class^="trow"],#usercppms_e td[class^="trow"],#usercpprofile_e td[class^="trow"],#usercpmisc_e td[class^="trow"]{border:none;padding:0}
+.pagination{padding:3px 0}
+.usercp_container{margin:5px;padding:8px}
+.new_pm{font-weight:bold}
+span.pmstatus_new_pm:before{content:"\f32f";font-family:'bootstrap-icons'}
+span.pmstatus_old_pm:before{content:"\f32e";font-family:'bootstrap-icons'}
+span.pmstatus_re_pm:before{content:"\f4e6";font-family:'bootstrap-icons'}
+span.pmstatus_fw_pm:before{content:"\f4e8";font-family:'bootstrap-icons'}
+
+/* Dark mode */
+:root[data-theme="dark"] .usercp_nav_item{color:var(--bs-body-color)}
+:root[data-theme="dark"] .usercp_nav_item:hover{color:var(--tekbb-accent)}
+:root[data-theme="dark"] .cp_options td:first-child{color:var(--tekbb-muted)}
+
+		

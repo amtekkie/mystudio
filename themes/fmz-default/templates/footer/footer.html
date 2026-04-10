@@ -1,0 +1,50 @@
+</main>
+
+<footer id="footer" class="mt-4">
+<div class="container">
+	<div class="row g-4 py-4">
+		<div class="col-lg-4 col-md-6">
+			<h6 class="fw-bold text-uppercase mb-3 small text-secondary"><i class="bi bi-info-circle me-1"></i> {$lang->fmz_footer_about}</h6>
+			<p class="small opacity-75">{$lang->fmz_footer_about_text}</p>
+		</div>
+		<div class="col-lg-4 col-md-6">
+			<h6 class="fw-bold text-uppercase mb-3 small text-secondary"><i class="bi bi-link-45deg me-1"></i> {$lang->fmz_footer_quick_links}</h6>
+			<ul class="list-unstyled small">
+				<li class="mb-1"><a href="{$mybb->settings['homeurl']}"><i class="bi bi-house me-1"></i>{$lang->fmz_footer_home}</a></li>
+				<li class="mb-1"><a href="<archive_url>"><i class="bi bi-archive me-1"></i>{$lang->fmz_footer_archive}</a></li>
+				<li class="mb-1"><a href="{$mybb->settings['bburl']}/misc.php?action=syndication"><i class="bi bi-rss me-1"></i>{$lang->fmz_footer_rss}</a></li>
+				<li class="mb-1"><a href="misc.php?action=markread&amp;my_post_key={$mybb->post_code}"><i class="bi bi-check2-all me-1"></i>{$lang->bottomlinks_markread}</a></li>
+			</ul>
+		</div>
+		<div class="col-lg-4 col-md-12">
+			<h6 class="fw-bold text-uppercase mb-3 small text-secondary"><i class="bi bi-envelope me-1"></i> {$lang->fmz_footer_contact}</h6>
+			<ul class="list-unstyled small">
+				<li class="mb-1"><a href="{$mybb->settings['contactlink']}"><i class="bi bi-envelope me-1"></i>{$lang->bottomlinks_contactus}</a></li>
+				<li class="mb-1"><a href="showteam.php"><i class="bi bi-people me-1"></i>{$lang->bottomlinks_forumteam}</a></li>
+			</ul>
+		</div>
+	</div>
+	{$auto_dst_detection}
+	<!-- The following piece of code allows MyBB to run scheduled tasks. DO NOT REMOVE -->{$task_image}<!-- End task image code -->
+</div>
+
+<div id="copyright">
+<div class="container">
+	<div class="d-flex justify-content-between align-items-center flex-wrap py-3 small">
+		<div>
+			<span>{$lang->fmz_footer_powered_by} <a href="https://mybb.com" target="_blank" rel="noopener">MyBB</a></span>
+			<span>& FMZ Studio by <a href="https://tektove.com" target="_blank" rel="noopener">Tektove</a></span>
+		</div>
+		<div class="d-flex align-items-center gap-3">
+			{$theme_select}
+			{$lang_select}
+			<span id="current_time">{$lang->welcome_current_time}</span>
+		</div>
+	</div>
+	{$fmz_footer_text_row}
+	{$debugstuff}
+</div>
+</div>
+</footer>
+
+<script src="{$mybb->asset_url}/jscripts/main.js?"></script>

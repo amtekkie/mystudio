@@ -1,0 +1,12 @@
+<div class="tborder">
+
+<div class="thead">{$lang->poll} {$poll['question']} - <span class="smalltext">{$pollstatus}{$undovote}</span></div>
+
+{$polloptions}
+
+<div class="tfoot">{$lang->you_voted}<span class="float_right" style="position:relative;top:-7px;">
+<a class="button" href="polls.php?action=showresults&amp;pid={$poll['pid']}">{$lang->show_results}</a>{$edit_poll}</span></div>
+
+</div>
+
+<br />

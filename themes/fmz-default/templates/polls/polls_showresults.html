@@ -1,0 +1,18 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->poll_results}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<div class="tborder ">
+<div class="thead">{$poll['question']}</div>
+
+{$polloptions}
+
+<div class="tfoot align_right smalltext">{$lang->poll_total} {$poll['numvotes']} {$lang->poll_votes} ({$totpercent})</div>
+
+</div>
+{$footer}
+</body>
+</html>

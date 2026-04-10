@@ -1,0 +1,35 @@
+<fieldset><legend>{$lang->away_information}</legend>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->away_status}</div>
+<div class="formbit_field" data-width="75%"><input type="radio" class="radio" name="away" value="1" {$awaycheck['1']} /> {$lang->im_away} <input type="radio" class="radio" name="away" value="0" {$awaycheck['0']} /> {$lang->im_here}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->away_reason}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="awayreason" value="{$user['awayreason']}" size="25" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->return_date}</div>
+<div class="formbit_field" data-width="75%"><select name="awayday">
+<option value="">&nbsp;</option>
+{$returndatesel}
+</select>  <select name="awaymonth">
+<option value="">&nbsp;</option>
+<option value="1" {$returndatemonthsel['1']} >{$lang->month_1}</option>
+<option value="2" {$returndatemonthsel['2']} >{$lang->month_2}</option>
+<option value="3" {$returndatemonthsel['3']} >{$lang->month_3}</option>
+<option value="4" {$returndatemonthsel['4']} >{$lang->month_4}</option>
+<option value="5" {$returndatemonthsel['5']} >{$lang->month_5}</option>
+<option value="6" {$returndatemonthsel['6']} >{$lang->month_6}</option>
+<option value="7" {$returndatemonthsel['7']} >{$lang->month_7}</option>
+<option value="8" {$returndatemonthsel['8']} >{$lang->month_8}</option>
+<option value="9" {$returndatemonthsel['9']} >{$lang->month_9}</option>
+<option value="10" {$returndatemonthsel['10']} >{$lang->month_10}</option>
+<option value="11" {$returndatemonthsel['11']} >{$lang->month_11}</option>
+<option value="12" {$returndatemonthsel['12']} >{$lang->month_12}</option>
+</select> <input type="text" class="textbox" size="4" maxlength="4" name="awayyear" value="{$returndate['2']}" /></div>
+</div>
+</fieldset>

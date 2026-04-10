@@ -1,0 +1,30 @@
+<html>
+<head>
+<title>{$lang->purgespammer}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form method="post" action="moderation.php">
+<input type="hidden" name="action" value="do_purgespammer" />
+<div class="tborder">
+
+<div class="thead">
+{$lang->purgespammer_purge}
+</div>
+
+
+<div class="trow1">{$lang->purgespammer_purge_desc}</div>
+
+</div><br />
+<div class="align_center">
+<input class="button" type="submit" value="{$lang->purgespammer_submit}" />
+  </div>
+
+
+<input type="hidden" name="uid" value="{$mybb->input['uid']}" />
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+</form>
+{$footer}
+</body>
+</html>

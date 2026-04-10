@@ -1,0 +1,15 @@
+<div class="mb-3">
+	<script>
+		lang.question_fetch_failure = "{$lang->question_fetch_failure}";
+	</script>
+	<script src="{$mybb->asset_url}/jscripts/question.js?ver=1821"></script>
+	<label class="form-label small text-muted"><i class="bi bi-question-circle me-1"></i>{$lang->security_question}</label>
+	<div class="text-muted small mb-2" id="question">{$question['question']}</div>
+	<div class="input-group">
+		<span class="input-group-text"><i class="bi bi-chat-left-dots"></i></span>
+		<input type="text" class="form-control" name="answer" value="" id="answer" placeholder="{$lang->security_question}" />
+	</div>
+	<input type="hidden" name="question_id" value="{$sid}" id="question_id" />
+	{$refresh}
+	<div id="answer_status"></div>
+</div>

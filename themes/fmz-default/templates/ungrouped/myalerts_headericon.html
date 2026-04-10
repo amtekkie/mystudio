@@ -1,0 +1,4 @@
+<span class="alerts {$newAlertsIndicator}">
+    <a href="{$mybb->settings['bburl']}/alerts.php" class="myalerts" onclick="MyBB.popupWindow('/alerts.php?modal=1&amp;ret_link={$myalerts_return_link}', { fadeDuration: 250, zIndex: (typeof modal_zindex !== 'undefined' ? modal_zindex : 9999) }); return false;">
+		<span class="myalert_alert"><i class="bi bi-bell-fill"></i> {$mybb->user['unreadAlerts']}</span></a>
+</span>

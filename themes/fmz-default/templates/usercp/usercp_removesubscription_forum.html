@@ -1,0 +1,33 @@
+<html>
+<head>
+	<title>{$lang->unsubscribe_from_forum}</title>
+	{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="usercp.php" method="post" name="input">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="removesubscription" />
+<input type="hidden" name="type" value="forum" />
+<input type="hidden" name="fid" value="{$forum['fid']}" />
+
+{$usercpnav}
+<div class="col-md-9">
+	<div>
+		<div class="thead">{$lang->unsubscribe_from_forum}</div>  
+		<div class="trow1">
+			{$lang->unsubscribe_from_forum_desc}
+			<br />
+			<br />
+  			<div style="text-align: center;">
+				<input type="submit" class="button" name="submit" value="{$lang->do_unsubscribe_forum}" tabindex="3" accesskey="s" />
+			</div> 
+		</div>  
+	</div>
+</div>
+</div>
+
+</form>
+{$footer}
+</body>
+</html>

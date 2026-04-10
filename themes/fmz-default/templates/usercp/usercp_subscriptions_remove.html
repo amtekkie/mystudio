@@ -1,0 +1,18 @@
+	<div class="tfoot">
+	
+
+		<a href="usercp.php?action=removesubscriptions&amp;my_post_key={$mybb->post_code}">{$lang->remove_all_subscriptions}</a>
+
+      
+<span class="float_right">
+		{$lang->with_selected}
+		<select name="do">
+			<option value="delete">{$lang->delete_subscriptions}</option>
+			<option value="no_notification">{$lang->update_no_notification}</option>
+			<option value="email_notification">{$lang->update_email_notification}</option>
+			<option value="pm_notification">{$lang->update_pm_notification}</option>
+		</select>
+		{$gobutton}
+	</span>
+      
+	</div>

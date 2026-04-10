@@ -1,0 +1,14 @@
+<fieldset><legend>{$lang->custom_usertitle}</legend>
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->default_usertitle}</div>
+<div class="formbit_field" data-width="75%">{$defaulttitle}</div>
+</div>
+
+{$currentcustom}
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->new_custom_usertitle}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="usertitle" size="25" maxlength="{$mybb->settings['customtitlemaxlength']}" value="{$newtitle}" /></div>
+</div>
+
+{$reverttitle}</fieldset>

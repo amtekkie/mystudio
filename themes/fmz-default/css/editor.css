@@ -1,0 +1,64 @@
+/* ── SCEditor fixes ── */
+
+/* Remove forced height — let it size naturally */
+.sceditor-container {
+  height: auto !important;
+  min-height: 250px;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: .5rem !important;
+  background: var(--glass-bg-heavy) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Dark mode for the editor toolbar and container */
+:root[data-theme="dark"] .sceditor-container {
+  background: var(--glass-bg-heavy) !important;
+  border-color: var(--glass-border) !important;
+}
+
+:root[data-theme="dark"] .sceditor-toolbar {
+  background: var(--glass-bg) !important;
+  border-bottom-color: var(--glass-border) !important;
+}
+
+:root[data-theme="dark"] .sceditor-button {
+  background: transparent !important;
+}
+
+:root[data-theme="dark"] .sceditor-button:hover {
+  background: var(--tekbb-accent-subtle) !important;
+}
+
+:root[data-theme="dark"] .sceditor-button div {
+  filter: invert(1);
+}
+
+:root[data-theme="dark"] .sceditor-group {
+  border-color: var(--glass-border) !important;
+  background: transparent !important;
+}
+
+/* Dark mode for editor dropdown menus */
+:root[data-theme="dark"] .sceditor-dropdown {
+  background: var(--glass-bg-heavy) !important;
+  border-color: var(--glass-border) !important;
+  color: var(--bs-body-color) !important;
+}
+
+:root[data-theme="dark"] .sceditor-dropdown label {
+  color: var(--bs-body-color) !important;
+}
+
+:root[data-theme="dark"] .sceditor-dropdown input,
+:root[data-theme="dark"] .sceditor-dropdown textarea {
+  background: var(--glass-bg-heavy) !important;
+  color: var(--bs-body-color) !important;
+  border-color: var(--glass-border) !important;
+}
+
+/* Source mode textarea */
+:root[data-theme="dark"] .sceditor-container textarea {
+  background: var(--bs-body-bg) !important;
+  color: var(--bs-body-color) !important;
+}

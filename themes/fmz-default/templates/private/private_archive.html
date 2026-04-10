@@ -1,0 +1,59 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->archive_messages}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="private.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+{$usercpnav}
+<div class="col-md-9">
+<div class="tborder">
+
+<div class="thead">{$lang->archive_messages}</div>
+
+
+<div class="tcat"><span class="smalltext">{$lang->archive_note}</span></div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->folders}</div>
+<div class="formbit_field" data-width="75%">{$folderlist}</div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->date_limit}</div>
+<div class="formbit_field" data-width="75%"><select name="dayway"><option value="older">{$lang->date_limit_older}</option><option value="newer">{$lang->date_limit_newer}</option><option value="disregard">{$lang->date_limit_disregard}</option></select> <input type="text" class="textbox" name="daycut" value="30" size="3" maxlength="4" /> {$lang->date_limit_days}</div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->export_unread}</div>
+<div class="formbit_field" data-width="75%"><input type="radio" class="radio" name="exportunread" value="1" /> {$lang->yes} <input type="radio" class="radio" name="exportunread" value="0" checked="checked" /> {$lang->no} </div>
+</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->delete_archived}</div>
+<div class="formbit_field" data-width="75%"><input type="radio" class="radio" name="deletepms" value="1" /> {$lang->yes} <input type="radio" class="radio" name="deletepms" value="0" checked="checked" /> {$lang->no} </div>
+</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->export_format}</div>
+<div class="formbit_field" data-width="75%"><input type="radio" class="radio" name="exporttype" value="html" checked="checked" /> {$lang->export_html}<br /><input type="radio" class="radio" name="exporttype" value="txt" /> {$lang->export_txt}<br /><input type="radio" class="radio" name="exporttype" value="csv" /> {$lang->export_csv}</div>
+</div>
+  
+</div>
+<br />
+<div class="align_center">
+<input type="hidden" name="action" value="do_export" />
+<input type="submit" class="button" name="submit" value="{$lang->archive_messages}" />
+</div>
+</div>
+</div>
+</div>
+</form>
+{$footer}
+</body>
+</html>

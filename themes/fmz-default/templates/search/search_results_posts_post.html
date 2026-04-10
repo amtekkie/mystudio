@@ -1,0 +1,38 @@
+<div class="inline_row d-flex align-items-start gap-3 px-3 py-2 border-bottom {$bgcolor}">
+<div class="flex-grow-1 min-w-0">
+	<div class="d-flex align-items-center gap-1 flex-wrap">
+		{$icon}
+		<a href="{$post_url}{$highlight}#pid{$post['pid']}" class="fw-semibold">{$post['subject']}</a>
+	</div>
+	<div class="small text-muted mt-1 fst-italic text-truncate" style="max-width:600px">{$prev}</div>
+	<!-- Mobile: show author, forum, stats + date inline -->
+	<div class="d-md-none small text-muted mt-1">
+		<span class="me-2"><i class="bi bi-person"></i> {$post['profilelink']}</span>
+		<span class="me-2"><i class="bi bi-folder"></i> {$post['forumlink']}</span>
+		<span class="me-2"><i class="bi bi-reply"></i> {$post['thread_replies']}</span>
+		<span class="me-2"><i class="bi bi-eye"></i> {$post['thread_views']}</span>
+		<span>&middot; {$posted}</span>
+	</div>
+</div>
+<!-- Desktop columns -->
+<div class="d-none d-md-block text-center small" style="min-width:80px;flex-shrink:0">
+	{$post['profilelink']}
+</div>
+<div class="d-none d-md-block text-center small" style="min-width:100px;flex-shrink:0">
+	{$post['forumlink']}
+</div>
+<div class="d-none d-md-flex gap-3 align-items-center" style="flex-shrink:0">
+	<div class="text-center" style="min-width:60px">
+		<div class="fw-semibold"><a href="javascript:MyBB.whoPosted({$post['tid']});">{$post['thread_replies']}</a></div>
+		<div class="text-muted small">{$lang->replies}</div>
+	</div>
+	<div class="text-center" style="min-width:60px">
+		<div class="fw-semibold">{$post['thread_views']}</div>
+		<div class="text-muted small">{$lang->views}</div>
+	</div>
+</div>
+<div class="d-none d-md-block small text-end" style="width:140px;flex-shrink:0">
+	<span class="text-muted">{$posted}</span>
+</div>
+<div class="d-none d-md-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0">{$inline_mod_checkbox}</div>
+</div>

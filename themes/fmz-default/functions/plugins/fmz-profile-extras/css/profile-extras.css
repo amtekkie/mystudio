@@ -1,0 +1,283 @@
+/* ═══════════════════════════════════════════════
+   FMZ Profile Extras — CSS
+   ═══════════════════════════════════════════════ */
+
+/* ── Banner Change Overlay ── */
+.profile-banner-change {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: .25rem;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .2s;
+  z-index: 5;
+}
+.profile-banner:hover .profile-banner-change { opacity: 1; }
+
+/* ── Banner Preview (inside modal) ── */
+.banner-preview {
+  height: 120px;
+  border-radius: .5rem;
+  border: 1px solid var(--tekbb-border);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--tekbb-surface);
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+.banner-preview-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.banner-preview-text span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--tekbb-text);
+}
+.banner-preview-text a {
+  font-size: .8rem;
+  color: var(--tekbb-accent);
+  text-decoration: none;
+  cursor: default;
+}
+.banner-preview-label {
+  background: rgba(0,0,0,.5);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: .2rem;
+}
+
+/* ── Previous Banners Gallery ── */
+.banner-gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.banner-gallery-item {
+  height: 60px;
+  border-radius: .375rem;
+  border: 2px solid var(--tekbb-border);
+  cursor: pointer;
+  transition: border-color .2s, transform .15s;
+}
+.banner-gallery-item:hover { transform: scale(1.05); }
+.banner-gallery-item.active { border-color: var(--tekbb-accent); box-shadow: 0 0 0 2px var(--tekbb-accent); }
+
+/* ── Solid Color Presets ── */
+.solid-presets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.solid-preset-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--tekbb-border);
+  cursor: pointer;
+  transition: transform .15s, border-color .2s;
+}
+.solid-preset-swatch:hover { transform: scale(1.15); }
+.solid-preset-swatch.active { border-color: var(--tekbb-accent); box-shadow: 0 0 0 2px var(--tekbb-accent); }
+
+/* ── Gradient Presets ── */
+.gradient-presets {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+}
+.gradient-preset-swatch {
+  height: 40px;
+  border-radius: .375rem;
+  border: 2px solid var(--tekbb-border);
+  cursor: pointer;
+  transition: transform .15s, border-color .2s;
+}
+.gradient-preset-swatch:hover { transform: scale(1.06); }
+.gradient-preset-swatch.active { border-color: var(--tekbb-accent); box-shadow: 0 0 0 2px var(--tekbb-accent); }
+
+/* ═══════════════════════════════════════════════
+   STATUS FEED
+   ═══════════════════════════════════════════════ */
+
+/* ── Compose Box ── */
+.status-compose-box {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: .5rem;
+  background: var(--tekbb-surface);
+}
+.status-compose-avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.status-compose-form { flex: 1; }
+.status-compose-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* ── Feed Items ── */
+.status-feed-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--tekbb-border);
+}
+.status-feed-item:last-child { border-bottom: none; }
+.status-feed-avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.status-feed-body { flex: 1; min-width: 0; }
+.status-feed-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.status-feed-username { font-weight: 600; }
+.status-feed-time {
+  font-size: 12px;
+  color: var(--tekbb-muted);
+}
+.status-feed-header .fmz-status-delete {
+  opacity: 0;
+  transition: opacity .2s;
+}
+.status-feed-header .fmz-status-edit {
+  opacity: 0;
+  transition: opacity .2s;
+}
+.status-feed-item:hover .fmz-status-delete,
+.status-feed-item:hover .fmz-status-edit { opacity: 1; }
+.status-feed-message {
+  word-wrap: break-word;
+  line-height: 1.5;
+}
+
+/* ── Sidebar ── */
+.status-feed-sidebar .list-group-item {
+  background: var(--tekbb-surface);
+  color: var(--bs-body-color);
+  border-color: var(--tekbb-border);
+}
+.status-feed-sidebar .list-group-item:hover,
+.status-feed-sidebar .list-group-item.active {
+  background: var(--tekbb-accent);
+  color: var(--tekbb-text-inv);
+  border-color: var(--tekbb-accent);
+}
+
+/* ── Status section on profile page ── */
+.profile-status-section {
+  margin-top: 1rem;
+}
+.profile-status-section .status-feed-item {
+  padding: 10px 12px;
+}
+
+/* ═══════════════════════════════════════════════
+   COMMENTS
+   ═══════════════════════════════════════════════ */
+
+.status-comments-section {
+  margin-top: 6px;
+}
+.status-comments-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none;
+  padding: 2px 0;
+}
+.status-comments-toggle:hover { color: var(--tekbb-accent) !important; }
+.status-comments-list {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--tekbb-border);
+}
+.status-comment {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  align-items: flex-start;
+}
+.status-comment-avatar img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.status-comment-body {
+  flex: 1;
+  min-width: 0;
+  background: var(--bs-body-bg);
+  border-radius: .5rem;
+  padding: 6px 10px;
+}
+.status-comment-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+}
+.status-comment-username { font-weight: 600; font-size: .8rem; }
+.status-comment-time { color: var(--tekbb-muted); font-size: .75rem; }
+.status-comment-header .fmz-comment-delete {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity .2s;
+  font-size: .7rem;
+}
+.status-comment:hover .fmz-comment-delete { opacity: 1; }
+.status-comment-message {
+  font-size: .85rem;
+  word-wrap: break-word;
+  line-height: 1.4;
+}
+.status-comment-message img { max-width: 100%; height: auto; }
+
+/* ── Comment Compose ── */
+.status-comment-compose {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+}
+.status-comment-compose-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.status-comment-compose .form-control {
+  border-radius: 1rem;
+  font-size: .85rem;
+  padding: 4px 12px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 767.98px) {
+  .banner-gallery { grid-template-columns: repeat(3, 1fr); }
+  .gradient-presets { grid-template-columns: repeat(4, 1fr); }
+  .status-feed-page .col-md-3 { margin-bottom: 1rem; }
+}

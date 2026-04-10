@@ -1,0 +1,19 @@
+<br />
+<form action="usercp.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div>
+
+<div class="thead">{$lang->personal_notepad}</div>
+
+
+<div class="trow1">
+<textarea name="notepad" class="usercp_notepad">{$mybb->user['notepad']}</textarea>
+</div>
+
+</div>
+<br />
+<div class="align_center">
+<input type="hidden" name="action" value="do_notepad" />
+<input type="submit" class="button" name="submit" value="{$lang->update_notepad}" />
+</div>
+</form>

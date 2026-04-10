@@ -1,0 +1,38 @@
+<link rel="stylesheet" href="{$mybb->asset_url}/themes/fmz-default/vendor/bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" href="{$mybb->asset_url}/themes/fmz-default/vendor/bootstrap-icons/bootstrap-icons.min.css" />
+<link rel="stylesheet" href="{$mybb->asset_url}/themes/fmz-default/css/global.css" />
+<div class="modal">
+	<div class="modal_{$user['uid']}_{$mybb->input['pid']}">
+<div class="card" style="max-width:480px;margin:2rem auto">
+	<div class="card-header text-white py-2">
+		<span class="fw-bold">{$vote_title} {$post_rep_info}</span>
+	</div>
+	<div class="card-body">
+		<form action="reputation.php" method="post" class="reputation_{$user['uid']}_{$mybb->input['pid']}" onsubmit="javascript: return MyBB.submitReputation({$user['uid']}, {$mybb->input['pid']});">
+			<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+			<input type="hidden" name="action" value="do_add" />
+			<input type="hidden" name="uid" value="{$user['uid']}" />
+			<input type="hidden" name="pid" value="{$mybb->input['pid']}" />
+			<input type="hidden" name="rid" value="{$rid}" />
+			<input type="hidden" name="nomodal" value="1" />
+			<div class="mb-3">
+				<label class="form-label fw-semibold">{$lang->reputation}</label>
+				<select name="reputation" id="reputation" class="form-select">
+					{$positive_power}
+					{$neutral_power}
+					{$negative_power}
+				</select>
+			</div>
+			<div class="mb-3">
+				<label class="form-label fw-semibold">{$lang->user_comments}</label>
+				<input type="text" class="form-control" name="comments" maxlength="250" value="{$comments}" />
+			</div>
+			<div class="d-flex justify-content-end gap-2">
+				{$delete_button}
+				<input type="submit" class="btn btn-sm btn-primary" value="{$vote_button}" />
+			</div>
+		</form>
+	</div>
+</div>
+	</div>
+</div>

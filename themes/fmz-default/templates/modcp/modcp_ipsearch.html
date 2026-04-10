@@ -1,0 +1,42 @@
+		<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->ipsearch}</title>
+{$headerinclude}
+</head>
+<body>
+	{$header}
+	<form action="modcp.php?action=ipsearch" method="post">
+		<div>
+			
+				{$modcp_nav}
+				<div class="col-md-9">
+					{$ipsearch_results}
+					<div>
+						
+							<div class="thead">{$lang->ipaddress_search}</div>
+						
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->ip_address}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="ipaddress" value="{$ipaddressvalue}" size="30" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->options}</div>
+<div class="formbit_field" data-width="75%">	<label><input type="checkbox" class="checkbox" name="search_users" value="1" {$usersearchselect} />{$lang->search_users}</label><br />
+								<label><input type="checkbox" class="checkbox" name="search_posts" value="1" {$postsearchselect} />{$lang->search_posts}</label></div>
+</div>
+
+
+	
+					</div>
+					<br />
+					<div class="align_center">
+						<input type="submit" class="button" value="{$lang->find}" />
+					</div>
+				</div>
+			
+		</div>
+	</form>
+{$footer}
+</body>
+</html>

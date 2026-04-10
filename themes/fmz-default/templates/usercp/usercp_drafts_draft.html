@@ -1,0 +1,34 @@
+<div class="trow1 rowbit">
+  
+  
+<div class="threadit_main draftbit_main" data-width="25%">{$draft['subject']}</div>
+
+  
+ 
+<div class="threadbit_stats draftbit_details align_center" data-width="25%" data-lang="{$lang->fmz_drafts_details}">
+
+<a href="#" data-link-role="drafit-{$id}_modal">{$lang->fmz_drafts_view}</a>
+
+<div class="modal" data-modal="drafit-{$id}_modal">
+<div>
+<div class="thead align_left">{$lang->fmz_drafts_details}</div>
+<div class="trow1">{$detail}</div>
+</div>
+</div>
+
+</div>
+  
+<div class="threadbit_stats draftbit_saved align_center" data-width="25%" data-lang="{$lang->draft_saved}">{$savedate}</div>  
+
+
+<div class="threadbit_stats draftbit_details threadbit_lastpost" data-width="25%">
+
+  <span data-moderation="1">
+<a href="{$editurl}" data-lastpost-time="{$lang->edit_draft}">{$lang->edit_draft}</a>
+  
+</span>
+</div>
+<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ms-auto ps-2"><input type="checkbox" class="form-check-input" name="deletedraft[{$id}]" value="{$type}" /></span>
+
+
+  </div>

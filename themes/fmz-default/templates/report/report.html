@@ -1,0 +1,46 @@
+<div class="modal">
+
+<div class="modal_{$id}">
+<div class="tborder">
+<form action="report.php" method="post" class="reportData_{$id}" onsubmit="javascript: return Report.submitReport({$id});">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_report" />
+<input type="hidden" name="type" value="{$report_type}" />
+<input type="hidden" name="pid" value="{$id}" />
+<input type="hidden" name="no_modal" value="1" />
+	
+	
+
+
+  <div class="thead">{$report_title}</div>
+
+<div class="trow1">
+      
+{$lang->report_to_mod}
+
+{$report_reasons}
+</div>
+      
+</form>
+
+<script type="text/javascript">
+<!--
+	if($("#report_reason option:selected").attr('data-extra') != 1)
+	{
+		$("#reason").hide();
+	}
+
+	$("#report_reason").on('change', function()
+	{
+		if($(this).find("option:selected").attr('data-extra') == 1)
+		{
+			$("#reason").show();
+			return;
+		}
+
+		$("#reason").hide();
+	});
+// -->
+</script>
+
+</div></div></div>

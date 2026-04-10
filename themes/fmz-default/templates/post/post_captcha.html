@@ -1,0 +1,32 @@
+<div id="captcha_trow" class="trow1 rowbit">
+ 
+
+
+<div class="formbit_label align_right" data-width="20%">{$lang->image_verification}</div>
+  
+<div class="formbit_field" data-width="80%">
+  
+  <script>
+<!--
+	lang.captcha_fetch_failure = "{$lang->captcha_fetch_failure}";
+// -->
+</script>
+<script src="{$mybb->asset_url}/jscripts/captcha.js?ver=1821"></script>
+
+<div style="padding-bottom:6px;"><img src="captcha.php?imagehash={$imagehash}" alt="{$lang->image_verification}" title="{$lang->image_verification}" id="captcha_img" />
+</div>
+
+<input type="text" class="textbox" name="imagestring" value="" id="imagestring" /><input type="hidden" name="imagehash" value="{$imagehash}" id="imagehash" />
+<script>
+<!--
+			if(use_xmlhttprequest == "1")
+			{
+				document.write('<input type="button" class="button" name="refresh" value="{$lang->refresh}" onclick="return captcha.refresh();" \/>');
+			}
+		// -->
+</script>
+
+
+<div>{$lang->verification_note}</div>
+
+</div></div>

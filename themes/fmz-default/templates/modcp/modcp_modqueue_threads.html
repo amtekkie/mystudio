@@ -1,0 +1,52 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->threads_awaiting_moderation}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="modcp.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_modqueue" />
+<div>
+
+{$modcp_nav}
+<div class="col-md-9">
+	<div>
+		
+			<div class="thead">
+			
+				{$lang->threads_awaiting_moderation}
+              
+	<div class="float_right thead_links smalltext">
+					{$thread_link}
+					{$post_link}
+					{$attachment_link}
+				</div>
+              
+			</div>
+		
+		
+			<div class="tcat rowbit">
+
+<span class="threadbit_main modcpbit_modqueue_subject modcpbit_modqueue_main" data-width="40%">{$lang->subject}</span>
+ 
+<span class="threadbit_stats modcpbit_modqueue_author" data-width="30%">{$lang->author}</span>
+
+<span class="threadbit_stats modcpbit_modqueue_time" data-width="30%">{$lang->date}</span>
+
+</div>
+		
+		{$threads}
+		</div>
+{$multipage}
+{$mass_controls}
+<br />
+<div class="align_center"><input type="submit" class="button" name="reportsubmit" value="{$lang->perform_actions}" /></div>
+</div>
+
+</div>
+</form>
+{$footer}
+</body>
+</html>

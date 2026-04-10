@@ -1,0 +1,91 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->modlogs}</title>
+{$headerinclude}
+</head>
+<body>
+	{$header}
+	<form action="modcp.php?action=modlogs" method="post">
+		<div>
+			
+				{$modcp_nav}
+				<div class="col-md-9">
+					<div>
+						
+							<div class="thead">{$lang->modlogs}</div>
+						
+						
+<div class="tcat rowbit">
+  
+  
+<span class="modcpbit_modlogsmain threadbit_main" data-width="20%">{$lang->username}</span>
+ 
+  
+<span class="modcpbit_modlogsdate threadbit_stats" data-width="20%">{$lang->date}</span>
+  
+<span class="modcpbit_modlogsip threadbit_stats" data-width="20%">{$lang->ip}</span>
+  
+<span class="modcpbit_modlogsaction threadbit_stats" data-width="20%">{$lang->action}</span>
+  
+<span class="modcpbit_modlogsdetails threadbit_stats" data-width="20%">{$lang->information}</span>
+  
+  
+</div>
+  
+						
+						{$results}
+						{$resultspages}
+					</div>
+					<br />
+					<div>
+						
+							<div class="thead">{$lang->filter_modlogs}</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->forum}:</div>  
+<div class="formbit_field" data-width="75%">{$forum_select}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->from_moderator}</div>  
+<div class="formbit_field" data-width="75%"><select name="uid">
+									<option value="">{$lang->all_moderators}</option>
+									<option value="">----------</option>
+									{$user_options}
+								</select></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->sort_by}</div>  
+<div class="formbit_field" data-width="75%"><select name="sortby">
+									<option value="dateline" {$sortbysel['dateline']}>{$lang->date}</option>
+									<option value="username" {$sortbysel['username']}>{$lang->username}</option>
+									<option value="forum" {$sortbysel['forum']}>{$lang->forum_name}</option>
+									<option value="thread" {$sortbysel['thread']}>{$lang->thread_subject}</option>
+								</select>
+								{$lang->in}
+								<select name="order">
+									<option value="asc" {$ordersel['asc']}>{$lang->asc}</option>
+									<option value="desc" {$ordersel['desc']}>{$lang->desc}</option>
+								</select>
+								{$lang->order}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->per_page}</div>  
+<div class="formbit_field" data-width="75%"><input type="text" name="perpage" value="{$perpage}" size="4" class="textbox" /></div>
+</div>
+                      
+                      
+					</div>
+					<br />
+					<div class="align_center">
+						<input type="submit" class="button" value="{$lang->filter_logs}" />
+					</div>
+				</div>
+			
+		</div>
+	</form>
+{$footer}
+</body>
+</html>

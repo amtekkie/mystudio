@@ -1,0 +1,39 @@
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->fmz_modcp_suspend_signature}</div>  
+<div class="formbit_field" data-width="75%"><script>
+<!--
+	var sig_checked = "{$checked}";
+
+	function toggleAction()
+	{
+		if($("#suspend_action").is(":visible") == true)
+		{
+			$("#suspend_action").hide();
+		}
+		else
+		{
+			$("#suspend_action").show();
+		}
+	}
+// -->
+</script>
+<dl>
+<dt><label><input type="checkbox" name="suspendsignature" value="1" class="checkbox" {$checked_item} onclick="toggleAction();" /> {$lang->suspend_signature}</label></dt>
+<dd id="suspend_action">
+<div>
+{$suspendsignature_info}
+	
+		{$lang->suspend_length} <input type="text" name="action_time" value="{$mybb->input['action_time']}" class="textbox" /> {$action_options}
+	
+</div>
+</dd>
+</dl>
+<script>
+<!--
+	if(sig_checked == 0)
+	{
+		$("#suspend_action").hide();
+	}
+// -->
+</script></div>
+</div>

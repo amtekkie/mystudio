@@ -1,0 +1,8 @@
+{
+    "name": "FMZ WYSIWYG Editor",
+    "description": "Replaces the default SCEditor with a modern, lightweight rich-text editor featuring image paste/upload, clean HTML output, and a streamlined toolbar.",
+    "version": "1.0.0",
+    "author": "Tektove",
+    "author_url": "https://tektove.com",
+    "compatibility": "18*"
+}

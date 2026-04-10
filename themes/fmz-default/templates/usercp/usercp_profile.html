@@ -1,0 +1,79 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->edit_profile}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="usercp.php" method="post" name="input">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+
+{$usercpnav}
+<div class="col-md-9">
+{$errors}
+<div>
+
+<div class="thead">{$lang->edit_profile}</div>
+ 
+<div class="trow1 rowbit cp_row">
+
+<div data-width="50%">{$requiredfields}
+  
+  
+<fieldset><legend>{$lang->profile_optional}</legend>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->birthday}</div>
+<div class="formbit_field" data-width="75%"><select name="bday1">
+<option value="">&nbsp;</option>
+{$bdaydaysel}
+</select> <select name="bday2">
+<option value="">&nbsp;</option>
+<option value="1" {$bdaymonthsel['1']}>{$lang->month_1}</option>
+<option value="2" {$bdaymonthsel['2']}>{$lang->month_2}</option>
+<option value="3" {$bdaymonthsel['3']}>{$lang->month_3}</option>
+<option value="4" {$bdaymonthsel['4']}>{$lang->month_4}</option>
+<option value="5" {$bdaymonthsel['5']}>{$lang->month_5}</option>
+<option value="6" {$bdaymonthsel['6']}>{$lang->month_6}</option>
+<option value="7" {$bdaymonthsel['7']}>{$lang->month_7}</option>
+<option value="8" {$bdaymonthsel['8']}>{$lang->month_8}</option>
+<option value="9" {$bdaymonthsel['9']}>{$lang->month_9}</option>
+<option value="10" {$bdaymonthsel['10']}>{$lang->month_10}</option>
+<option value="11" {$bdaymonthsel['11']}>{$lang->month_11}</option>
+<option value="12" {$bdaymonthsel['12']}>{$lang->month_12}</option>
+</select> <input type="text" class="textbox" size="4" maxlength="4" name="bday3" value="{$bday['2']}" /></div>
+</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->birthdayprivacy}</div>
+<div class="formbit_field" data-width="75%"><select name="birthdayprivacy">
+<option value="all"{$allselected}>{$lang->birthdayprivacyall}</option>
+<option value="none"{$noneselected}>{$lang->birthdayprivacynone}</option>
+<option value="age"{$ageselected}>{$lang->birthdayprivacyage}</option>
+</select></div>
+</div>
+  
+{$website}
+  </fieldset>   {$customfields}</div>
+
+<div data-width="50%">{$customtitle}
+{$contactfields}
+  {$awaysection}</div>
+
+
+</div>
+  
+</div>
+  
+<div class="align_center"><br />
+<input type="hidden" name="action" value="do_profile" />
+<input type="submit" class="button" name="regsubmit" value="{$lang->update_profile}" />
+</div>
+</div>
+</div>
+</form>
+{$footer}
+</body>
+</html>

@@ -1,0 +1,146 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->delayed_moderation}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+{$display_errors}
+<br />
+<div class="tborder">
+
+<div class="thead">{$lang->delayed_mod_queue}</div>
+  
+
+
+<div class="tcat rowbit">
+
+<span class="delayedmodbit_modactions threadbit_main" data-width="20%">{$lang->mod_actions}</span>
+
+
+<span class="delayedmodbit_username threadbit_stats" data-width="20%">{$lang->mod_username}</span>
+
+<span class="delayedmodbit_days threadbit_stats" data-width="20%">{$lang->time_to_perform_action}</span>
+
+<span class="delayedmodbit_actions threadbit_stats" data-width="20%">{$lang->actions}</span>
+
+<span class="delayedmodbit_info threadbit_stats" data-width="20%">{$lang->mod_information}</span>
+
+
+</div> 
+  
+{$delayedmods}
+  
+</div>
+  
+<br />
+<form action="moderation.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_delayedmoderation" />
+<input type="hidden" name="url" value="{$url}" />
+<input type="hidden" name="tid" value="{$tid}" />
+<input type="hidden" name="fid" value="{$fid}" />
+<div class="tborder">
+
+<div class="thead">{$lang->delayed_moderation}</div>
+
+
+<div class="tcat">{$lang->delayed_moderation_desc}</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->threads}</div>
+<div class="formbit_field" data-width="80%">{$threads}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->run_moderation_time}</div>
+<div class="formbit_field" data-width="80%">	<select name="date_day">
+				{$dateday}
+		</select>
+		&nbsp;
+		<select name="date_month">
+				{$datemonth}
+		</select>
+		&nbsp;
+		<input type="text" name="date_year" value="{$dateyear}" size="4" maxlength="4" class="textbox" />
+		 - {$lang->time} <input type="text" name="date_time" value="{$datetime}" size="10" class="textbox" /></div>
+</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->moderation_action}</div>
+<div class="formbit_field" data-width="80%">
+  
+  
+<script>
+<!--
+	function toggleType()
+	{
+		if($('#type_merge'))
+		{
+			if($('#type_movecopythread').prop('checked') == true)
+			{
+				$('#type_merge_expanded').hide();
+				$('#type_movecopythread_expanded').show();
+			}
+			else if($('#type_merge').prop('checked') == true)
+			{
+				$('#type_movecopythread_expanded').hide();
+				$('#type_merge_expanded').show();
+			}
+			else
+			{
+				$('#type_movecopythread_expanded').hide();
+				$('#type_merge_expanded').hide();
+			}
+		}
+		else
+		{
+			if($('#type_movecopythread').prop('checked') == true)
+			{
+				$('#type_movecopythread_expanded').show();
+			}
+			else
+			{
+				$('#type_movecopythread_expanded').hide();
+			}
+		}
+	}
+// -->
+</script>
+<ul class="list_style">
+<li><input type="radio" name="type" value="openclosethread" {$type_selected['openclosethread']} id="type_openclosethread" onclick="toggleType();" /><label for="type_openclosethread">{$lang->open_close_thread}</label></li>
+<li><input type="radio" name="type" value="softdeleterestorethread" {$type_selected['softdeleterestorethread']} id="type_softdeleterestorethread" onclick="toggleType();" /><label for="type_softdeleterestorethread">{$lang->softdelete_restore_thread}</label></li>
+<li><input type="radio" name="type" value="deletethread" {$type_selected['deletethread']} id="type_deletethread" onclick="toggleType();" /><label for="type_deletethread">{$lang->delete_thread}</label></li>
+<li><input type="radio" name="type" value="move" {$type_selected['move']} id="type_movecopythread" onclick="toggleType();" /><label for="type_movecopythread">{$lang->move_copy_thread}</label></li>
+<li id="type_movecopythread_expanded">
+	{$lang->new_forum}<br />
+	{$forumselect}
+	{$moderation_delayedmoderation_move}
+	</li>
+<li><input type="radio" name="type" value="stick" {$type_selected['stick']} id="type_stick_unstick_thread" onclick="toggleType();" /><label for="type_stick_unstick_thread">{$lang->stick_unstick_thread}</label></li>
+	{$moderation_delayedmoderation_merge}
+	<li><input type="radio" name="type" value="removeredirects" {$type_selected['removeredirects']} id="type_removeredirects" onclick="toggleType();" /><label for="type_removeredirects">{$lang->remove_redirects}</label></li>
+<li><input type="radio" name="type" value="removesubscriptions" {$type_selected['removesubscriptions']} id="type_removesubscriptions" onclick="toggleType();" /><label for="type_removesubscriptions">{$lang->remove_subscriptions}</label></li>
+<li><input type="radio" name="type" value="approveunapprovethread" {$type_selected['approveunapprovethread']} id="type_approveunapprovethread" onclick="toggleType();" /><label for="type_approveunapprovethread">{$lang->approve_unapprove_thread}</label></li>
+	{$customthreadtools}
+</ul>
+<script>
+<!--
+	toggleType();
+// -->
+</script>
+
+</div>
+</div>
+
+
+
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" value="{$lang->save_delayed_moderation}" /></div>
+</form>
+{$footer}
+</body>
+</html>

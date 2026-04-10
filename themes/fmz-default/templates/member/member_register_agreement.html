@@ -1,0 +1,35 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->agreement}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<br />
+<form action="member.php" method="post">
+<div class="tborder">
+
+<div class="thead">{$mybb->settings['bbname']} - {$lang->agreement}</div>
+
+{$coppa_agreement}
+
+<div class="trow1">
+<p>{$lang->agreement_1}</p>
+<p>{$lang->agreement_2}</p>
+<p>{$lang->agreement_3}</p>
+<p>{$lang->agreement_4}</p>
+<p>{$lang->agreement_5}</p>
+</div>
+
+</div>
+
+<br />
+<div class="align_center">
+<input type="hidden" name="step" value="agreement" />
+<input type="hidden" name="action" value="register" />
+<input type="submit" class="button" name="agree" value="{$lang->i_agree}" />
+</div>
+</form>
+{$footer}
+</body>
+</html>

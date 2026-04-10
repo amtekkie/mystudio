@@ -1,0 +1,23 @@
+<div class="trow1 rowbit">
+  
+
+<div class="modcpbit_report_info" data-width="35%">{$report_data['content']} </div>
+  
+<div class="modcpbit_report_count" data-width="15%" data-lang="{$lang->report_count}">{$report_data['reports']}</div>
+ 
+<div class="modcpbit_report_lastreporter" data-width="25%" data-lang="{$lang->report_lastpost}">{$lastreport_date} <span class="block"></span>by {$report_data['lastreporter']}</div>
+ 
+<div class="modcpbit_report_reason infobit" data-width="25%" data-lang="{$lang->report_type}">
+<span class="threadbit_modbit">
+<input type="checkbox" class="checkbox" name="reports[]" id="reports_{$report['rid']}" value="{$report['rid']}" onclick="checkReportedPost(this);" />
+</span>
+
+<span data-moderation="1">
+
+{$report_data['comment']}
+</span>
+</div>
+  
+  
+  
+</div>

@@ -1,0 +1,52 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->contact}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="contact.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="from" value="{$redirect_url}" />
+{$errors}
+<div class="tborder">
+
+<div class="thead">{$lang->contact}</div>
+
+  
+<div class="trow1 rowbit">
+  
+<div class="formbit_label align_right" data-width="20%">{$lang->contact_subject}:</div>
+  
+<div class="formbit_field" data-width="80%"><input type="text" name="subject" class="textbox" value="{$mybb->input['subject']}" /></div>
+
+</div>
+
+<div class="trow1 rowbit">
+  
+<div class="formbit_label align_right" data-width="20%">{$lang->contact_message}:</div>
+  
+<div class="formbit_field" data-width="80%"><textarea name="message" class="textarea">{$mybb->input['message']}</textarea></div>
+
+</div>
+
+
+<div class="trow1 rowbit">
+  
+<div class="formbit_label align_right" data-width="20%">{$lang->contact_email}:</div>
+  
+<div class="formbit_field" data-width="80%"><input type="text" name="email" class="textbox" value="{$mybb->input['email']}" /><br /><span class="smalltext">{$lang->contact_email_desc}</span></div>
+
+</div>
+
+  
+{$captcha}
+</div>
+<br />
+<div class="align_center">
+<input type="submit" class="button" name="submit" value="{$lang->contact_send}" />
+</div>
+</form>
+{$footer}
+</body>
+</html>

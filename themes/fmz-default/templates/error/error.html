@@ -1,0 +1,20 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$title}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+<div class="card border-danger">
+	<div class="card-header bg-danger text-white py-2">
+		<span class="fw-bold"><i class="bi bi-exclamation-triangle-fill me-2"></i>{$title}</span>
+	</div>
+	<div class="card-body py-4">
+		{$error}
+	</div>
+</div>
+
+{$footer}
+</body>
+</html>

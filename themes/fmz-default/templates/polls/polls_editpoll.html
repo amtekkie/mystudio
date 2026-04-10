@@ -1,0 +1,115 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->edit_poll}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="moderation.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+<div class="tborder form_delete_form">
+<div class="thead">{$lang->delete_poll}</div>
+<div class="trow1">
+<div class="float_left form_checkbox_block"> <input type="checkbox" class="checkbox" name="delete" value="1" tabindex="9" /></div>
+<div class="float_right form_sumbit_block"><input type="submit" class="button" name="submit" value="{$lang->delete_poll}" tabindex="10" /></div>
+<div class="form_description_block">&nbsp;{$lang->delete_note} {$lang->delete_note2} </div>
+
+<br class="clear" />
+</div>
+</div>
+
+  </form>
+  
+<br />
+<form action="polls.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->edit_poll}</div>
+
+{$loginbox}
+
+  
+<div class="trow1 rowbit">
+  
+<div class="formbit_label align_right" data-width="20%">{$lang->question}</div>
+  
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" name="question" size="40" maxlength="240" value="{$question}" />
+</div>
+</div>
+
+
+<div class="trow1 rowbit">
+  
+<div class="formbit_label align_right" data-width="20%">{$lang->num_options}<br /><span class="smalltext">{$lang->max_options} {$mybb->settings['maxpolloptions']}</span></div>
+  
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" name="numoptions" size="10" value="{$numoptions}" />&nbsp;&nbsp;<input type="submit" class="button" name="updateoptions" value="{$lang->update_options}" />
+</div>
+</div>
+
+
+<div class="trow1 rowbit">
+  
+<div class="formbit_label align_right" data-width="20%">{$lang->poll_options}</div>
+  
+<div class="formbit_field" data-width="80%"><span>{$lang->poll_options_note}</span>
+  
+<div class="poll_option">
+{$optionbits}
+</div>
+  
+</div>
+</div>
+
+
+<div class="trow1 rowbit">
+  
+<div class="formbit_label align_right" data-width="20%">{$lang->options}</div>
+  
+<div class="formbit_field" data-width="80%"><label><input type="checkbox" class="checkbox" name="postoptions[multiple]" value="1" {$postoptionschecked['multiple']} />&nbsp;{$lang->option_multiple}</label><br />
+  
+  
+<div id="maxOptions" class="none" style="padding:4px 0px;">{$lang->option_multiple_maxoptions} <input type="text" class="textbox" name="maxoptions" value="0" style="width:40px;" /></div>
+<script>
+//<!--
+	if($("input[name='postoptions[multiple]']").is(":checked")) {
+		$("#maxOptions").show();
+	}
+  
+ 	$("input[name='postoptions[multiple]']").on('click', function() {
+ 		if($(this).is(":checked")) {
+ 	    	$("#maxOptions").show();
+		} else {
+ 	    	$("#maxOptions").hide();
+ 	   	}
+    });
+// -->
+</script>
+
+<label><input type="checkbox" class="checkbox" name="postoptions[public]" value="1" {$postoptionschecked['public']} />&nbsp;{$lang->option_public}</label><br />
+<label><input type="checkbox" class="checkbox" name="postoptions[closed]" value="1" {$postoptionschecked['closed']} />&nbsp;{$lang->option_closed}</label>
+
+</div>
+</div>
+
+
+<div class="trow1 rowbit">
+
+<div class="formbit_label align_right" data-width="20%">{$lang->poll_timeout}</div>
+
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" name="timeout" value="{$timeout}" /> {$lang->days_after} {$polldate}
+</div>
+</div>
+
+</div>
+<br />
+<div class="align_center">
+<input type="submit" class="button" name="submit" value="{$lang->update_poll}" />
+</div>
+<input type="hidden" name="action" value="do_editpoll" />
+<input type="hidden" name="pid" value="{$pid}" />
+</form>
+{$footer}
+</body>
+</html>

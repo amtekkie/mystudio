@@ -1,0 +1,61 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->modcp}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+
+{$modcp_nav}
+<div class="col-md-9">
+
+{$awaitingmoderation}
+{$latestfivemodactions}
+  
+<div>
+
+<div class="thead">{$lang->bans_ending_soon}</div>
+
+
+<div class="tcat rowbit">
+  
+<span class="modcpbit_bansusername threadbit_main" data-width="25%">{$lang->username} </span>
+  
+<span class="modcpbit_bansbannedby threadbit_main" data-width="25%">{$lang->ban_bannedby}</span>
+  
+<span class="modcpbit_banslenght threadbit_main" data-width="25%">{$lang->ban_length}</span>
+  
+<span class="modcpbit_bansreason threadbit_main" data-width="25%">{$lang->reason}</span>
+  
+
+</div>  
+
+
+{$bannedusers}
+</div>
+  
+<br />
+<form action="modcp.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_modnotes" />
+<div>
+
+<div class="thead">{$lang->moderator_notes}</div>
+
+
+<div class="tcat"><span class="smalltext">{$lang->notes_public_all}</span>
+</div>
+
+<div class="trow1"><textarea name="modnotes">{$modnotes}</textarea></div>
+
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="notessubmit" value="{$lang->save_notes}" /></div>
+</form>
+
+  
+</div>
+{$footer}
+</body>
+</html>

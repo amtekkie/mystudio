@@ -1,0 +1,39 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->move_threads}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="moderation.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->move_threads}</div>
+
+{$loginbox}
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->new_forum}</div>
+<div class="formbit_field" data-width="80%">{$forumselect}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->method}</div>
+<div class="formbit_field" data-width="80%"><label><input type="radio" class="radio" name="method" value="move" />{$lang->method_move}</label><br />
+<label><input type="radio" class="radio" name="method" value="redirect" checked="checked" />{$lang->method_move_redirect}</label> <input type="text" class="textbox" name="redirect_expire" size="3" /> {$lang->redirect_expire_note}<br />
+<label><input type="radio" class="radio" name="method" value="copy" />{$lang->method_copy}</label><br /></div>
+</div>
+
+  
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->move_threads}" /></div>
+<input type="hidden" name="action" value="do_multimovethreads" />
+<input type="hidden" name="fid" value="{$fid}" />
+<input type="hidden" name="threads" value="{$inlineids}" />
+<input type="hidden" name="url" value="{$return_url}" />
+</form>
+{$footer}
+</body>
+</html>

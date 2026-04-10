@@ -1,0 +1,24 @@
+<div class="d-flex gap-2 mb-2">
+	<label class="fw-bold text-nowrap align-self-center" style="min-width:90px">{$login_username}</label>
+	<div class="input-group">
+		<span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+		<input name="quick_username" id="quick_login_username" type="text" value="" class="form-control textbox initial_focus" />
+	</div>
+</div>
+<div class="d-flex gap-2 mb-2">
+	<label class="fw-bold text-nowrap align-self-center" style="min-width:90px">{$lang->password}</label>
+	<div class="input-group">
+		<span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+		<input name="quick_password" id="quick_login_password" type="password" value="" class="form-control textbox" />
+	</div>
+</div>
+<div class="d-flex justify-content-between align-items-center mb-2">
+	<div class="form-check">
+		<input name="quick_remember" id="quick_login_remember" type="checkbox" value="yes" class="form-check-input" checked="checked" />
+		<label for="quick_login_remember" class="form-check-label">{$lang->remember_me}</label>
+	</div>
+	<a href="{$mybb->settings['bburl']}/member.php?action=lostpw" class="lost_password small">{$lang->lost_password}</a>
+</div>
+<div class="text-center">
+	<input name="submit" type="submit" class="btn btn-primary btn-sm" value="{$lang->login}" />
+</div>

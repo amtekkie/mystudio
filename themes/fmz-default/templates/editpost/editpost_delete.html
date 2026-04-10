@@ -1,0 +1,24 @@
+<form action="editpost.php" method="post" name="editpost">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+
+<div class="tborder form_delete_form">
+<div class="thead">{$lang->delete_post}</div>
+<div class="trow1">
+<div class="float_left form_checkbox_block"> <input type="checkbox" class="checkbox" name="delete" value="1" tabindex="9" /></div>
+<div class="float_right form_sumbit_block"><input type="submit" class="button" name="submit" value="{$lang->delete_now}" tabindex="10" /></div>
+<div class="form_description_block">&nbsp;{$lang->delete_1} {$lang->delete_2} </div>
+
+<br class="clear" />
+</div>
+</div>
+
+
+
+
+
+  
+<input type="hidden" name="action" value="deletepost" />
+<input type="hidden" name="pid" value="{$pid}" />
+</form>
+<br />

@@ -1,0 +1,46 @@
+<html>
+<head>
+<title>{$lang->subscribe_to_thread}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="usercp.php" method="post" name="input">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_addsubscription" />
+<input type="hidden" name="tid" value="{$thread['tid']}" />
+
+
+{$usercpnav}
+<div class="col-md-9">
+<div>
+
+<div class="thead">{$lang->subscribe_to_thread}</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->notification_method}</div>
+<div class="formbit_field" data-width="75%">			<input type="radio" name="notification" id="notification_none" value="0" {$notification_none_checked} /> <label for="notification_none">{$lang->no_notification}</label>
+			<br /><span class="smalltext">{$lang->no_notification_desc}</span>
+		
+		    <br />
+			<input type="radio" name="notification" id="notification_email" value="1" {$notification_email_checked} /> <label for="notification_email">{$lang->email_notification}</label><br />
+			<span class="smalltext">{$lang->email_notification_desc}</span>
+		
+		    <br />
+		    <input type="radio" name="notification" id="notification_pm" value="2" {$notification_pm_checked} /> <label for="notification_pm">{$lang->pm_notification}</label><br />
+			<span class="smalltext">{$lang->pm_notification_desc}</span></div>
+</div>
+
+
+</div>
+<br />
+<div class="align_center">
+	<input type="submit" class="button" name="submit" value="{$lang->do_subscribe}" tabindex="3" accesskey="s" />
+</div>
+</div>
+</div>
+
+</form>
+{$footer}
+</body>
+</html>

@@ -1,0 +1,33 @@
+<script src="{$mybb->asset_url}/jscripts/inline_moderation.js?ver=1821"></script>
+<form action="moderation.php" method="post" class="d-inline-flex align-items-center gap-2">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="fid" value="0" />
+<input type="hidden" name="searchid" value="{$sid}" />
+<input type="hidden" name="modtype" value="inlinethread" />
+<span class="small text-muted">{$lang->inline_thread_moderation}</span>
+<select name="action" class="form-select form-select-sm" style="width:auto">
+	<optgroup label="{$lang->standard_mod_tools}">
+		<option value="multiclosethreads">{$lang->close_threads}</option>
+		<option value="multiopenthreads">{$lang->open_threads}</option>
+		<option value="multistickthreads">{$lang->stick_threads}</option>
+		<option value="multiunstickthreads">{$lang->unstick_threads}</option>
+		<option value="multideletethreads">{$lang->delete_threads}</option>
+		<option value="multimovethreads">{$lang->move_threads}</option>
+		<option value="multiapprovethreads">{$lang->approve_threads}</option>
+		<option value="multiunapprovethreads">{$lang->unapprove_threads}</option>
+	</optgroup>
+	{$customthreadtools}
+</select>
+<input type="submit" class="btn btn-sm btn-primary" name="go" value="{$lang->inline_go} ({$inlinecount})" id="inline_go" />
+<input type="button" onclick="javascript:inlineModeration.clearChecked();" value="{$lang->clear}" class="btn btn-sm btn-outline-secondary" />
+<input type="hidden" name="url" value="{$return_url}" />
+<input type="hidden" name="inlinetype" value="search" />
+</form>
+<script>
+<!--
+	var go_text = "{$lang->inline_go}";
+	var all_text = "{$threadcount}";
+	var inlineType = "search";
+	var inlineId = '{$sid}';
+// -->
+</script>

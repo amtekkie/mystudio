@@ -1,0 +1,10 @@
+			<div class="inline_post_edit">
+				<textarea id="quickedit_{$post['pid']}" tabindex="999">{$post['message']}</textarea>
+			<br />
+<br />
+			<div class="align_right">
+				<input type="button" class="badge bg-success" onclick="Thread.quickEditSave({$post['pid']});" value="{$lang->save_changes}" tabindex="1000" />
+				<input type="button" class="badge bg-primary" onclick="Thread.quickEditCancel({$post['pid']});" value="{$lang->cancel_edit}" tabindex="1001" />
+			</div>
+              
+              </div>

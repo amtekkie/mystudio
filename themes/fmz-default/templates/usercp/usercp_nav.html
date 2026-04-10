@@ -1,0 +1,24 @@
+<div class="row row-offcanvas row-offcanvas-left">
+<div class="col-md-3 sidebar-offcanvas" id="sidebar" style="padding-right:10px;">
+<div class="usercp_nav">
+<div class="tborder">
+<div class="thead">{$lang->ucp_nav_menu}</div>
+<div class="trow1 smalltext"><a href="usercp.php" class="usercp_nav_item usercp_nav_home">{$lang->ucp_nav_home}</a></div>
+<div class="trow1 smalltext"><a href="usercp.php?action=statusfeed" class="usercp_nav_item usercp_nav_statusfeed">{$lang->fmz_nav_statusfeed}</a></div>
+<div class="smalltext">{$usercpmenu}</div>
+</div>  
+</div>
+</div>
+
+<p class="d-md-none mb-2 ms-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="offcanvas"><i class="bi bi-layout-sidebar" id="offcanvas_icon"></i></button>
+          </p>
+
+<script>
+$(document).ready(function () {
+  $('[data-toggle="offcanvas"]').click(function () {
+    $('.row-offcanvas').toggleClass('active');
+	  $('#offcanvas_icon').toggleClass('bi-layout-sidebar').toggleClass('bi-x-lg')
+  });
+});
+</script>

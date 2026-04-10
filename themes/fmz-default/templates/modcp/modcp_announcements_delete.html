@@ -1,0 +1,33 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->delete_announcement}</title>
+{$headerinclude}
+</head>
+<body>
+	{$header}
+	<form action="modcp.php" method="post" enctype="multipart/form-data">
+	<input type="hidden" name="action" value="do_delete_announcement" />
+	<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+		<div>
+			
+				{$modcp_nav}
+				<div class="col-md-9">
+					<div>
+					
+					<div class="thead">{$announcement['subject']} - {$lang->delete_announcement}</div>
+					
+					
+					<div class="trow1">{$lang->confirm_delete_announcement}</div>
+					
+					</div>
+					<br />
+					<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->delete_announcement}" /></div>
+					<input type="hidden" name="aid" value="{$aid}" />
+					</form>
+				</div>
+			
+		</div>
+	</form>
+	{$footer}
+</body>
+</html>

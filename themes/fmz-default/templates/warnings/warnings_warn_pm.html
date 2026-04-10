@@ -1,0 +1,45 @@
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">	{$lang->send_pm}</div>
+<div class="formbit_field" data-width="80%">
+  
+	<script>
+				// <!--
+					function togglePM()
+					{
+						if($('#send_pm').prop('checked') == true)
+						{
+							$('#pm_input').show();
+							$('#pm_smilie_insert').show();
+						}
+						else
+						{
+							$('#pm_input').hide();
+						}
+					}
+				// -->
+</script>
+
+<label><input type="checkbox" class="checkbox" value="1" name="send_pm" id="send_pm" onclick="togglePM();" {$send_pm_checked} /> {$lang->send_user_warning_pm}</label>
+
+<div id="pm_input">
+
+<div>{$lang->send_pm_subject}</div>
+<div><input type="text" class="textbox" name="pm_subject" size="40" maxlength="85" value="{$pm_subject}" /></div>
+
+
+<div>{$lang->send_pm_message}</div>
+<div><textarea name="pm_message" id="message">{$message}</textarea>
+						{$codebuttons}</div> 
+      
+  	{$anonymous_pm}
+  </div>
+<script>
+<!--
+				$(function() {
+					togglePM();
+				});
+				// -->
+</script>
+
+</div>
+</div>

@@ -1,0 +1,19 @@
+<form action="polls.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="vote" />
+<input type="hidden" name="pid" value="{$poll['pid']}" />
+<div class="tborder">
+
+<div class="thead">{$lang->poll} {$poll['question']}</div>
+{$polloptions}
+
+<div class="tfoot">
+
+<span class="inline-block vmiddle">{$publicnote} {$closeon}</span> <input type="submit" class="button" value="{$lang->vote}" />
+<span class="float_right" style="position:relative;top:1px;"><a class="button" href="polls.php?action=showresults&amp;pid={$poll['pid']}">{$lang->show_results}</a>{$edit_poll}</span>
+
+</div>
+  
+  
+</div>
+</form><br />

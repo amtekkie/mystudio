@@ -1,0 +1,413 @@
+<?php
+/**
+ * FMZ Default — Theme Options
+ *
+ * Return an array of option definitions. Each key becomes the option name.
+ * Values are stored in themes/fmz-default/default.json
+ * and available in templates via {$mybb->fmz_theme_options['key']}.
+ *
+ * Supported types: text, textarea, yesno, select, color, numeric, image
+ */
+
+return array(
+
+    /* ── Appearance ── */
+    'color_mode' => array(
+        'title'       => 'Color Mode',
+        'description' => 'Choose the color scheme for the theme.',
+        'type'        => 'radio',
+        'options'     => array(
+            'light' => '☀️ Light',
+            'dark'  => '🌙 Dark',
+        ),
+        'default'     => 'light',
+        'page'        => 'global',
+    ),
+
+    /* ── Header ── */
+    'header_style' => array(
+        'title'       => 'Header Style',
+        'description' => 'Choose a header layout variant.',
+        'type'        => 'select',
+        'options'     => array(
+            'default'  => 'Default (Logo + Nav)',
+            'centered' => 'Centered (Logo centered, nav below)',
+            'minimal'  => 'Minimal (Text only, no logo)',
+        ),
+        'default'     => 'default',
+        'page'        => 'header_footer',
+    ),
+
+    'logo_icon' => array(
+        'title'       => 'Logo Icon',
+        'description' => 'Choose a Bootstrap Icon for the logo. Leave empty for no icon.',
+        'type'        => 'icon_chooser',
+        'default'     => 'bi-chat-square',
+        'page'        => 'header_footer',
+    ),
+
+    'logo_text' => array(
+        'title'       => 'Logo Text',
+        'description' => 'Custom text for the logo. Leave empty to use the board name.',
+        'type'        => 'text',
+        'default'     => 'FMZ Studio',
+        'page'        => 'header_footer',
+    ),
+
+    'site_logo' => array(
+        'title'          => 'Upload Logo Image',
+        'description'    => 'Upload a logo image. When set, this replaces the icon/text logo. Supports PNG, JPG, GIF, SVG, WebP.',
+        'type'           => 'image',
+        'has_dimensions' => true,
+        'default'        => '',
+        'default_width'  => '200',
+        'default_height' => '0',
+        'page'           => 'header_footer',
+    ),
+
+    'favicon' => array(
+        'title'       => 'Favicon',
+        'description' => 'Upload a favicon (.ico, .png, .svg). Displayed in browser tabs and bookmarks.',
+        'type'        => 'image',
+        'default'     => '',
+        'page'        => 'header_footer',
+    ),
+
+    /* ── Color Palette: Light Mode ── */
+    'light_body_bg' => array(
+        'title'       => 'Body Background',
+        'description' => 'Main page background color in light mode.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--bs-body-bg',
+        'default'     => '#f5f6fa',
+    ),
+    'light_body_color' => array(
+        'title'       => 'Text Color',
+        'description' => 'Primary text color in light mode.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--bs-body-color',
+        'default'     => '#1e293b',
+    ),
+    'light_accent' => array(
+        'title'       => 'Accent',
+        'description' => 'Primary accent color for links, buttons, and highlights.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-accent',
+        'default'     => '#0d9488',
+    ),
+    'light_accent_hover' => array(
+        'title'       => 'Accent Hover',
+        'description' => 'Accent color on hover state (slightly darker).',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-accent-hover',
+        'default'     => '#0f766e',
+    ),
+    'light_heading_bg' => array(
+        'title'       => 'Heading Background',
+        'description' => 'Background color for table headers and headings.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-heading-bg',
+        'default'     => '#0d9488',
+    ),
+    'light_surface' => array(
+        'title'       => 'Surface',
+        'description' => 'Background for cards, panels, and elevated elements.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-surface',
+        'default'     => '#ffffff',
+    ),
+    'light_border' => array(
+        'title'       => 'Border',
+        'description' => 'Color for borders and dividers.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-border',
+        'default'     => '#dbefed',
+    ),
+    'light_muted' => array(
+        'title'       => 'Muted Text',
+        'description' => 'Color for secondary/muted text and labels.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-muted',
+        'default'     => '#64748b',
+    ),
+    'light_text_inv' => array(
+        'title'       => 'Inverted Text',
+        'description' => 'Text color on dark/accent backgrounds (e.g. header text).',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-text-inv',
+        'default'     => '#ffffff',
+    ),
+    'light_link' => array(
+        'title'       => 'Link Color',
+        'description' => 'Color for hyperlinks.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-link',
+        'default'     => '#0d9488',
+    ),
+    'light_link_hover' => array(
+        'title'       => 'Link Hover',
+        'description' => 'Color for links on hover and active states.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-link-hover',
+        'default'     => '#0f766e',
+    ),
+    'light_btn_bg' => array(
+        'title'       => 'Button Background',
+        'description' => 'Background color for buttons.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-btn-bg',
+        'default'     => '#0d9488',
+    ),
+    'light_btn_hover' => array(
+        'title'       => 'Button Hover',
+        'description' => 'Button background on hover state.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-btn-hover',
+        'default'     => '#0f766e',
+    ),
+    'light_nav_bg' => array(
+        'title'       => 'Nav Background',
+        'description' => 'Background color for the top navigation bar.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-nav-bg',
+        'default'     => '#ffffff',
+    ),
+    'light_footer_bg' => array(
+        'title'       => 'Footer Background',
+        'description' => 'Background color for the footer area.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-footer-bg',
+        'default'     => '#f1f5f9',
+    ),
+    'light_footer_color' => array(
+        'title'       => 'Footer Text',
+        'description' => 'Text and link color in the footer.',
+        'type'        => 'color',
+        'group'       => 'palette_light',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-footer-color',
+        'default'     => '#475569',
+    ),
+
+    /* ── Color Palette: Dark Mode ── */
+    'dark_body_bg' => array(
+        'title'       => 'Body Background',
+        'description' => 'Main page background color in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--bs-body-bg',
+        'default'     => '#0f172a',
+    ),
+    'dark_body_color' => array(
+        'title'       => 'Text Color',
+        'description' => 'Primary text color in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--bs-body-color',
+        'default'     => '#e2e8f0',
+    ),
+    'dark_accent' => array(
+        'title'       => 'Accent',
+        'description' => 'Primary accent color for links, buttons, and highlights in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-accent',
+        'default'     => '#2dd4bf',
+    ),
+    'dark_accent_hover' => array(
+        'title'       => 'Accent Hover',
+        'description' => 'Accent color on hover state in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-accent-hover',
+        'default'     => '#5eead4',
+    ),
+    'dark_heading_bg' => array(
+        'title'       => 'Heading Background',
+        'description' => 'Background color for table headers and headings in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-heading-bg',
+        'default'     => '#0d9488',
+    ),
+    'dark_surface' => array(
+        'title'       => 'Surface',
+        'description' => 'Background for cards and panels in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-surface',
+        'default'     => '#1e293b',
+    ),
+    'dark_border' => array(
+        'title'       => 'Border',
+        'description' => 'Color for borders and dividers in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-border',
+        'default'     => '#122d3b',
+    ),
+    'dark_muted' => array(
+        'title'       => 'Muted Text',
+        'description' => 'Color for secondary/muted text in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-muted',
+        'default'     => '#94a3b8',
+    ),
+    'dark_text_inv' => array(
+        'title'       => 'Inverted Text',
+        'description' => 'Text color on dark/accent backgrounds in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-text-inv',
+        'default'     => '#ffffff',
+    ),
+    'dark_link' => array(
+        'title'       => 'Link Color',
+        'description' => 'Color for hyperlinks in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-link',
+        'default'     => '#2dd4bf',
+    ),
+    'dark_link_hover' => array(
+        'title'       => 'Link Hover',
+        'description' => 'Color for links on hover and active in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-link-hover',
+        'default'     => '#5eead4',
+    ),
+    'dark_btn_bg' => array(
+        'title'       => 'Button Background',
+        'description' => 'Background color for buttons in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-btn-bg',
+        'default'     => '#2dd4bf',
+    ),
+    'dark_btn_hover' => array(
+        'title'       => 'Button Hover',
+        'description' => 'Button background on hover in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-btn-hover',
+        'default'     => '#5eead4',
+    ),
+    'dark_nav_bg' => array(
+        'title'       => 'Nav Background',
+        'description' => 'Background color for the top navigation bar in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-nav-bg',
+        'default'     => '#1e293b',
+    ),
+    'dark_footer_bg' => array(
+        'title'       => 'Footer Background',
+        'description' => 'Background color for the footer area in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-footer-bg',
+        'default'     => '#1e293b',
+    ),
+    'dark_footer_color' => array(
+        'title'       => 'Footer Text',
+        'description' => 'Text and link color in the footer in dark mode.',
+        'type'        => 'color',
+        'group'       => 'palette_dark',
+        'page'        => 'global',
+        'css_var'     => '--tekbb-footer-color',
+        'default'     => '#94a3b8',
+    ),
+
+    /* ── Navigation ── */
+    'custom_nav_links' => array(
+        'title'       => 'Custom Navigation Links',
+        'description' => 'Add custom links to the main navigation bar.',
+        'type'        => 'nav_links',
+        'default'     => '',
+        'page'        => 'header_footer',
+    ),
+
+    /* ── Footer ── */
+    'footer_text' => array(
+        'title'       => 'Footer Custom Text',
+        'description' => 'Additional text displayed below the copyright bar in the footer. HTML allowed.',
+        'type'        => 'textarea',
+        'default'     => '',
+        'page'        => 'header_footer',
+    ),
+
+    'footer_about_text' => array(
+        'title'       => 'Footer About Text',
+        'description' => 'Text shown in the "About" section of the footer. Leave empty to use the default language string. Supports HTML. Use <code>{boardname}</code> as a placeholder for the board name.',
+        'type'        => 'textarea',
+        'default'     => '',
+        'page'        => 'header_footer',
+    ),
+
+    /* ── Layout ── */
+    'show_sidebar' => array(
+        'title'       => 'Show Stats as Sidebar',
+        'description' => 'Move board statistics into a sidebar column on the forum index. The forum listing becomes col-md-9 and a col-md-3 sidebar shows stats, who&rsquo;s online, and birthdays.',
+        'type'        => 'yesno',
+        'default'     => '0',
+        'page'        => 'global',
+    ),
+
+
+
+    /* ── Effects ── */
+    'loading_bar' => array(
+        'title'       => 'Page Loading Bar',
+        'description' => 'Show an accent-colored progress bar at the top of the page during navigation.',
+        'type'        => 'yesno',
+        'default'     => '1',
+        'page'        => 'global',
+    ),
+);

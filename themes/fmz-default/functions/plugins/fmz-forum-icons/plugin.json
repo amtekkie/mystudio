@@ -1,0 +1,8 @@
+{
+    "name": "Forum Icons",
+    "description": "Allows admins to assign custom Bootstrap Icons or uploaded images as forum/category icons. Supports status-aware coloring for icon fonts and grayscale filters for images.",
+    "version": "1.0.0",
+    "author": "Tektove",
+    "author_url": "https://tektove.com",
+    "compatibility": "18*"
+}

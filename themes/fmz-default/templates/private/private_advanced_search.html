@@ -1,0 +1,113 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->advanced_private_message_search}</title>
+{$headerinclude}
+<link rel="stylesheet" href="{$mybb->asset_url}/jscripts/select2/select2.css?ver=1806">
+</head>
+<body>
+{$header}
+<form action="private.php" method="post" name="pmForm">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_search" />
+
+{$usercpnav}
+<div class="col-md-9">
+<div class="tborder">
+	
+		<div class="thead">{$lang->advanced_private_message_search}</div>
+	
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%"><label for="keywords">{$lang->keywords}</label></div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="keywords" id="keywords" size="35" maxlength="250" />
+
+<br />
+<label><input type="checkbox" name="subject" checked="checked" value="1" /> {$lang->search_in_subject}</label><br />
+				<label><input type="checkbox" name="message" checked="checked" value="1" /> {$lang->search_in_message}</label>
+
+
+</div>
+</div>
+  
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%"><label for="keywords">{$lang->sender}</label></div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="sender" id="sender" size="35" maxlength="250" /></div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->message_status}</div>
+<div class="formbit_field" data-width="75%">	<label><input type="checkbox" name="status[new]" checked="checked" value="1" /> {$lang->message_status_new}</label><br />
+			<label><input type="checkbox" name="status[replied]" checked="checked" value="1" /> {$lang->message_status_replied_to}</label><br />
+			<label><input type="checkbox" name="status[forwarded]" checked="checked" value="1" /> {$lang->message_status_forwarded}</label><br />
+			<label><input type="checkbox" name="status[read]" checked="checked" value="1" /> {$lang->message_status_read}</label>
+	</div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%"><label for="folder">{$lang->folder}</label></div>
+<div class="formbit_field" data-width="75%">	{$foldersearch}</div>
+</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%"><label for="sort">{$lang->sort_by}</label></div>
+<div class="formbit_field" data-width="75%">	<select name="sort" id="sort">
+				<option value="subject">{$lang->sort_by_subject}</option>
+				<option value="sender">{$lang->sort_by_sender}</option>
+				<option value="dateline" selected="selected">{$lang->sort_by_date}</option>
+			</select> <input type="radio" class="radio" name="sortordr" id="order_asc" value="asc" /> <label for="order_asc">{$lang->ascending_order}</label> <input type="radio" class="radio" name="sortordr" id="order_desc" checked="checked" value="desc" /> <label for="order_desc">{$lang->descending_order}</label>
+			</div>
+</div>
+ 
+  
+</div>
+<br />
+<div class="align_center"><input type="submit" value="{$lang->search_private_messages}" class="button" /></div>
+</div>
+</div>
+</div>
+</form>
+{$footer}
+
+<script src="{$mybb->asset_url}/jscripts/select2/select2.min.js"></script>
+<script>
+<!--
+if(use_xmlhttprequest == "1")
+{
+	MyBB.select2();
+	$("#sender").select2({
+		placeholder: "{$lang->search_user}",
+		minimumInputLength: 2,
+		multiple: false,
+		allowClear: true,
+		ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+			url: "xmlhttp.php?action=get_users",
+			dataType: 'json',
+			data: function (term, page) {
+				return {
+					query: term, // search term
+				};
+			},
+			results: function (data, page) { // parse the results into the format expected by Select2.
+				// since we are using custom formatting functions we do not need to alter remote JSON data
+				return {results: data};
+			}
+		},
+		initSelection: function(element, callback) {
+			var value = $(element).val();
+			if (value !== "") {
+				callback({
+					id: value,
+					text: value
+				});
+			}
+		}
+	});
+}
+// -->
+</script>
+
+</body>
+</html>

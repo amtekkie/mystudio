@@ -1,0 +1,101 @@
+/* =========================================================
+   Thread Status Icons – Bootstrap Icons (imageless)
+   Overrides core sprite-based thread_status.css
+   ========================================================= */
+
+/* Kill the sprite background entirely */
+.thread_status {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: none !important;
+    background: none !important;
+    font-size: 14px;
+    text-align: center;
+    line-height: 16px;
+}
+
+/* Base pseudo-element for all status icons */
+.thread_status::before {
+    font-family: "bootstrap-icons";
+    font-size: 14px;
+    font-style: normal;
+    font-weight: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* --- Normal / read threads --- */
+.thread_status.folder::before,
+.thread_status.dot_folder::before {
+    content: "\f3d1"; /* bi-folder */
+    color: var(--tekbb-accent);
+}
+
+/* --- Hot threads --- */
+.thread_status.hotfolder::before,
+.thread_status.dot_hotfolder::before {
+    content: "\f3d1";
+    color: #dc2626;
+}
+
+/* --- New / unread threads --- */
+.thread_status.newfolder::before,
+.thread_status.dot_newfolder::before {
+    content: "\f3d1";
+    color: #16a34a;
+}
+
+/* --- Closed threads --- */
+.thread_status.closefolder::before,
+.thread_status.dot_closefolder::before {
+    content: "\f47a"; /* bi-lock */
+    color: var(--tekbb-muted);
+}
+
+/* --- Hot + closed --- */
+.thread_status.hotclosefolder::before,
+.thread_status.dot_hotclosefolder::before {
+    content: "\f47a";
+    color: #dc2626;
+}
+
+/* --- New + hot --- */
+.thread_status.newhotfolder::before,
+.thread_status.dot_newhotfolder::before {
+    content: "\f3d1";
+    color: #ea580c;
+}
+
+/* --- New + hot + closed --- */
+.thread_status.newhotclosefolder::before,
+.thread_status.dot_newhotclosefolder::before {
+    content: "\f47a";
+    color: #ea580c;
+}
+
+/* --- New + closed --- */
+.thread_status.newclosefolder::before,
+.thread_status.dot_newclosefolder::before {
+    content: "\f47a";
+    color: #16a34a;
+}
+
+/* --- Moved thread --- */
+.thread_status.movefolder::before {
+    content: "\f131"; /* bi-arrows-move */
+    color: #eab308;
+}
+
+/* --- Announcement --- */
+.thread_status.announcement::before {
+    content: "\f133"; /* bi-megaphone */
+    color: var(--tekbb-accent);
+}
+
+/* --- Threadbit positioning --- */
+.threadbit_folder .thread_status {
+    position: relative;
+    top: 2px;
+}
+

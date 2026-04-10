@@ -1,0 +1,21 @@
+<div class="tborder">
+<div class="thead">{$icon} <a href="{$mybb->settings['bburl']}/{$announcement['threadlink']}">{$announcement['subject']}</a></div>
+
+<div class="row trow1 m-0">	
+<div class="col-md-6">{$avatar}</div>
+<div class="col-md-6 smalltext align_right">
+{$lang->posted_by} {$profilelink}<br>{$anndate}<br>{$lang->forum} <a href="{$mybb->settings['bburl']}/{$announcement['forumlink']}">{$announcement['forumname']}</a><br>{$numcomments}
+</div>
+</div>
+	
+<div class="trow1">
+			<p>
+				{$message}
+			</p>
+			</div>
+	<div class="tfoot align_right">
+			<span class="smalltext">
+				<a href="{$mybb->settings['bburl']}/printthread.php?tid={$announcement['tid']}" title="{$lang->print_this_item}"><i class="bi bi-printer" aria-hidden="true"></i></a>{$senditem}
+			</span>
+		</div></div>
+<br />

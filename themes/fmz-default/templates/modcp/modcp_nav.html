@@ -1,0 +1,25 @@
+<div class="row row-offcanvas row-offcanvas-left">
+<div class="col-md-3 sidebar-offcanvas" id="sidebar">
+<div class="modcp_nav">
+<div class="tborder">
+<div class="thead">{$lang->nav_menu}</div>
+<div class="trow1"><a href="modcp.php" class="modcp_nav_item modcp_nav_home">{$lang->mcp_nav_home}</a></div>
+{$modcp_nav_forums_posts}
+{$modcp_nav_users}
+</div>
+</div>
+</div>
+
+<div class="d-md-none mb-2 ms-2">
+	<button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="offcanvas">
+		<i class="bi bi-layout-sidebar" id="offcanvas_icon"></i>
+	</button>
+</div>
+
+<script>
+$(document).ready(function () {
+  $('[data-toggle="offcanvas"]').click(function () {
+    $('.row-offcanvas').toggleClass('active');
+  });
+});
+</script>

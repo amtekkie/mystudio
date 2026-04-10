@@ -1,0 +1,19 @@
+<br />
+<form action="misc.php" method="post">
+<div class="tborder">
+
+<div class="thead">{$lang->search}</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->search}</div>
+<div class="formbit_field" data-width="80%"><input type="text" name="keywords" value="{$lang->enter_keywords}" onfocus="if(this.value == '{$lang->enter_keywords}') { this.value = ''; }" onblur="if(this.value=='') { this.value='{$lang->enter_keywords}'; }" class="textbox" size="25" /><br /><label><input name="name" checked="checked" value="1" type="checkbox"> {$lang->search_by_name}</label><br />
+<label><input name="document" checked="checked" value="1" type="checkbox"> {$lang->search_by_document}</label></div>
+</div>
+
+</div> 
+  <br />
+<div class="align_center">
+<input type="hidden" name="action" value="do_helpsearch" />
+  <input type="submit" class="button" name="submit" value="{$lang->search_help_documents}" /></div>
+</form>

@@ -1,0 +1,82 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->coppa_compliance}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<br />
+<form action="member.php" method="post">
+<div class="tborder">
+
+<div class="thead">{$mybb->settings['bbname']} - {$lang->coppa_compliance}</div>
+
+<div class="trow1">
+{$lang->coppa_desc}
+  
+<br />
+  
+  <div class="tborder">
+    
+    <div class="thead">{$lang->date_of_birth}</div>
+    
+    <div class="trow1 rowbit">
+     
+     <div data-width="30%"><label for="day">{$lang->day}:</label></div>
+     <div data-width="40%"><label for="month">{$lang->month}:</label></div>
+     <div data-width="30%"><label for="year">{$lang->year}:</label></div>
+    </div>
+      
+      <div class="trow1 rowbit">
+        
+        	<div data-width="30%">
+							<select name="bday1" id="day">
+								<option value="">&nbsp;</option>
+								{$bdaysel}
+							</select>
+						</div>
+						<div data-width="40%">
+							<select name="bday2" id="month">
+								<option value="">&nbsp;</option>
+								<option value="1" {$bdaymonthsel['1']}>{$lang->month_1}</option>
+								<option value="2" {$bdaymonthsel['2']}>{$lang->month_2}</option>
+								<option value="3" {$bdaymonthsel['3']}>{$lang->month_3}</option>
+								<option value="4" {$bdaymonthsel['4']}>{$lang->month_4}</option>
+								<option value="5" {$bdaymonthsel['5']}>{$lang->month_5}</option>
+								<option value="6" {$bdaymonthsel['6']}>{$lang->month_6}</option>
+								<option value="7" {$bdaymonthsel['7']}>{$lang->month_7}</option>
+								<option value="8" {$bdaymonthsel['8']}>{$lang->month_8}</option>
+								<option value="9" {$bdaymonthsel['9']}>{$lang->month_9}</option>
+								<option value="10" {$bdaymonthsel['10']}>{$lang->month_10}</option>
+								<option value="11" {$bdaymonthsel['11']}>{$lang->month_11}</option>
+								<option value="12" {$bdaymonthsel['12']}>{$lang->month_12}</option>
+							</select>
+						</div>
+						<div data-width="30%">
+							<input type="text" class="textbox" size="4" maxlength="4" name="bday3" id="year" value="{$mybb->input['bday3']}" />
+						</div>
+        
+    </div>
+    
+    <div class="trow1 align_center">{$lang->hide_dob}</div>
+    
+    </div>
+    
+    
+  </div>
+  
+  <br />
+  
+</div>
+  
+
+</div>
+<br />
+<div class="align_center">
+<input type="hidden" name="action" value="register" />
+<input type="submit" class="button" name="agree" value="{$lang->continue_registration}" />
+</div>
+</form>
+{$footer}
+</body>
+</html>

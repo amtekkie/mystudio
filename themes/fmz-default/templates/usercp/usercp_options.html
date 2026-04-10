@@ -1,0 +1,185 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->edit_options}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="usercp.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+
+{$usercpnav}
+<div class="col-md-9">
+{$errors}
+<div>
+
+<div class="thead">{$lang->edit_options}</div>
+
+<div class="trow1 rowbit cp_row">
+
+<div class="col-md-6">
+
+{$canbeinvisible}
+<br />
+	
+<fieldset>
+	<legend>{$lang->messaging_notification}</legend>
+	<input type="checkbox" class="checkbox" name="allownotices" id="allownotices" value="1" {$allownoticescheck} /><label for="allownotices">{$lang->allow_notices}</label>
+	<br />
+
+	<input type="checkbox" class="checkbox" name="hideemail" id="hideemail" value="1" {$hideemailcheck} /> <label for="hideemail">{$lang->allow_emails}</label>
+	<br />
+	
+	<input type="checkbox" class="checkbox" name="receivepms" id="receivepms" value="1" {$receivepmscheck} /> <label for="receivepms">{$lang->receive_pms}</label>
+	<br />
+
+{$pms_from_buddys}
+
+	<input type="checkbox" class="checkbox" name="pmnotice" id="pmnotice" value="1"{$pmnoticecheck} /> <label for="pmnotice">{$lang->pm_notice}</label>
+	<br />
+
+	<input type="checkbox" class="checkbox" name="pmnotify" id="pmnotify" value="1" {$pmnotifycheck} /> <label for="pmnotify">{$lang->pm_notify}</label>
+	<br />
+
+	<input type="checkbox" class="checkbox" name="buddyrequestspm" id="buddyrequestspm" value="1" {$buddyrequestspmcheck} /> <label for="buddyrequestspm">{$lang->buddyrequests_pm}</label>
+	<br />
+
+	<input type="checkbox" class="checkbox" name="buddyrequestsauto" id="buddyrequestsauto" value="1" {$buddyrequestsautocheck} /> <label for="buddyrequestsauto">{$lang->buddyrequests_auto}</label>
+	<br/>
+	<br/>
+	<div><label for="subscriptionmethod">{$lang->subscription_method}</label></div>
+	<div>
+	<select name="subscriptionmethod" id="subscriptionmethod">
+		<option value="0" {$no_auto_subscribe_selected}>{$lang->no_auto_subscribe}</option>
+		<option value="1" {$no_subscribe_selected}>{$lang->no_subscribe}</option>
+		<option value="2" {$instant_email_subscribe_selected}>{$lang->instant_email_subscribe}</option>
+		<option value="3" {$instant_pm_subscribe_selected}>{$lang->instant_pm_subscribe}</option>
+	</select>
+	</div>
+</fieldset>
+	<br />
+
+<fieldset><legend>{$lang->date_time_options}</legend>
+  
+
+<div class="formbit_label">{$lang->date_format}</div>
+<div class="formbit_field"><select name="dateformat">
+<option value="0">{$lang->use_default}</option>
+{$date_format_options}
+</select></div>
+<br/>
+
+
+<div class="formbit_label">{$lang->time_format}</div>
+<div class="formbit_field"><select name="timeformat">
+<option value="0">{$lang->use_default}</option>
+{$time_format_options}
+</select></div>
+<br/>
+
+
+  <div class="formbit_label">{$lang->time_offset_desc}</div>
+<div class="formbit_field">{$tzselect}</div>
+<br/>
+
+  
+
+<div class="formbit_label">{$lang->dst_correction}</div>
+<div class="formbit_field">	<select name="dstcorrection">
+		<option value="2" {$dst_auto_selected}>{$lang->dst_correction_auto}</option>
+		<option value="1" {$dst_enabled_selected}>{$lang->dst_correction_enabled}</option>
+		<option value="0" {$dst_disabled_selected}>{$lang->dst_correction_disabled}</option>
+	</select></div>
+<br/>
+</fieldset>
+
+
+</div>
+
+
+<div class="col-md-6">
+
+<fieldset><legend>{$lang->forum_display_options}</legend>
+
+{$tppselect}
+
+
+<div class="formbit_label">{$lang->thread_view}</div>
+<div class="formbit_field"><select name="daysprune">
+<option value="">{$lang->use_default}</option>
+<option value="1" {$daysprunesel['1']}>{$lang->thread_view_lastday}</option>
+<option value="5" {$daysprunesel['5']}>{$lang->thread_view_5days}</option>
+<option value="10" {$daysprunesel['10']}>{$lang->thread_view_10days}</option>
+<option value="20" {$daysprunesel['20']}>{$lang->thread_view_20days}</option>
+<option value="50" {$daysprunesel['50']}>{$lang->thread_view_50days}</option>
+<option value="75" {$daysprunesel['75']}>{$lang->thread_view_75days}</option>
+<option value="100" {$daysprunesel['100']}>{$lang->thread_view_100days}</option>
+<option value="365" {$daysprunesel['365']}>{$lang->thread_view_year}</option>
+<option value="9999" {$daysprunesel['9999']}>{$lang->thread_view_all}</option>
+</select></div>
+<br/><br/>
+
+</fieldset>
+
+<fieldset><legend>{$lang->thread_view_options}</legend>
+
+
+<div class="formbit_label">{$lang->thread_view_options}</div>
+<div class="formbit_field"><input type="checkbox" class="checkbox" name="classicpostbit" id="classicpostbit" value="1" {$classicpostbitcheck} /> <label for="classicpostbit">{$lang->show_classic_postbit}</label><br />
+
+<input type="checkbox" class="checkbox" name="showimages" id="showimages" value="1" {$showimagescheck} /> <label for="showimages">{$lang->show_images}</label><br />
+
+<input type="checkbox" class="checkbox" name="showvideos" id="showvideos" value="1" {$showvideoscheck} /> <label for="showvideos">{$lang->show_videos}</label><br />
+
+<input type="checkbox" class="checkbox" name="showsigs" id="showsigs" value="1" {$showsigscheck} /> <label for="showsigs">{$lang->show_sigs}</label><br />
+
+<input type="checkbox" class="checkbox" name="showavatars" id="showavatars" value="1" {$showavatarscheck} /> <label for="showavatars">{$lang->show_avatars}</label><br />
+
+
+<input type="checkbox" class="checkbox" name="showquickreply" id="showquickreply" value="1" {$showquickreplycheck} /> <label for="showquickreply">{$lang->show_quick_reply}</label><br />
+</div>
+
+<br/>
+	
+{$pppselect}
+  
+<div class="formbit_label">{$lang->thread_mode}</div>
+<div class="formbit_field"><select name="threadmode"><option value="">{$lang->use_default}</option><option value="linear" {$threadview['linear']}>{$lang->linear}</option><option value="threaded" {$threadview['threaded']}>{$lang->threaded}</option></select></div>
+<br/>
+
+</fieldset>
+
+
+<fieldset><legend>{$lang->other_options}</legend>
+<div><input type="checkbox" class="checkbox" name="showredirect" id="showredirect" value="1" {$showredirectcheck} /> <label for="showredirect">{$lang->show_redirect}</label></div>
+
+<div><input type="checkbox" class="checkbox" name="showcodebuttons" id="showcodebuttons" value="1" {$showcodebuttonscheck} /> <label for="showcodebuttons">{$lang->show_codebuttons}</label></div>
+  
+<div><input type="checkbox" class="checkbox" name="sourceeditor" id="sourceeditor" value="1" {$sourcemodecheck} /> <label for="sourceeditor">{$lang->source_editor}</label></div>
+<br/>
+{$board_style}
+{$board_language}
+
+</fieldset>
+
+
+
+</div>
+
+
+</div>
+  
+</div>
+<br />
+<div class="align_center">
+<input type="hidden" name="action" value="do_options" />
+<input type="submit" class="button" name="regsubmit" value="{$lang->update_options}" />
+</div>
+</div>
+</div>
+
+</form>
+{$footer}
+</body>
+</html>

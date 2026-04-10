@@ -1,0 +1,31 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->merge_posts}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="moderation.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->merge_posts}</div>
+  
+{$loginbox}
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->post_separator}</div>
+<div class="formbit_field" data-width="80%"><label><input type="radio" class="radio" name="sep" value="hr" checked="checked" />&nbsp;{$lang->horizontal_rule}</label><br /><label><input type="radio" class="radio" name="sep" value="new_line" />&nbsp;{$lang->new_line}</label></div>
+</div>
+
+{$postlist}
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->merge_posts}" /></div>
+<input type="hidden" name="action" value="do_multimergeposts" />
+<input type="hidden" name="tid" value="{$tid}" />
+<input type="hidden" name="url" value="{$return_url}" />
+</form>
+{$footer}
+</body>
+</html>

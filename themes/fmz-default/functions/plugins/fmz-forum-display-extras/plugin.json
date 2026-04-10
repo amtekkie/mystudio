@@ -1,0 +1,8 @@
+{
+    "name": "Forum Display Extras",
+    "description": "Enriches forum listings with last poster avatars (+ user info modal), column-based subforum layout, and a card-style forum listing option.",
+    "version": "1.0.0",
+    "author": "Tektove",
+    "author_url": "https://tektove.com",
+    "compatibility": "18*"
+}

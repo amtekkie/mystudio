@@ -1,0 +1,20 @@
+<div class="mb-3">
+	<label class="form-label small text-muted"><i class="bi bi-image me-1"></i>{$lang->image_verification}</label>
+	<script>
+		lang.captcha_fetch_failure = "{$lang->captcha_fetch_failure}";
+	</script>
+	<script src="{$mybb->asset_url}/jscripts/captcha.js?ver=1821"></script>
+	<div class="mb-2"><img src="captcha.php?action=regimage&amp;imagehash={$imagehash}" alt="{$lang->image_verification}" id="captcha_img" class="rounded border" /></div>
+	<div class="input-group" style="max-width:300px">
+		<span class="input-group-text"><i class="bi bi-shield-check"></i></span>
+		<input type="text" class="form-control" name="imagestring" value="" id="imagestring" placeholder="{$lang->image_verification}" />
+	</div>
+	<input type="hidden" name="imagehash" value="{$imagehash}" id="imagehash" />
+	<script>
+		if(use_xmlhttprequest == "1") {
+			document.write('<button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="return captcha.refresh();"><i class="bi bi-arrow-clockwise me-1"></i>{$lang->refresh}</button>');
+		}
+	</script>
+	<div id="imagestring_status"></div>
+	<div class="form-text">{$lang->verification_note}</div>
+</div>

@@ -1,0 +1,72 @@
+<html>
+<head>
+<title>{$thread['subject']}</title>
+{$headerinclude}
+<script>
+<!--
+	var quickdelete_confirm = "{$lang->quickdelete_confirm}";
+	var quickrestore_confirm = "{$lang->quickrestore_confirm}";
+	var allowEditReason = "{$mybb->settings['alloweditreason']}";
+	lang.save_changes = "{$lang->save_changes}";
+	lang.cancel_edit = "{$lang->cancel_edit}";
+	lang.quick_edit_update_error = "{$lang->quick_edit_update_error}";
+	lang.quick_reply_post_error = "{$lang->quick_reply_post_error}";
+	lang.quick_delete_error = "{$lang->quick_delete_error}";
+	lang.quick_delete_success = "{$lang->quick_delete_success}";
+	lang.quick_delete_thread_success = "{$lang->quick_delete_thread_success}";
+	lang.quick_restore_error = "{$lang->quick_restore_error}";
+	lang.quick_restore_success = "{$lang->quick_restore_success}";
+	lang.editreason = "{$lang->postbit_editreason}";
+// -->
+</script>
+<script src="{$mybb->asset_url}/jscripts/report.js?ver=1839"></script>
+<script src="{$mybb->asset_url}/jscripts/jeditable/jeditable.min.js"></script>
+<script src="{$mybb->asset_url}/jscripts/thread.js?ver=1839"></script>
+</head>
+<body>
+{$header}
+{$threadnotesbox}
+{$pollbox}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 py-2 px-3 rounded-2 border">
+	<div class="d-flex align-items-center gap-3 flex-wrap">
+		{$ratethread}
+		<a href="showthread.php?mode={$thread_toggle}&amp;tid={$tid}&amp;pid={$pid}#pid{$pid}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-repeat me-1"></i>{$lang->thread_toggle}</a>
+		{$threadnoteslink}
+	</div>
+	<div class="d-flex align-items-center gap-3 flex-wrap">
+		{$multipage}
+		{$newreply}
+	</div>
+</div>
+
+<div id="posts_container">
+<div id="posts">
+	{$posts}
+</div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2 p-2 border-top">
+	<div>
+		<strong>&laquo; <a href="{$next_oldest_link}">{$lang->next_oldest}</a> | <a href="{$next_newest_link}">{$lang->next_newest}</a> &raquo;</strong>
+	</div>
+	<div>{$search}</div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+	<div>{$multipage}</div>
+	<div class="d-flex gap-2">{$newreply}</div>
+</div>
+
+{$quickreply}
+{$threadexbox}
+{$similarthreads}
+{$usersbrowsing}
+{$moderationoptions}
+{$inline_edit_js}
+<br />
+{$forumjump}
+
+{$footer}
+</body>
+</html>

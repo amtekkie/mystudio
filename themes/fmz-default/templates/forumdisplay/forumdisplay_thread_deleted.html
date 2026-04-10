@@ -1,0 +1,19 @@
+<div class="inline_row {$bgcolor}{$thread_type_class} rowbit">
+
+<div class="threadbit_main" data-width="60%" data-rate-thread="{$foruminfo['allowtratings']}">
+<div class="threadbit_folder"><span class="folder thread_status {$folder}" title="{$folder_label}"></span></div>
+<div class="threadbit_title">
+  <div class="fst-italic text-muted">{$lang->deleted_thread}</div>
+  <div class="smalltext">{$thread['profilelink']}</div>
+</div>
+</div>
+
+<div class="threadbit_stats threadbit_replies align_center smalltext" data-width="7.5%" data-lang="{$lang->replies}">-</div>
+<div class="threadbit_stats threadbit_views align_center smalltext" data-width="7.5%" data-lang="{$lang->views}">-</div>
+{$rating}
+<div class="threadbit_lastpost smalltext" data-width="25%">
+{$modbit}
+<span data-moderation="{$ismod}">-</span>
+</div>
+
+</div>

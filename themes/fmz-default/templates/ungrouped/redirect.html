@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']}</title>
+<meta http-equiv="refresh" content="2;URL={$url}" />
+{$headerinclude}
+<style>#welcomeblock{display:none!important}</style>
+</head>
+<body>
+{$header}
+
+<div class="card">
+    <div class="card-header text-white py-2">
+        <span class="fw-bold">{$lang->redirect}</span>
+    </div>
+    <div class="card-body text-center py-4">
+        <div class="spinner-border mb-3" style="color:#0d9488" role="status"><span class="visually-hidden">Loading...</span></div>
+        <div>{$message}</div>
+        <p class="text-muted small mt-2"><a href="{$url}">{$lang->redirect_return}</a></p>
+    </div>
+</div>
+
+{$footer}
+</body>
+</html>

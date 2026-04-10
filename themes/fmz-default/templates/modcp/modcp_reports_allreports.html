@@ -1,0 +1,47 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->all_reports}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+	
+		{$modcp_nav}
+		<div class="col-md-9">
+			<div>
+				
+					<div class="thead">{$lang->all_reports}</div>
+
+              
+
+  
+<div class="tcat rowbit">
+  
+  
+<span class="modcpbit_report_info threadbit_main" data-width="25%">{$lang->report_info}</span>
+  
+  
+<span class="modcpbit_report_count threadbit_stats" data-width="15%">{$lang->report_count}</span>
+  
+
+<span class="modcpbit_report_reporter threadbit_stats" data-width="15%">{$lang->reporter}</span>
+  
+<span class="modcpbit_report_time threadbit_stats" data-width="20%">{$lang->report_time}</span>
+ 
+ 
+<span class="modcpbit_report_reason threadbit_stats" data-width="25%">{$lang->report_type}</span>
+  
+  
+</div>  
+		
+				
+				{$allreports}
+			</div>
+			{$allreportspages}
+		</div>
+	
+
+{$footer}
+</body>
+</html>

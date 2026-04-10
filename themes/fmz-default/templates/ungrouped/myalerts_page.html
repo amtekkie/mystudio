@@ -1,0 +1,38 @@
+<html>
+<head>
+    <title>{$lang->myalerts_page_title} - {$mybb->settings['bbname']}</title>
+    <script type="text/javascript">
+        <!--
+        var myalerts_autorefresh = {$mybb->settings['myalerts_autorefresh']};
+        var page = {$page};
+        var pages = {$pages};
+        // -->
+</script>
+    {$headerinclude}
+</head>
+<body>
+{$header}
+	{$usercpnav}
+	<div class="col-md-9">
+		<div class="d-flex justify-content-end mb-2">{$multipage}</div>
+		<div class="tborder">
+			<div class="thead d-flex justify-content-between align-items-center flex-wrap gap-2">
+				<strong>{$lang->myalerts_page_title}</strong>
+				<div class="d-flex gap-2 small fw-normal">
+					<a href="{$mybb->settings['bburl']}/alerts.php?action=mark_all_read&amp;my_post_key={$mybb->post_code}">{$lang->myalerts_page_mark_all_read}</a>
+					<span aria-hidden="true">|</span>
+					<a href="{$mybb->settings['bburl']}/alerts.php?action=delete_read&amp;my_post_key={$mybb->post_code}" onclick="return confirm('{$lang->myalerts_delete_read_confirm}')">{$lang->myalerts_page_delete_read}</a>
+					<span aria-hidden="true">|</span>
+					<a href="{$mybb->settings['bburl']}/alerts.php?action=delete_all&amp;my_post_key={$mybb->post_code}" onclick="return confirm('{$lang->myalerts_delete_all_confirm}')">{$lang->myalerts_page_delete_all}</a>
+					<span aria-hidden="true">|</span>
+					<a id="getLatestAlerts" href="{$mybb->settings['bburl']}/alerts.php">{$lang->myalerts_page_getnew}</a>
+				</div>
+			</div>
+			<div id="latestAlertsListing">{$alertsListing}</div>
+		</div>
+		<div class="d-flex justify-content-end mt-2">{$multipage}</div>
+	</div>
+</div>
+{$footer}
+</body>
+</html>

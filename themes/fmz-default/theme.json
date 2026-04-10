@@ -1,0 +1,51 @@
+{
+    "name": "FMZ Default",
+    "version": "1839",
+    "properties": {
+        "editortheme": "default.css",
+        "imgdir": "images",
+        "tablespace": "0",
+        "borderwidth": "0",
+        "color": ""
+    },
+    "stylesheets": [
+        {
+            "name": "editor.css",
+            "attachedto": "",
+            "order": 2
+        },
+        {
+            "name": "global.css",
+            "attachedto": "",
+            "order": 3
+        },
+        {
+            "name": "modcp.css",
+            "attachedto": "modcp.php",
+            "order": 4
+        },
+        {
+            "name": "showthread.css",
+            "attachedto": "showthread.php",
+            "order": 5
+        },
+        {
+            "name": "star_ratings.css",
+            "attachedto": "forumdisplay.php|showthread.php",
+            "order": 6
+        },
+        {
+            "name": "thread_status.css",
+            "attachedto": "",
+            "order": 7
+        },
+        {
+            "name": "usercp.css",
+            "attachedto": "usercp.php|private.php",
+            "order": 8
+        }
+    ],
+    "js": [
+        "main.js"
+    ]
+}

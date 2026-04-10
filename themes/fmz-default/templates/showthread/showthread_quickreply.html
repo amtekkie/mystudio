@@ -1,0 +1,55 @@
+<div id="quickreply_spinner" class="showthread_spinner" style="display: none"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>
+<br />
+{$moderation_notice}
+<form method="post" action="newreply.php?tid={$tid}&amp;processed=1" name="quick_reply_form" id="quick_reply_form">
+	<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+	<input type="hidden" name="subject" value="{$lang->fmz_reply_prefix} {$reply_subject}" />
+	<input type="hidden" name="action" value="do_newreply" />
+	<input type="hidden" name="posthash" value="{$posthash}" id="posthash" />
+	<input type="hidden" name="quoted_ids" value="" id="quoted_ids" />
+	<input type="hidden" name="lastpid" id="lastpid" value="{$last_pid}" />
+	<input type="hidden" name="from_page" value="{$page}" />
+	<input type="hidden" name="tid" value="{$tid}" />
+	<input type="hidden" name="method" value="quickreply" />
+
+	<div class="tborder">
+		<div class="thead d-flex justify-content-between align-items-center">
+					<div><strong>{$lang->quick_reply}</strong></div>
+					<div class="expcolimage"><span id="quickreply_img" class="expander" style="cursor:pointer"><i class="bi bi-chevron-up"></i></span></div>
+		</div>
+		<div class="tbody" style="{$collapsed['quickreply_e']}" id="quickreply_e">
+			<div class="rowbit trow1">
+<div data-width="25%">
+					<strong>{$lang->message}</strong><br />
+					<span class="smalltext">{$lang->message_note}<br /><br />
+					{$option_signature}
+					<label><input type="checkbox" class="checkbox" name="postoptions[disablesmilies]" value="1" />&nbsp;<strong>{$lang->disable_smilies}</strong></label>{$closeoption}</span>
+				</div>
+					<div data-width="75%">
+						<div class="editor_control_bar" style="padding: 4px; margin-top: 3px; display: none;" id="quickreply_multiquote">
+						<span class="smalltext">
+							{$lang->quickreply_multiquote_selected} <a href="./newreply.php?tid={$tid}&amp;load_all_quotes=1" onclick="return Thread.loadMultiQuoted();">{$lang->quickreply_multiquote_now}</a> {$lang->or} <a href="javascript:Thread.clearMultiQuoted();">{$lang->quickreply_multiquote_deselect}</a>.
+						</span>
+					</div>
+						<textarea name="message" id="message" tabindex="1"></textarea>{$codebuttons}
+						<script type="text/javascript">
+						$(function() {
+							$('#quick_reply_form').on('reset', function() {
+								MyBBEditor.val('');
+							});
+						});
+						</script>{$codebuttons}
+						<script type="text/javascript">
+						$(function() {
+							$('#quick_reply_form').on('reset', function() {
+								MyBBEditor.val('');
+							});
+						});
+						</script>
+					</div>
+					
+				</div>
+			{$captcha}
+		<div class="tfoot align_center"><input type="submit" class="button" value="{$lang->post_reply}" tabindex="2" accesskey="s" id="quick_reply_submit" /> <input type="submit" class="button" name="previewpost" value="{$lang->preview_post}" tabindex="3" /></div>
+			</div></div>
+</form>

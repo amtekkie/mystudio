@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->syndication}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<div class="trow1">
+{$lang->syndication_note}
+</div>
+<br />
+  
+{$feedurl}
+  
+<form method="post" action="misc.php?action=syndication">
+<div class="tborder">
+
+<div class="thead">{$lang->syndication}</div>
+
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->syndication_forum}<br /><span class="smalltext">{$lang->syndication_forum_desc}</span></div>
+<div class="formbit_field" data-width="80%">{$forumselect}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->syndication_version}</div>
+<div class="formbit_field" data-width="80%"><input type="radio" class="radio" name="version" value="rss2.0" {$rss2check} />&nbsp;{$lang->syndication_version_rss2}<br /><input type="radio" class="radio" name="version" value="atom1.0" {$atom1check} />&nbsp;{$lang->syndication_version_atom1}<br /><input type="radio" class="radio" name="version" value="json" {$json1check} />&nbsp;{$lang->syndication_version_json1}<span class="smalltext">{$lang->syndication_version_desc}</span></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->syndication_limit}</div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" name="limit" value="{$limit}" size="3" /> {$lang->syndication_threads_time}</div>
+</div>
+
+
+  
+  
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="make" value="{$lang->syndication_generate}" /></div>
+</form>
+{$footer}
+</body>
+</html>

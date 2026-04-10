@@ -1,0 +1,28 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->delete_threads}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="moderation.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->delete_threads}</div>
+
+
+<div class="trow1">{$lang->confirm_delete_threads}</div>
+
+{$loginbox}
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->delete_threads}" /></div>
+<input type="hidden" name="action" value="do_multideletethreads" />
+<input type="hidden" name="fid" value="{$fid}" />
+<input type="hidden" name="threads" value="{$inlineids}" />
+<input type="hidden" name="url" value="{$return_url}" />
+</form>
+{$footer}
+</body>
+</html>

@@ -1,0 +1,68 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->private_messaging}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+{$usercpnav}
+	
+
+<div class="col-md-9">
+<div class="row">
+{$pmspacebar}
+	
+{$limitwarning}
+</div>	
+	
+<form action="private.php" method="post" name="pmForm">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+<div class="tborder">
+
+<div class="thead">{$foldername}</div>
+
+
+<div class="tcat rowbit">
+
+  
+<span class="pmbit_main threadbit_main" data-width="50%">
+<a href="private.php?fid={$fid}&amp;sortby=subject&amp;order=asc">{$lang->message_title}</a> {$orderarrow['subject']}</span>
+
+ 
+<span class="pmbit_author threadbit_stats align_center" data-width="25%"><a href="private.php?fid={$fid}&amp;sortby=username&amp;order=asc">{$sender}</a> {$orderarrow['username']}</span>
+
+<span class="threadbit_lastpost pmbit_date" data-width="25%">
+
+ <span data-moderation="1">
+<a href="private.php?fid={$fid}&amp;sortby=dateline&amp;order=desc">{$lang->date_sent}</a> {$orderarrow['dateline']}</span>
+  </span>
+<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ps-2"><input name="allbox" title="{$lang->check_all}" type="checkbox" class="form-check-input checkall" value="{$lang->check_all}" /></span>
+</div>
+
+{$messagelist}
+
+<div class="tfoot align_right">
+<input type="submit" class="button" name="moveto" value="{$lang->move_to}" /> {$folderoplist} {$lang->or}
+<input type="submit" class="button" name="delete" value="{$lang->delete}" /> {$lang->selected_messages}
+</div>
+
+</div>
+<br />
+<div class="float_right">
+{$lang->jump_folder} {$folderjump}
+<input type="submit" class="button" name="hop" value="{$lang->go}" />
+</div>
+<input type="hidden" name="action" value="do_stuff" />
+</form>
+
+<div class="float_left">{$multipage}</div>
+
+{$emptyexportlink}
+</div>
+</div>
+
+{$footer}
+</body>
+</html>

@@ -1,0 +1,17 @@
+<li><label><input type="radio" name="type" value="custom" {$type_checked['custom']} class="types_check" onclick="checkType();" /> {$lang->custom}</label></li>
+<li id="type_custom" class="types">
+
+<div class="rowbit warnings_warn_custom">
+<span>{$lang->reason}<br /><input type="text" class="textbox" name="custom_reason" size="30" maxlength="120" value="{$custom_reason}" /></span>
+<span>{$lang->points}<br /><input type="text" class="textbox" name="custom_points" size="2" value="{$custom_points}" /></span>
+<span>{$lang->expires}<br /><input type="text" class="textbox" name="expires" size="2" value="{$expires}" />
+								<select name="expires_period">
+									<option value="hours" {$expires_period['hours']}>{$lang->hour_or_hours}</option>
+									<option value="days" {$expires_period['days']}>{$lang->day_or_days}</option>
+									<option value="weeks" {$expires_period['weeks']}>{$lang->week_or_weeks}</option>
+									<option value="months" {$expires_period['months']}>{$lang->month_or_months}</option>
+									<option value="never" {$expires_period['never']}>{$lang->never}</option>
+								</select></span>
+</div>
+
+</li>

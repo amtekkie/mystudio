@@ -1,0 +1,90 @@
+<a href="misc.php?action=buddypopup" onclick="fmzOpenBuddyModal();return false;" class="btn btn-sm btn-outline-secondary position-relative"><i class="bi bi-person-heart"></i><span class="d-none d-lg-inline ms-1">{$lang->welcome_open_buddy_list}</span>{$fmz_buddy_badge}</a>
+
+<div class="modal fade" id="fmzBuddyListModal" tabindex="-1" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:420px">
+<div class="modal-content">
+  <div class="modal-header">
+    <h6 class="modal-title"><i class="bi bi-person-heart me-1"></i> {$lang->welcome_open_buddy_list}</h6>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body" id="fmzBuddyListBody" style="min-height:120px">
+    <div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>
+  </div>
+  <div class="modal-footer py-1">
+    <a href="usercp.php?action=editlists" class="btn btn-sm btn-outline-secondary w-100"><i class="bi bi-pencil-square me-1"></i> Manage Buddy & Ignore Lists</a>
+  </div>
+</div>
+</div>
+</div>
+
+<style>
+#fmzBuddyListBody .buddy-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--tekbb-border)}
+#fmzBuddyListBody .buddy-item:last-child{border-bottom:none}
+#fmzBuddyListBody .buddy-item img{width:36px;height:36px;border-radius:50%;object-fit:cover}
+#fmzBuddyListBody .buddy-section{font-weight:600;font-size:.85rem;color:var(--tekbb-muted);margin-top:10px;margin-bottom:4px}
+#fmzBuddyListBody .buddy-section:first-child{margin-top:0}
+</style>
+
+<script>
+function fmzOpenBuddyModal(){
+  var modal=new bootstrap.Modal(document.getElementById('fmzBuddyListModal'));
+  var body=document.getElementById('fmzBuddyListBody');
+  body.innerHTML='<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+  modal.show();
+  fetch(rootpath+'/misc.php?action=buddypopup')
+  .then(function(r){return r.text()})
+  .then(function(html){
+    // Strip MyBB template debug comments
+    html=html.replace(/<!--[\s\S]*?-->/g,'');
+    var tmp=document.createElement('div');
+    tmp.innerHTML=html;
+    var content=tmp.querySelector('.trow1');
+    if(content){
+      var raw=content.innerHTML;
+      // Convert the list items into styled buddy items
+      var out='';
+      var sections=raw.split(/<div[^>]*class="mediumtext"[^>]*>/i);
+      for(var i=0;i<sections.length;i++){
+        var s=sections[i];
+        if(!s.trim())continue;
+        var titleMatch=s.match(/^([^<]+)/);
+        var title=titleMatch?titleMatch[1].trim():'';
+        if(title)out+='<div class="buddy-section"><i class="bi bi-circle-fill me-1" style="font-size:.5rem;color:'+(title.toLowerCase().indexOf('offline')>-1?'#94a3b8':'#22c55e')+'"></i>'+title+'</div>';
+        var lis=s.match(/<li[^>]*>([\s\S]*?)<\/li>/gi);
+        if(lis){
+          for(var j=0;j<lis.length;j++){
+            var li=lis[j];
+            var imgMatch=li.match(/<img[^>]+src="([^"]+)"/i);
+            var linkMatch=li.match(/<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
+            var lastMatch=li.match(/- ([^<]+)/);
+            var pmMatch=li.match(/<a[^>]+href="(private\.php[^"]+)"[^>]*>([^<]+)<\/a>/i);
+            if(imgMatch||linkMatch){
+              out+='<div class="buddy-item">';
+              if(imgMatch)out+='<img src="'+imgMatch[1]+'" alt="">';
+              out+='<div class="flex-grow-1">';
+              if(linkMatch){
+                // Fix links to not use window.opener
+                var href=linkMatch[1];
+                out+='<a href="'+href+'" class="fw-semibold">'+linkMatch[2]+'</a>';
+              }
+              if(lastMatch)out+='<div class="small text-muted">'+lastMatch[1].trim()+'</div>';
+              out+='</div>';
+              if(pmMatch)out+='<a href="'+pmMatch[1]+'" class="btn btn-sm btn-outline-primary" title="'+pmMatch[2]+'"><i class="bi bi-chat-dots"></i></a>';
+              out+='</div>';
+            } else {
+              // "None" message
+              out+='<div class="text-muted small py-1">'+li.replace(/<\/?li[^>]*>/gi,'')+'</div>';
+            }
+          }
+        }
+      }
+      body.innerHTML=out||'<div class="text-muted text-center py-3">No buddies added yet.</div>';
+    } else {
+      body.innerHTML='<div class="text-muted text-center py-3">No buddies added yet.</div>';
+    }
+  })
+  .catch(function(){
+    body.innerHTML='<div class="text-center text-danger py-3"><i class="bi bi-exclamation-circle me-1"></i>Failed to load buddy list.</div>';
+  });
+}
+</script>

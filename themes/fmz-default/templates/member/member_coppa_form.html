@@ -1,0 +1,81 @@
+<html>
+<head>
+	<title>{$mybb->settings['bbname']} - {$lang->coppa_compliance}</title>
+{$headerinclude}
+</head>
+<body>
+  {$header}
+
+<div class="tborder">
+ 
+  <div class="thead">{$lang->coppa_registration}</div>  
+  
+  <div class="mediumtext trow1">{$lang->coppa_form_instructions}</div>
+  
+  
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->fax_number}</div>
+<div class="formbit_field" data-width="80%">{$mybb->settings['faxno']}<</div>
+</div>
+  
+  
+  
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->mailing_address}</div>
+<div class="formbit_field" data-width="80%">{$mybb->settings['mailingaddress']}</div>
+</div>
+
+  
+  <div class="trow1 mediumtext">{$lang->account_information}</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"><label for="username">{$lang->username}</label></div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" id="username" /></div>
+</div>
+  
+  <div class="trow1 mediumtext">{$lang->parent_details}</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"><label for="email">{$lang->email}</label></div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" id="email" /></div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"><label for="email"><label for="name">{$lang->full_name}</label></label></div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" id="name" /></div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"><label for="relation">{$lang->relation}</label></div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" id="relation" /></div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"><label for="phone">{$lang->phone_no}</label></div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" id="phone" /></div>
+</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"><label for="parent_email">{$lang->email}</label></div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" id="parent_email" /></div>
+</div>
+  
+  <div class="trow1 mediumtext">{$lang->coppa_parent_agreement}</div> 
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"><label for="signature">{$lang->signature}</label></div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" id="signature" /> {$lang->date}: <input type="text" class="textbox date" id="date" /></div>
+</div>
+  
+  
+  </div>  
+  
+{$footer}
+</body>
+</html>

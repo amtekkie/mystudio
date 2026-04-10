@@ -1,0 +1,42 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->join_requests}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+{$joinrequests}
+<form method="post" action="managegroup.php">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="do_joinrequests" />
+<input type="hidden" name="gid" value="{$gid}" />
+<div class="tborder">
+
+<div class="thead">{$lang->join_requests}</div>
+
+
+<div class="tcat rowbit">
+  
+
+<span class="managegroupbit_username threadbit_main" data-width="20%"> {$lang->user_name}</span>
+
+<span class="managegroupbit_reason threadbit_stats" data-width="25%">{$lang->reason} </span>
+
+
+<span class="managegroupbit_reason threadbit_stats" data-width="15%">{$lang->accept}</span> 
+
+<span class="managegroupbit_reason threadbit_stats" data-width="15%">{$lang->ignore}</span> 
+
+<span class="managegroupbit_reason threadbit_stats" data-width="15%">{$lang->decline}</span> 
+
+
+</div>
+
+{$users}
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" value="{$lang->action_requests}" /></div>
+</form>
+{$footer}
+</body>
+</html>

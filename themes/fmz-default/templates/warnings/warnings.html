@@ -1,0 +1,42 @@
+<html>
+<head>
+	<title>{$mybb->settings['bbname']} - {$lang->warning_log}</title>
+	{$headerinclude}
+</head>
+<body>
+	{$header}
+
+	{$multipage}
+	<div class="tborder">
+		
+			
+				<div class="thead">
+					<span class="smalltext float_right">{$lang->current_warning_level}</span>
+					{$lang->warning_log}
+				</div>
+			
+<div class="tcat rowbit">	
+				
+<span class="warningbit_warning threadbit_main" data-width="25%">{$lang->warning}</span>
+
+<span class="warningbit_issuedby threadbit_stats" data-width="20%">{$lang->issued_by}</span>
+			
+<span class="warningbit_dateissued threadbit_stats" data-width="20%">{$lang->date_issued}</span>
+			
+<span class="warningbit_expires threadbit_stats" data-width="20%">{$lang->expiry_date}</span>
+			
+<span class="warningbit_details threadbit_stats" data-width="20%">{$lang->details}</span>
+			
+			
+</div>
+			
+		
+
+		{$warnings}
+
+	</div>
+	{$multipage}
+
+{$footer}
+</body>
+</html>

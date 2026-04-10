@@ -1,0 +1,39 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->email_user}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+{$errors}
+<form action="member.php" method="post" name="input">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->email_user}</div>
+
+{$from_email}
+
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->email_subject}</div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" size="50" name="subject" value="{$subject}" /></div>
+</div>
+  
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->email_message}</div>
+<div class="formbit_field" data-width="80%"><textarea name="message">{$message}</textarea></div>
+</div>
+  
+
+{$captcha}
+</div>
+<br />
+<input type="hidden" name="action" value="do_emailuser" />
+<input type="hidden" name="uid" value="{$to_user['uid']}" />
+<div><input type="submit" class="button" value="{$lang->send_email}" /></div>
+</form>
+{$footer}
+</body>
+</html>

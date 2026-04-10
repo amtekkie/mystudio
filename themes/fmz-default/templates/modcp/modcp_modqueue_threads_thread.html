@@ -1,0 +1,24 @@
+			
+				<div class="{$altbg} rowbit">
+		
+<div class="modcpbit_modqueue_subject modcpbit_modqueue_main" data-width="40%"><a href="{$thread['threadlink']}">{$thread['subject']}</a></div>
+ 
+<div class="modcpbit_modqueue_author" data-width="30%" data-lang="{$lang->author}">{$profile_link}</div>
+
+<div class="threadbit_stats modcpbit_modqueue_time" data-width="30%" data-lang="{$lang->date}">{$threaddate}</div>
+</div>
+
+
+				<div class="{$altbg}">
+					<div class="modqueue_message">
+						<div class="float_right modqueue_controls">
+							<label class="label_radio_ignore"><input type="radio" class="radio radio_ignore" name="threads[{$thread['tid']}]" value="ignore" checked="checked" /> {$lang->ignore}</label>
+							<label class="label_radio_delete"><input type="radio" class="radio radio_delete" name="threads[{$thread['tid']}]" value="delete" /> {$lang->delete}</label>
+							<label class="label_radio_approve"><input type="radio" class="radio radio_approve" name="threads[{$thread['tid']}]" value="approve" /> {$lang->approve}</label>
+						</div>
+						<div class="modqueue_meta">
+							{$forum}
+						</div>
+						{$thread['postmessage']}
+					</div>
+				</div>

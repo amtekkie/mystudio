@@ -1,0 +1,95 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->add_announcement}</title>
+{$headerinclude}
+</head>
+<body>
+	{$header}
+	<form action="modcp.php" method="post" enctype="multipart/form-data">
+	<input type="hidden" name="action" value="do_new_announcement" />
+	<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+	<input type="hidden" name="fid" value="{$announcement_fid}" />
+		<div>
+			
+				{$modcp_nav}
+				<div class="col-md-9">
+					{$errors}
+					{$preview}
+					<div>
+						
+							<div class="thead">{$lang->add_announcement}</div>
+						
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->title}</div>  
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="title" size="40" value="{$title}" /></div>
+</div>
+                      
+                      
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->start_date}</div>  
+<div class="formbit_field" data-width="75%">								<select name="starttime_day">
+								{$startdateday}
+								</select>
+								&nbsp;
+								<select name="starttime_month">
+								{$startdatemonth}
+								</select>
+								&nbsp;
+								<input type="text" name="starttime_year" value="{$startdateyear}" size="4" maxlength="4" class="textbox" />
+								 - {$lang->time} <input type="text" name="starttime_time" value="{$starttime_time}" size="10" class="textbox" />
+							</div>
+</div>
+                      
+                      
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->end_date}</div>  
+<div class="formbit_field" data-width="75%"><input type="radio" name="endtime_type" value="1"{$end_type_sel['finite']} />
+								<select name="endtime_day">
+								{$enddateday}
+								</select>
+								&nbsp;
+								<select name="endtime_month">
+								{$enddatemonth}
+								</select>
+								&nbsp;
+								<input type="text" name="endtime_year" value="{$enddateyear}" size="4" maxlength="4" class="textbox" />
+								 - {$lang->time} <input type="text" name="endtime_time" value="{$endtime_time}" size="10" class="textbox" /> <input type="radio" name="endtime_type" value="2"{$end_type_sel['infinite']} /> {$lang->never}
+							</div>
+</div>
+                      
+                      
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->announcement}<br />{$smilieinserter}</div>  
+<div class="formbit_field" data-width="75%"><textarea id="message" name="message">{$message}</textarea>{$codebuttons}</div>
+</div>
+                      
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->allow_html}</div>  
+<div class="formbit_field" data-width="75%"><label><input type="radio" name="allowhtml" value="1"{$html_sel['yes']} />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowhtml" value="0"{$html_sel['no']} />&nbsp;{$lang->no}</label></div>
+</div>
+               
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->allow_mycode}</div>  
+<div class="formbit_field" data-width="75%"><label><input type="radio" name="allowmycode" value="1"{$mycode_sel['yes']} />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowmycode" value="0"{$mycode_sel['no']} />&nbsp;{$lang->no}</label></div>
+</div>
+                      
+                      
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->allow_smilies}</div>  
+<div class="formbit_field" data-width="75%"><label><input type="radio" name="allowsmilies" value="1"{$smilies_sel['yes']} />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowsmilies" value="0"{$smilies_sel['no']} />&nbsp;{$lang->no}</label></div>
+</div>
+                      
+                      
+					</div>
+					<br />
+					<div class="align_center">
+						<input type="submit" class="button" value="{$lang->add_announcement}" />&nbsp;&nbsp;
+						<input type="submit" class="button" name="preview" value="{$lang->preview}" />
+					</div>
+				</div>
+			
+		</div>
+	</form>
+	{$footer}
+</body>
+</html>

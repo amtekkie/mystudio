@@ -1,0 +1,76 @@
+<html>
+<head>
+	<title>{$mybb->settings['bbname']} - {$lang->calendar}</title>
+	{$headerinclude}
+</head>
+<body>
+	{$header}
+
+<div class="calendar_sidebar">
+{$mini_calendars}
+</div>
+  
+  
+<div class="calendar_container">
+  
+<div class="tborder">
+		
+			
+				<div class="thead">
+					{$lang->weekly_overview} {$friendly_week_from} - {$friendly_week_to}
+				<span class="float_right smalltext">
+						<a href="{$prev_link}"> {$lang->previous_week}</a>  <a href="{$next_link}">{$lang->next_week}</a>
+				</span>
+			
+				</div>
+  
+  
+<div class="body">
+			{$weekday_bits}
+		</div>
+  
+  </div>
+  
+
+  
+  
+  </div>
+  <br class="clear" />
+
+	<form action="calendar.php" method="post">
+		
+						
+					{$addevent}
+							<div class="float_right">
+							<span class="smalltext">{$lang->jump_month}</span>
+							<select name="month">
+								<option value="{$week_from[1]}">{$monthnames[$week_from_one]}</option>
+								<option value="{$week_from[1]}">----------</option>
+								<option value="1">{$lang->alt_month_1}</option>
+								<option value="2">{$lang->alt_month_2}</option>
+								<option value="3">{$lang->alt_month_3}</option>
+								<option value="4">{$lang->alt_month_4}</option>
+								<option value="5">{$lang->alt_month_5}</option>
+								<option value="6">{$lang->alt_month_6}</option>
+								<option value="7">{$lang->alt_month_7}</option>
+								<option value="8">{$lang->alt_month_8}</option>
+								<option value="9">{$lang->alt_month_9}</option>
+								<option value="10">{$lang->alt_month_10}</option>
+								<option value="11">{$lang->alt_month_11}</option>
+								<option value="12">{$lang->alt_month_12}</option>
+							</select>
+							<select name="year">
+								<option value="{$week_from[2]}">{$week_from[2]}</option>
+								<option value="{$week_from[2]}">----------</option>
+								{$yearsel}
+							</select>
+							{$gobutton}
+							<br />
+							{$calendar_jump}
+							</div>
+	
+	</form>
+  <br />
+{$footer}
+</body>
+</html>

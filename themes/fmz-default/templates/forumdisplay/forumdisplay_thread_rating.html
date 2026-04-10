@@ -1,0 +1,11 @@
+<div class="text-center" id="rating_table_{$thread['tid']}" style="min-width:80px">
+		<div>
+		<ul class="star_rating{$not_rated}" id="rating_thread_{$thread['tid']}">
+			<li style="width: {$thread['width']}%" class="current_rating" id="current_rating_{$thread['tid']}">{$ratingvotesav}</li>
+		</ul>
+		<script>
+		<!--
+			Rating.build_forumdisplay({$thread['tid']}, { width: '{$thread['width']}', extra_class: '{$not_rated}', current_average: '{$ratingvotesav}' });
+		// -->
+</script>
+</div></div>

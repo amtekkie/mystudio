@@ -1,0 +1,66 @@
+<html>
+<head>
+<title>{$lang->post_reply_to}</title>
+{$headerinclude}
+{$post_javascript}
+</head>
+<body>
+{$header}
+{$preview}
+{$maximageserror}
+{$attacherror}
+{$reply_errors}
+{$moderation_notice}
+<form action="newreply.php?tid={$tid}&amp;processed=1" method="post" enctype="multipart/form-data" name="input">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->reply_to}</div>
+
+{$loginbox}
+
+
+<div class="trow1 rowbit">
+  
+<div class="formbit_label strong col-md-2">{$lang->post_subject}</div>
+  
+<div class="formbit_field col-md-10"><input type="text" class="textbox" name="subject" size="40" maxlength="85" value="{$subject}" tabindex="1" /></div>
+
+</div>
+
+<div class="trow1 rowbit">
+  
+<div class="formbit_label strong col-md-2">{$lang->your_message}<br /></div>
+  
+<div class="formbit_field col-md-10"><textarea id="message" name="message" tabindex="2">{$message}</textarea>
+{$codebuttons}
+{$multiquote_external}</div>
+
+</div>
+  
+  
+  
+{$postoptions}
+
+{$modoptions}
+{$subscriptionmethod}
+{$captcha}
+  
+</div>
+{$attachbox}
+<br />
+<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->post_reply}" tabindex="3" accesskey="s" />  <input type="submit" class="button" name="previewpost" value="{$lang->preview_post}" tabindex="4" />{$savedraftbutton}</div>
+<input type="hidden" name="action" value="do_newreply" />
+<input type="hidden" name="replyto" value="{$replyto}" />
+<input type="hidden" name="posthash" value="{$posthash}" />
+<input type="hidden" name="attachmentaid" value="" />
+<input type="hidden" name="attachmentact" value="" />
+<input type="hidden" name="quoted_ids" value="{$quoted_ids}" />
+<input type="hidden" name="tid" value="{$tid}" />
+{$editdraftpid}
+</form>
+{$forumrules}
+{$threadreview}
+{$footer}
+</body>
+</html>

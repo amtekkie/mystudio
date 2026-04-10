@@ -1,0 +1,35 @@
+<html>
+<head>
+	<title>{$lang->unsubscribe_from_thread}</title>
+	{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="usercp.php" method="post" name="input">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="removesubscription" />
+<input type="hidden" name="tid" value="{$thread['tid']}" />
+
+{$usercpnav}
+<div class="col-md-9">
+	<div>
+		<div class="thead">{$lang->unsubscribe_from_thread}</div>  
+		<div class="trow1">
+			{$lang->unsubscribe_from_thread_desc}
+			<br />
+			<br />
+			<a href="usercp.php?action=addsubscription&tid={$thread['tid']}&my_post_key={$mybb->post_code}">{$lang->unsubscribe_change_notificaton}</a>
+			<br />
+			<br />
+  			<div style="text-align: center;">
+				<input type="submit" class="button" name="submit" value="{$lang->do_unsubscribe_thread}" tabindex="3" accesskey="s" />
+			</div> 
+		</div>  
+	</div>
+</div>
+</div>
+
+</form>
+{$footer}
+</body>
+</html>

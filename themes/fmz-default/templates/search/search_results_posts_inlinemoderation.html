@@ -1,0 +1,30 @@
+<script src="{$mybb->asset_url}/jscripts/inline_moderation.js?ver=1821"></script>
+<form action="moderation.php" method="post" class="d-inline-flex align-items-center gap-2">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="tid" value="0" />
+<input type="hidden" name="searchid" value="{$sid}" />
+<input type="hidden" name="modtype" value="inlinepost" />
+<span class="small text-muted">{$lang->inline_post_moderation}</span>
+<select name="action" class="form-select form-select-sm" style="width:auto">
+<optgroup label="{$lang->standard_mod_tools}">
+	<option value="multisoftdeleteposts">{$lang->inline_soft_delete_posts}</option>
+	<option value="multirestoreposts">{$lang->inline_restore_posts}</option>
+	<option value="multideleteposts">{$lang->inline_delete_posts}</option>
+	<option value="multiapproveposts">{$lang->inline_approve_posts}</option>
+	<option value="multiunapproveposts">{$lang->inline_unapprove_posts}</option>
+</optgroup>
+{$customposttools}
+</select>
+<input type="submit" class="btn btn-sm btn-primary" name="go" value="{$lang->go} ({$inlinecount})" id="inline_go" />
+<input type="button" class="btn btn-sm btn-outline-secondary" onclick="javascript:inlineModeration.clearChecked();" value="{$lang->clear}" />
+<input type="hidden" name="url" value="{$return_url}" />
+<input type="hidden" name="inlinetype" value="search" />
+</form>
+<script>
+<!--
+	var go_text = "{$lang->inline_go}";
+	var all_text = "{$postcount}";
+	var inlineType = "search";
+	var inlineId = "{$sid}";
+// -->
+</script>

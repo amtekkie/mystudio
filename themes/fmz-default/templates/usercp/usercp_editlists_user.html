@@ -1,0 +1,5 @@
+<li id="{$type}_{$user['uid']}">
+	{$profile_link}
+  
+<span class="float_right"><a href="usercp.php?action=do_editlists&amp;my_post_key={$mybb->post_code}&amp;manage={$type}&amp;delete={$user['uid']}" onclick="return UserCP.removeBuddy('{$type}', {$user['uid']});" title="{$lang->remove_from_list}">X</a></span>
+</li>

@@ -1,0 +1,100 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->reputation_report}</title>
+{$headerinclude}
+<script type="text/javascript">
+<!--
+	var delete_reputation_confirm = "{$lang->delete_reputation_confirm}";
+// -->
+</script>
+<script type="text/javascript" src="{$mybb->asset_url}/jscripts/report.js?ver=1820"></script>
+</head>
+<body>
+{$header}
+{$add_reputation}<br class="clear" /><br />
+<div class="tborder">
+
+<div class="thead">{$lang->reputation_report}</div>
+
+<div class="trow1 rowbit">
+
+<div data-width="30%">
+
+
+<span class="largetext"><strong>{$username}</strong></span><br />
+<span class="smalltext">
+					({$usertitle})<br />
+<br />
+<strong>{$lang->total_reputation}:</strong><span class="repbox {$total_class}">{$rep_total}</span><br /><br />
+<strong>{$lang->reputation_members} {$rep_members}</strong><br />
+<strong>{$lang->reputation_posts} {$rep_posts}</strong>
+</span>
+
+
+</div>
+
+
+<div data-width="70%">
+<div class="rep-stats-grid">
+	<div class="rep-stats-row header-row">
+		<div></div>
+		<div class="reputation_positive">{$lang->positive_count}</div>
+		<div class="reputation_neutral">{$lang->neutral_count}</div>
+		<div class="reputation_negative">{$lang->negative_count}</div>
+	</div>
+	<div class="rep-stats-row">
+		<div class="align_right smalltext">{$lang->last_week}</div>
+		<div class="smalltext">{$f_positive_week}</div>
+		<div class="smalltext">{$f_neutral_week}</div>
+		<div class="smalltext">{$f_negative_week}</div>
+	</div>
+	<div class="rep-stats-row">
+		<div class="align_right smalltext">{$lang->last_month}</div>
+		<div class="smalltext">{$f_positive_month}</div>
+		<div class="smalltext">{$f_neutral_month}</div>
+		<div class="smalltext">{$f_negative_month}</div>
+	</div>
+	<div class="rep-stats-row">
+		<div class="align_right smalltext">{$lang->last_6months}</div>
+		<div class="smalltext">{$f_positive_6months}</div>
+		<div class="smalltext">{$f_neutral_6months}</div>
+		<div class="smalltext">{$f_negative_6months}</div>
+	</div>
+	<div class="rep-stats-row">
+		<div class="align_right smalltext">{$lang->all_time}</div>
+		<div class="smalltext">{$f_positive_count}</div>
+		<div class="smalltext">{$f_neutral_count}</div>
+		<div class="smalltext">{$f_negative_count}</div>
+	</div>
+</div>
+</div>
+
+
+</div>
+
+<div class="tcat">{$lang->comments}</div>
+
+{$reputation_votes}
+  
+<div class="tfoot align_right">
+<form action="reputation.php" method="get">
+<input type="hidden" name="uid" value="{$user['uid']}" />
+<select name="show">
+<option value="all" {$show_selected['all']}>{$lang->show_all}</option>
+<option value="positive" {$show_selected['positive']}>{$lang->show_positive}</option>
+<option value="neutral" {$show_selected['neutral']}>{$lang->show_neutral}</option>
+<option value="negative" {$show_selected['negative']}>{$lang->show_negative}</option>
+</select>
+<select name="sort">
+<option value="dateline" {$sort_selected['last_updated']}>{$lang->sort_updated}</option>
+<option value="username" {$sort_selected['username']}>{$lang->sort_username}</option>
+</select>
+		{$gobutton}
+	</form>
+</div>
+
+</div>
+{$multipage}<br class="clear" /><br />
+{$footer}
+</body>
+</html>

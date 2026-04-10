@@ -1,0 +1,40 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->get_pm_ip}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<div class="tborder">
+
+<div class="thead">{$lang->get_pm_ip}</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->username}</div>
+<div class="formbit_field" data-width="80%">{$username}</div>
+</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->ip_address}</div>
+<div class="formbit_field" data-width="80%">{$pm['ipaddress']}</div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"></div>
+<div class="formbit_field" data-width="80%"></div>
+</div>
+  
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->hostname}</div>
+<div class="formbit_field" data-width="80%">{$hostname}<br /><span class="smalltext">{$lang->if_resolvable}</span></div>
+</div>
+  
+  
+  
+{$modoptions}
+</div>
+{$footer}
+</body>
+</html>

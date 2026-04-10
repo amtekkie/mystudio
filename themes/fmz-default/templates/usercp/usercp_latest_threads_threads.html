@@ -1,0 +1,55 @@
+<div class="trow1 rowbit d-none d-md-flex">
+
+
+<div class="threadbit_main" data-width="60%">
+
+<div class="threadbit_folder"><span class="thread_status {$folder}" title="{$folder_label}"><span></span></span></div>
+<div class="threadbit_title">
+
+<div>{$gotounread}{$thread['displayprefix']}<a href="{$thread['threadlink']}" class="{$new_class}">{$thread['subject']}</a></div>
+
+<div class="smalltext">{$thread['author']}</div>
+
+</div></div>
+
+<div class="threadbit_stats align_center threadbit_replies smalltext" data-width="7.5%" data-lang="{$lang->replies}"><a href="{$mybb->settings['bburl']}/misc.php?action=whoposted&tid={$thread['tid']}" onclick="MyBB.whoPosted({$thread['tid']}); return false;">{$thread['replies']}</a></div>
+
+<div class="threadbit_stats align_center threadbit_views smalltext" data-width="7.5%" data-lang="{$lang->views}">{$thread['views']}</div>
+
+<div class="threadbit_lastpost smalltext" data-width="25%">
+
+
+<a href="{$thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}
+<br />{$lastpostdate}
+
+</div>
+
+
+</div>
+
+
+
+<div class="trow1 rowbit d-flex d-md-none">
+
+
+<div class="threadbit_main" data-width="70%">
+
+<div class="threadbit_folder"><span class="thread_status {$folder}" title="{$folder_label}"><span></span></span></div>
+<div class="threadbit_title">
+
+<div>{$gotounread}{$thread['displayprefix']}<a href="{$thread['threadlink']}" class="{$new_class}">{$thread['subject']}</a></div>
+
+<div class="smalltext">{$thread['author']}</div>
+
+</div></div>
+
+<div class="threadbit_lastpost smalltext" data-width="30%">
+
+
+<a href="{$thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}
+<br />{$lastpostdate}
+
+</div>
+
+
+</div>

@@ -1,0 +1,52 @@
+<html>
+<head>
+	<title>{$mybb->settings['bbname']} - {$lang->warning_log}</title>
+	{$headerinclude}
+</head>
+<body>
+	{$header}
+
+	<div class="tborder">
+		
+			<div class="thead">
+				
+		{$lang->warning_details}<span class="float_right smalltext">{$status}</span>
+			</div>
+		
+		{$warning_info}
+		
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->warning}</div>
+<div class="formbit_field" data-width="80%">{$warning_type} {$points}</div>
+</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->date_issued}</div>
+<div class="formbit_field" data-width="80%">{$date_issued}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->issued_by}</div>
+<div class="formbit_field" data-width="80%">{$issuedby}</div>
+</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->expiry_date}</div>
+<div class="formbit_field" data-width="80%">{$expires} {$revoked_date}</div>
+</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->details_warning_note}</div>
+<div class="formbit_field" data-width="80%">{$notes}</div>
+</div>
+		
+	</div>
+
+	{$revoke}
+
+{$footer}
+</body>
+</html>

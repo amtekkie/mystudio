@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->empty_folders}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="private.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+{$usercpnav}
+<div class="col-md-9">
+<div class="tborder">
+
+<div class="thead">{$lang->empty_folders}</div>
+
+
+<div class="trow1"><span class="smalltext">{$lang->empty_note}</span></div>
+
+
+<div class="tcat">{$lang->export_folder}</div>
+<div class="tcat">{$lang->num_messages}</div>
+<div class="tcat">{$lang->empty_q}</div>
+
+{$folderlist}
+
+<div class="trow2"><input type="checkbox" class="checkbox" name="keepunread" value="1" checked="checked" />{$lang->keep_unread}</div>
+
+</div>
+<br />
+<div>
+<input type="hidden" name="action" value="do_empty" />
+<input type="submit" class="button" name="submit" value="{$lang->delete}" />
+</div>
+</div>
+</div>
+</div>
+</form>
+{$footer}
+</body>
+</html>

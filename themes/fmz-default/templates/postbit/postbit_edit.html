@@ -1,0 +1,7 @@
+<div class="dropdown d-inline-block">
+	<a href="editpost.php?pid={$post['pid']}" id="edit_post_{$post['pid']}" title="{$lang->postbit_edit}" class="postbit_edit postbit_mirage dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><span>{$lang->postbit_button_edit}</span></a>
+	<ul class="dropdown-menu dropdown-menu-end" id="edit_post_{$post['pid']}_popup">
+		<li><a href="javascript:void(0)" class="dropdown-item quick_edit_button" id="quick_edit_post_{$post['pid']}">{$lang->postbit_quick_edit}</a></li>
+		<li><a href="editpost.php?pid={$post['pid']}" class="dropdown-item">{$lang->postbit_full_edit}</a></li>
+	</ul>
+</div>

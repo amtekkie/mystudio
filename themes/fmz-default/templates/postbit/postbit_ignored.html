@@ -1,0 +1,28 @@
+<div class="ignored_post tborder trow1" id="ignored_post_{$post['pid']}">
+  
+  
+	<div class="ignored_post_author"><span class="largetext">{$post['profilelink']}</span> <a href="#" onclick="Thread.showIgnoredPost({$post['pid']}); return false;" class="float_right smalltext">{$lang->postbit_show_ignored_post}</a></div>
+	<div class="ignored_post_message">
+
+<script>
+<!--
+	$('#show_ignored_link_{$post['pid']}').show();
+// -->
+</script>
+		{$ignored_message}
+	</div>
+
+<div class="none hide">
+
+<span class="postbit_time">{$post['postdate']}</span>
+
+<span class="block largetext postbit_username">{$post['profilelink']}</span>
+
+{$post['useravatar']}
+  
+<div class="postbit_body scaleimages">
+{$post['message']}</div>
+
+</div>
+
+</div>

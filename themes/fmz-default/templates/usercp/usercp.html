@@ -1,0 +1,42 @@
+<html>
+<head>
+<title>{$lang->user_cp}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+{$usercpnav}
+	
+<div class="col-md-9">
+
+<div>
+<div class="thead">{$lang->account_summary}</div>  
+
+<div class="trow1">
+{$avatar}<span class="usercp_username">{$username}</span> 
+<br />
+  <strong>{$lang->postnum}</strong> <a href="search.php?action=finduser&amp;uid={$mybb->user['uid']}">{$mybb->user['posts']}</a> {$lang->posts_day}<br />
+{$reputation}
+<strong>{$lang->email}</strong> {$mybb->user['email']}<br />
+<strong>{$lang->registration_date}</strong> {$regdate}<br />
+<strong>{$lang->primary_usergroup}</strong> {$usergroup}<br />
+{$referral_info}
+
+  
+</div>  
+</div>
+  
+{$latest_subscribed}
+{$latest_threads}
+{$latest_warnings}
+{$user_notepad}
+
+</div>	
+
+</div>
+{$footer}
+	
+
+</body>
+</html>

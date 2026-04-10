@@ -1,0 +1,15 @@
+<div class="trow1 rowbit">
+  
+
+<span class="managegroupbit_username threadbit_main" data-width="20%">{$user['profilelink']}</span>
+
+<span class="managegroupbit_reason threadbit_stats" data-width="25%" data-lang="{$lang->reason}">
+{$user['reason']} </span>
+
+<span class="managegroupbit_reason threadbit_stats" data-width="15%" data-lang="{$lang->accept}"><input type="radio" class="radio" name="request[{$user['uid']}]" value="accept" /></span> 
+
+<span class="managegroupbit_reason threadbit_stats" data-width="15%" data-lang="{$lang->ignore}"><input type="radio" class="radio" name="request[{$user['uid']}]" value="ignore" /></span> 
+
+<span class="managegroupbit_reason threadbit_stats" data-width="15%" data-lang="{$lang->decline}"><input type="radio" class="radio" name="request[{$user['uid']}]" value="decline" /></span> 
+
+</div>

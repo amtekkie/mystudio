@@ -1,0 +1,74 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->thread_notes_editor}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="moderation.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->thread_notes_editor}</div>
+
+{$loginbox}
+
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->below_notes}</div>
+<div class="formbit_field" data-width="80%"><textarea name="threadnotes" tabindex="1">{$thread['notes']}</textarea></div>
+</div>
+  
+ 
+
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->update_notes}" tabindex="2" /></div>
+<input type="hidden" name="action" value="do_threadnotes" />
+<input type="hidden" name="tid" value="{$tid}" />
+</form>
+<br />
+<div class="tborder">
+
+<div class="thead">{$lang->mod_logs}</div>
+  
+  
+<div class="tcat rowbit">
+
+<span class="threadmodlogsbit_action threadbit_main" data-width="25%">{$lang->mod_actions}</span>
+
+<span class="threadmodlogsbit_username threadbit_stats" data-width="25%">{$lang->mod_username}</span>
+
+<span class="threadmodlogsbit_date threadbit_stats" data-width="25%">{$lang->mod_date}</span>
+  
+<span class="threadmodlogsbit_info threadbit_stats" data-width="25%">{$lang->mod_information}</span>
+  
+
+</div>  
+  
+
+{$modactions}
+</div>
+<br />
+<div class="tborder">
+
+<div class="thead">{$lang->delayed_mod_queue}</div>
+
+<div class="tcat rowbit">
+
+<span class="delayedmod_action threadbit_main" data-width="25%">{$lang->mod_actions}</span>
+
+<span class="delayedmod_username threadbit_stats" data-width="25%">{$lang->mod_username}</span>
+
+<span class="delayedmod_date threadbit_stats" data-width="25%">{$lang->time_to_perform_action}</span>
+  
+<span class="delayedmod_info threadbit_stats" data-width="25%">{$lang->mod_information}</span>
+  
+ 
+  </div> 
+
+{$delayedmods}
+</div>
+{$footer}
+</body>
+</html>

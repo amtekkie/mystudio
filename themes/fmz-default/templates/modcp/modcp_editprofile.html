@@ -1,0 +1,248 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->edit_profile}</title>
+{$headerinclude}
+<script>
+<!--
+	var mod_posts = '{$modpost_check}';
+	var susp_posts = '{$suspost_check}';
+// -->
+</script>
+</head>
+<body>
+	{$header}
+	<form action="modcp.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<div>
+			
+				{$modcp_nav}
+				<div class="col-md-9">
+					{$errors}
+					<div>
+
+<div class="thead">{$lang->edit_profile}</div>
+
+
+<div class="cp_row trow1 rowbit">
+
+<div data-width="50%">
+
+<fieldset><legend>{$lang->profile_required}</legend>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->current_username}</div>
+<div class="formbit_field" data-width="75%">{$profile_link}</div>
+</div>        
+{$requiredfields}
+            </fieldset>
+
+
+
+<fieldset><legend>{$lang->profile_optional}</legend>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->remove_avatar}</div>
+<div class="formbit_field" data-width="75%"><input type="checkbox" class="checkbox" name="remove_avatar" value="1" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->birthday}</div>
+<div class="formbit_field" data-width="75%"><select name="birthday_day">
+<option value="">&nbsp;</option>
+													{$bdaydaysel}
+												</select><select name="birthday_month">
+<option value="">&nbsp;</option>
+<option value="1" {$bdaymonthsel['1']}>{$lang->month_1}</option>
+<option value="2" {$bdaymonthsel['2']}>{$lang->month_2}</option>
+<option value="3" {$bdaymonthsel['3']}>{$lang->month_3}</option>
+<option value="4" {$bdaymonthsel['4']}>{$lang->month_4}</option>
+<option value="5" {$bdaymonthsel['5']}>{$lang->month_5}</option>
+<option value="6" {$bdaymonthsel['6']}>{$lang->month_6}</option>
+<option value="7" {$bdaymonthsel['7']}>{$lang->month_7}</option>
+<option value="8" {$bdaymonthsel['8']}>{$lang->month_8}</option>
+<option value="9" {$bdaymonthsel['9']}>{$lang->month_9}</option>
+<option value="10" {$bdaymonthsel['10']}>{$lang->month_10}</option>
+<option value="11" {$bdaymonthsel['11']}>{$lang->month_11}</option>
+<option value="12" {$bdaymonthsel['12']}>{$lang->month_12}</option>
+</select>
+
+<input type="text" class="textbox" size="4" maxlength="4" name="birthday_year" value="{$mybb->input['birthday_year']}" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->website_url}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="website" size="25" maxlength="75" value="{$mybb->input['website']}" /></div>
+</div>
+</fieldset>
+
+{$customfields}
+
+
+</div>
+
+
+
+
+
+<div data-width="50%">
+
+<fieldset><legend>{$lang->custom_usertitle}</legend>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->default_usertitle}</div>
+<div class="formbit_field" data-width="75%">{$defaulttitle}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->current_custom_usertitle}</div>
+<div class="formbit_field" data-width="75%">{$user['usertitle']}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->new_custom_usertitle}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="usertitle" size="25" maxlength="{$mybb->settings['customtitlemaxlength']}" value="{$newtitle}" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->revert_usertitle}</div>
+<div class="formbit_field" data-width="75%"><input type="checkbox" name="reverttitle" id="reverttitle" class="checkbox" /></div>
+</div>
+</fieldset>
+
+
+<fieldset><legend>{$lang->additional_contact_details}     </legend>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->icq_number}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="icq" size="25" value="{$mybb->input['icq']}" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->skype_id}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="skype" size="25" value="{$mybb->input['skype']}" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->google_id}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="google" size="25" value="{$mybb->input['google']}" /></div>
+</div>
+
+</fieldset>
+
+<fieldset><legend>{$lang->moderation}</legend>
+<div>
+
+
+<dl style="margin-top: 0; margin-bottom: 0;">
+<dt><label><input type="checkbox" name="moderateposting" value="1" {$modpost_checked} class="checkbox" onclick="toggleSuspend('modposts');" id="modpost" /> {$lang->moderate_posts}</label></dt>
+<dd style="margin-top: 4px;" id="modposts_action">
+<div>
+{$moderateposts_info}
+	
+		<span> {$lang->modpost_length} </span><input type="text" name="modpost_time" value="{$mybb->input['modpost_time']}" class="textbox" style="width: 60px;" /> {$modpost_options}
+</div>
+</dd>
+</dl>
+
+
+<dl style="margin-top: 0; margin-bottom: 0;">
+<dt><label><input type="checkbox" name="suspendposting" value="1" {$suspost_checked} class="checkbox" onclick="toggleSuspend('susposts');" id="suspost" /> {$lang->suspend_posts}</label></dt>
+<dd style="margin-top: 4px;" id="susposts_action">
+<div>
+{$suspendposting_info}
+
+		<span>{$lang->suspost_length}</span><input type="text" name="suspost_time" value="{$mybb->input['suspost_time']}" class="textbox" style="width: 60px;" /> {$suspost_options}
+
+</div>
+</dd>
+</dl>
+
+</div>
+</fieldset>     
+{$awaysection}
+
+
+</div>
+
+</div>
+
+<div class="trow1">
+
+<fieldset><legend>{$lang->signature}</legend>
+<textarea id="signature" name="signature">{$user['signature']}</textarea>
+{$codebuttons}
+  
+{$suspend_signature}
+  </fieldset>
+
+<fieldset><legend>{$lang->mod_notes}</legend><textarea name="usernotes" id="usernotes">{$user['usernotes']}</textarea></fieldset>
+
+</div>
+
+
+</div>
+<br />
+<div class="align_center">
+<input type="hidden" name="action" value="do_editprofile" />
+<input type="hidden" name="uid" value="{$user['uid']}" />
+<input type="submit" class="button" value="{$lang->update_profile}" />
+</div>
+</div>
+
+</div>
+</form>
+	{$footer}
+<script>
+<!--
+	if(mod_posts == 0)
+	{
+		$("#modposts_action").hide();
+	}
+
+	if(susp_posts == 0)
+	{
+		$("#susposts_action").hide();
+	}
+
+	function toggleSuspend(action)
+	{
+		if(action == "modposts")
+		{
+			$("#susposts_action").hide();
+			$("#suspost").attr("checked", false);
+
+			if($("#modpost").prop("checked") == false)
+			{
+				$("#modpost").attr("checked", false);
+				$("#modposts_action").hide();
+			}
+			else
+			{
+				$("#modpost").attr("checked", true);
+				$("#modposts_action").show();
+			}
+		}
+
+		if(action == "susposts")
+		{
+			$("#modposts_action").hide();
+			$("#modpost").attr("checked", false);
+
+			if($("#suspost").prop("checked") == false)
+			{
+				$("#suspost").attr("checked", false);
+				$("#susposts_action").hide();
+			}
+			else
+			{
+				$("#suspost").attr("checked", true);
+				$("#susposts_action").show();
+			}
+		}
+	}
+// -->
+</script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->request_join_usergroup}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="usercp.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+
+{$usercpnav}
+<div class="col-md-9">
+<div>
+
+<div class="thead">{$lang->request_join_usergroup}</div>
+
+
+<div class="trow1">{$lang->join_group_moderate_note}</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->user_group}</div>
+<div class="formbit_field" data-width="75%">{$usergroup['title']}</div>
+</div>
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->join_reason}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="reason" value="" size="50" /></div>
+</div>
+  
+</div>
+<br />
+<div class="align_center">
+<input type="hidden" name="action" value="usergroups" />
+<input type="hidden" name="joingroup" value="{$joingroup}" />
+<input type="hidden" name="do" value="joingroup" />
+<input type="submit" class="button" value="{$lang->send_join_request}" />
+</div>
+</div>
+</div>
+
+</form>
+{$footer}
+</body>
+</html>

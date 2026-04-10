@@ -1,0 +1,41 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->users_online}</title>
+{$headerinclude}
+<script type="text/javascript">
+    $(document).ready(function() {
+      $(".online_row_location a").each(function() {
+        if($(this).is("[href*='inbox_list.php']")) {
+          $(this).text("{lang->using_pmsystem}");
+        }
+      });
+      
+    });
+  </script>
+</head>
+<body>
+	{$header}
+	{$multipage}<br class="clear" /><br />
+	<div class="tborder">
+		
+			<div class="thead">{$lang->users_online}</div>
+		
+		
+			<div class="tcat d-none d-md-block">
+				<div class="row gx-2 px-2 py-1">
+					<div class="col-md-3 fw-bold"><a href="online.php?sortby=username">{$lang->on_username}</a></div>
+					<div class="col-md-2 text-center fw-bold"><a href="online.php?sortby=time">{$lang->time}</a></div>
+					<div class="col-md-7 fw-bold"><a href="online.php?sortby=location">{$lang->location}</a></div>
+				</div>
+			</div>
+  
+	{$online_rows}
+		
+			<div class="tfoot align_right"><a href="online.php?action=today">{$lang->online_today}</a> | <a href="online.php">{$lang->refresh_page}</a></div>
+		
+	</div>
+	<br />
+	{$multipage}	{$multipage}<br class="clear" /><br />
+	{$footer}
+</body>
+</html>

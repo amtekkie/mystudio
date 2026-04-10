@@ -1,0 +1,14 @@
+<div class="row trow1">
+<div class="col-md-7">
+<a href="{$similar_thread['threadlink']}">{$similar_thread['subject']}</a>
+<div class="smalltext"><avatarep_suid_[{$similar_thread['uid']}]>{$similar_thread['profilelink']}</div>
+</div>
+<div class="align_center smalltext col-md-1 d-none d-md-block" data-lang="{$lang->replies}"><a href="javascript:MyBB.whoPosted({$similar_thread['tid']});">{$similar_thread['replies']}</a></div>
+
+<div class="align_center smalltext col-md-1 d-none d-md-block" data-lang="{$lang->views}">{$similar_thread['views']}</div>
+
+<div class="smalltext col-md-3 align_right">
+<a href="{$similar_thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}<br />
+{$lastpostdate}
+    </div>
+ </div>

@@ -1,0 +1,29 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->resend_activation}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+{$errors}
+<form action="member.php" method="post">
+<div class="tborder">
+
+<div class="thead">{$lang->resend_activation}</div>
+
+  
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->email_address}</div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" name="email" value="{$email}" /></div>
+</div>
+{$captcha}  
+  
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->request_activation}" /></div>
+<input type="hidden" name="action" value="do_resendactivation" />
+</form>
+{$footer}
+</body>
+</html>

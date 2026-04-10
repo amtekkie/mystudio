@@ -1,0 +1,173 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->search}</title>
+{$headerinclude}
+<link rel="stylesheet" href="{$mybb->asset_url}/jscripts/select2/select2.css?ver=1806">
+<script src="{$mybb->asset_url}/jscripts/select2/select2.min.js"></script>
+</head>
+<body>
+{$header}
+
+<form action="search.php">
+<input type="hidden" name="action" value="do_search" />
+
+<div class="card mb-3">
+<div class="card-header text-white py-2">
+	<span class="fw-bold"><i class="bi bi-search me-1"></i> {$mybb->settings['bbname']} - {$lang->search}</span>
+</div>
+<div class="card-body">
+<div class="row g-4">
+
+	<div class="col-md-6">
+		<div class="mb-3">
+			<label class="form-label fw-semibold">{$lang->search_keyword}</label>
+			<input type="text" class="form-control" name="keywords" maxlength="250" />
+			<div class="mt-1">
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="radio" name="postthread" value="1" id="postthread_post" checked="checked" />
+					<label class="form-check-label small" for="postthread_post">{$lang->search_entire_post}</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="radio" name="postthread" value="2" id="postthread_title" />
+					<label class="form-check-label small" for="postthread_title">{$lang->search_titles_only}</label>
+				</div>
+			</div>
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-semibold">{$lang->search_forums}</label>
+			{$srchlist}
+		</div>
+	</div>
+
+	<div class="col-md-6">
+		<div class="mb-3">
+			<label class="form-label fw-semibold">{$lang->search_username}</label>
+			<input type="text" id="author" name="author" maxlength="{$mybb->settings['maxnamelength']}" />
+			<div class="form-check mt-1">
+				<input class="form-check-input" type="checkbox" name="matchusername" value="1" id="matchusername" checked="checked" />
+				<label class="form-check-label small" for="matchusername">{$lang->match_username}</label>
+			</div>
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-semibold">{$lang->search_options}</label>
+			<div class="d-flex align-items-center gap-2 mb-2">
+				<select name="findthreadst" class="form-select form-select-sm" style="width:auto">
+					<option value="1">{$lang->threads_at_least}</option>
+					<option value="2">{$lang->threads_at_most}</option>
+				</select>
+				<input type="text" class="form-control form-control-sm" name="numreplies" style="width:60px" maxlength="4" />
+				<span class="small text-muted">{$lang->replies2}</span>
+			</div>
+			<div class="d-flex align-items-center gap-2 mb-2">
+				<select name="postdate" class="form-select form-select-sm" style="width:auto">
+					<option value="0">{$lang->find_anydate}</option>
+					<option value="1">{$lang->find_yesterday}</option>
+					<option value="7">{$lang->find_lastweek}</option>
+					<option value="14">{$lang->find_2weeks}</option>
+					<option value="30">{$lang->find_month}</option>
+					<option value="90">{$lang->find_3months}</option>
+					<option value="180">{$lang->find_6months}</option>
+					<option value="365">{$lang->find_year}</option>
+				</select>
+				<div class="form-check form-check-inline mb-0">
+					<input class="form-check-input" type="radio" name="pddir" value="1" id="pddir_newer" checked="checked" />
+					<label class="form-check-label small" for="pddir_newer">{$lang->and_newer}</label>
+				</div>
+				<div class="form-check form-check-inline mb-0">
+					<input class="form-check-input" type="radio" name="pddir" value="0" id="pddir_older" />
+					<label class="form-check-label small" for="pddir_older">{$lang->and_older}</label>
+				</div>
+			</div>
+			{$prefixselect}
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-semibold">{$lang->sorting_options}</label>
+			<div class="d-flex align-items-center gap-2">
+				<select name="sortby" class="form-select form-select-sm" style="width:auto">
+					<option value="lastpost">{$lang->sort_lastpost}</option>
+					<option value="starter">{$lang->sort_author}</option>
+					<option value="forum">{$lang->sort_forum}</option>
+					<option value="views">{$lang->sort_views}</option>
+					<option value="replies">{$lang->sort_replies}</option>
+				</select>
+				<div class="form-check form-check-inline mb-0">
+					<input class="form-check-input" type="radio" name="sortordr" value="asc" id="sortordr_asc" />
+					<label class="form-check-label small" for="sortordr_asc">{$lang->sort_asc}</label>
+				</div>
+				<div class="form-check form-check-inline mb-0">
+					<input class="form-check-input" type="radio" name="sortordr" value="desc" id="sortordr_desc" checked="checked" />
+					<label class="form-check-label small" for="sortordr_desc">{$lang->sort_desc}</label>
+				</div>
+				<span class="small text-muted">{$lang->sort_order}</span>
+			</div>
+		</div>
+
+		<div class="mb-3">
+			<label class="form-label fw-semibold">{$lang->display_options}</label>
+			<div>
+				<span class="small text-muted me-1">{$lang->show_results_as}</span>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="radio" name="showresults" value="threads" id="showresults_threads" checked="checked" />
+					<label class="form-check-label small" for="showresults_threads">{$lang->show_results_threads}</label>
+				</div>
+				<div class="form-check form-check-inline">
+					<input class="form-check-input" type="radio" name="showresults" value="posts" id="showresults_posts" />
+					<label class="form-check-label small" for="showresults_posts">{$lang->show_results_posts}</label>
+				</div>
+			</div>
+		</div>
+
+		{$moderator_options}
+	</div>
+
+</div>
+</div>
+<div class="card-footer text-center">
+	<button type="submit" class="btn btn-primary" name="submit"><i class="bi bi-search me-1"></i> {$lang->search}</button>
+</div>
+</div>
+</form>
+
+{$footer}
+
+<script>
+<!--
+if(use_xmlhttprequest == "1")
+{
+	MyBB.select2();
+	$("#author").select2({
+		placeholder: "{$lang->search_user}",
+		minimumInputLength: 2,
+		multiple: false,
+		allowClear: true,
+		ajax: {
+			url: "xmlhttp.php?action=get_users",
+			dataType: 'json',
+			data: function (term, page) {
+				return {
+					query: term,
+				};
+			},
+			results: function (data, page) {
+				return {results: data};
+			}
+		},
+		initSelection: function(element, callback) {
+			var value = $(element).val();
+			if (value !== "") {
+				callback({
+					id: value,
+					text: value
+				});
+			}
+		},
+	});
+}
+// -->
+</script>
+
+</body>
+</html>

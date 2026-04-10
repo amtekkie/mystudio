@@ -1,0 +1,55 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->login}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<br />
+{$inline_errors}
+{$member_loggedin_notice}
+<form action="member.php" method="post">
+<input name="my_post_key" type="hidden" value="{$mybb->post_code}" />
+<div class="tborder">
+
+<div class="thead">{$lang->login}</div>
+
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%"></div>
+<div class="formbit_field" data-width="80%"></div>
+</div>
+  
+  
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->username}</div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" name="username" size="25" value="{$username}" /></div>
+</div>
+  
+  
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->password}</div>
+<div class="formbit_field" data-width="80%"><input type="password" class="textbox" name="password" size="25" value="{$password}" /> (<a href="member.php?action=lostpw">{$lang->lostpw_note}</a>)</div>
+</div>
+  
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->remember_me}</div>
+<div class="formbit_field" data-width="80%"><label><input type="checkbox" class="checkbox" name="remember" checked="checked" value="yes" /> {$lang->remember_me_desc}</label></div>
+</div>
+  
+  
+  
+{$captcha}
+</div>
+<br />
+<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->login}" /></div>
+<input type="hidden" name="action" value="do_login" />
+<input type="hidden" name="url" value="{$redirect_url}" />
+</form>
+{$footer}
+</body>
+</html>

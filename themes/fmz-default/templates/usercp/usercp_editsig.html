@@ -1,0 +1,55 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->edit_sig}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="usercp.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+{$usercpnav}
+<div class="col-md-9">
+{$error}
+{$signature}
+<div>
+
+<div class="thead">{$lang->edit_sig}</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_field"><textarea id="signature" name="signature">{$sig}</textarea>
+{$codebuttons}</div>
+</div>
+
+
+
+  
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%"><span data-lang-variable="usercp_sig_options"></span></div>
+<div class="formbit_field" data-width="75%"><label><input type="radio" class="radio" name="updateposts" value="enable" />&nbsp;{$lang->enable_sig_posts}</label><br />
+<label><input type="radio" class="radio" name="updateposts" value="disable" />&nbsp;{$lang->disable_sig_posts}</label><br />
+<label><input type="radio" class="radio" name="updateposts" value="0" checked="checked" />&nbsp;{$lang->leave_sig_settings}</label></div>
+</div>
+
+
+ <div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->edit_sig_note}</div>
+<div class="formbit_field" data-width="75%">
+{$lang->edit_sig_note2}</div>
+</div> 
+ 
+  
+</div>
+<br />
+<div class="align_center">
+<input type="hidden" name="action" value="do_editsig" />
+<input type="submit" class="button" name="submit" value="{$lang->update_sig}" />
+<input type="submit" class="button" name="preview" value="{$lang->preview}" />
+</div>
+</div>
+</div>
+</form>
+{$footer}
+</body>
+</html>

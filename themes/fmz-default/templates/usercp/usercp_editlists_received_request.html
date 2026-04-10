@@ -1,0 +1,5 @@
+	<div class="{$bgcolor}">
+      {$request['username']} - <span class="smalltext">{$request['date']}</span>
+	<span class="float_right smalltext">
+		<a class="badge bg-success" href="{$mybb->settings['bburl']}/usercp.php?action=acceptrequest&amp;id={$request['id']}&amp;my_post_key={$mybb->post_code}">{$lang->accept}</a> <a href="{$mybb->settings['bburl']}/usercp.php?action=declinerequest&amp;id={$request['id']}&amp;my_post_key={$mybb->post_code}" class="badge bg-danger">{$lang->decline}</a></span>
+	</div>

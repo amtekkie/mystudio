@@ -1,0 +1,47 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->change_avatar}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+	
+<form enctype="multipart/form-data" action="usercp.php" method="post">
+			<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+              
+	{$usercpnav}
+	<div class="col-md-9">
+
+{$avatar_error}
+      
+
+
+
+   
+<div class="thead">{$lang->change_avatar}</div>
+<div class="trow1 changeavatar">
+<div style="border: 4px solid #aaa; border-radius: 5px;">{$currentavatar}</div>
+<div class="smalltext" style="margin-left: 15px;">{$lang->avatar_note}{$avatarmsg}</div>
+</div>
+			{$avatarupload}
+			
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->avatar_url}</div>
+<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="avatarurl" size="45" value="{$avatarurl}" /><br /><span class="smalltext">{$lang->avatar_url_gravatar}</span></div>
+</div>
+
+		<br />
+		<div class="align_center">
+			<input type="hidden" name="action" value="do_avatar" />
+			<input type="submit" class="button" name="submit" value="{$lang->change_avatar}" />
+			{$removeavatar}
+		</div>
+  </div>
+</div>
+      </form>
+
+
+{$footer}
+</body>
+</html>

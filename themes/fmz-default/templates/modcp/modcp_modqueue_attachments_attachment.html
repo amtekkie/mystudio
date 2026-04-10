@@ -1,0 +1,14 @@
+			
+				<div class="{$altbg} rowbit">
+                  
+
+
+<div class="threadbit_main modcpbit_modqueue_filename modcpbit_modqueue_main" data-width="40%"><a href="attachment.php?aid={$attachment['aid']}" target="_blank">{$attachment['filename']}</a> {$attachment['filesize']} -  <a href="{$link}" class="smalltext">{$lang->post} {$attachment['postsubject']}</a></div>
+ 
+<div class="modcpbit_modqueue_author" data-width="30%" data-lang="{$lang->author}">{$profile_link} </div>
+
+<div class="modcpbit_modqueue_time" data-width="30%" data-lang="{$lang->date}">{$attachdate}</div>
+</div>
+
+</div>
+				<div class="{$altbg}"><label class="label_radio_ignore"><input type="radio" class="radio radio_ignore" name="attachments[{$attachment['aid']}]" value="ignore" checked="checked" /> {$lang->ignore}</label> <label class="label_radio_delete"><input type="radio" class="radio radio_delete" name="attachments[{$attachment['aid']}]" value="delete" /> {$lang->delete}</label> <label class="label_radio_approve"><input type="radio" class="radio radio_approve" name="attachments[{$attachment['aid']}]" value="approve" /> {$lang->approve}</label></div>

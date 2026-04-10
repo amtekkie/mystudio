@@ -1,0 +1,363 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->calendar} - {$lang->edit_event}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+{$event_errors}
+
+<form action="calendar.php" method="post">
+	<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+	
+
+<div class="tborder form_delete_form">
+<div class="thead">{$lang->delete_event}</div>
+<div class="trow1">
+<div class="float_left form_checkbox_block"> <input type="checkbox" class="checkbox" name="delete" value="1" tabindex="9" /></div>
+<div class="float_right form_sumbit_block"><input type="submit" class="button" name="submit" value="{$lang->delete_now}" tabindex="10" /></div>
+<div class="form_description_block">&nbsp;{$lang->delete_q} {$lang->delete_2} </div>
+<br class="clear" />
+</div></div>
+
+
+
+	<input type="hidden" name="action" value="do_deleteevent" />
+	<input type="hidden" name="eid" value="{$event['eid']}" />
+</form>
+<br />
+  
+<form action="calendar.php" method="post" name="input">
+	<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+	<div class="tborder clear">
+		
+			<div class="thead">{$lang->edit_event}</div>
+		
+		
+
+      
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->event_name}</div>
+<div class="formbit_field" data-width="80%"><input type="text" class="textbox" size="50" name="name" maxlength="120" value=" {$name}"/></div>
+      </div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->event_date}</div>
+<div class="formbit_field" data-width="80%">
+
+
+
+<script>
+				<!--
+					function toggleType()
+					{
+						if($("#type_single").prop("checked"))
+						{
+							$("#ranged_selects").hide();
+							$("#single_selects").show();
+						}
+						else
+						{
+							$("#single_selects").hide();
+							$("#ranged_selects").show();
+							toggleRepeats();
+						}
+					}
+
+					function toggleRepeats()
+					{
+						var repeats = $("#repeats").get(0).selectedIndex;
+						$(".repeats_type").each(function()
+						{
+							$(this).hide();
+						});
+						if($("#repeats_type_"+repeats).length > 0)
+						{
+							$("#repeats_type_"+repeats).show();
+						}
+					}
+				// -->
+</script>
+
+<ul class="list_style">
+
+<li><input type="radio" name="type" value="single" {$type_single} id="type_single" onclick="toggleType();" /><label for="type_single">{$lang->type_single}</label></li>
+
+<li id="single_selects">
+<select name="single_day">
+							{$single_days}
+						</select>
+						&nbsp;
+						<select name="single_month">
+<option value="1" {$single_month['1']}>{$lang->month_1}</option>
+<option value="2" {$single_month['2']}>{$lang->month_2}</option>
+<option value="3" {$single_month['3']}>{$lang->month_3}</option>
+<option value="4" {$single_month['4']}>{$lang->month_4}</option>
+<option value="5" {$single_month['5']}>{$lang->month_5}</option>
+<option value="6" {$single_month['6']}>{$lang->month_6}</option>
+<option value="7" {$single_month['7']}>{$lang->month_7}</option>
+<option value="8" {$single_month['8']}>{$lang->month_8}</option>
+<option value="9" {$single_month['9']}>{$lang->month_9}</option>
+<option value="10" {$single_month['10']}>{$lang->month_10}</option>
+<option value="11" {$single_month['11']}>{$lang->month_11}</option>
+<option value="12" {$single_month['12']}>{$lang->month_12}</option>
+</select>
+						&nbsp;
+						<select name="single_year">
+							{$single_years}
+						</select>
+</li>
+
+<li><input type="radio" name="type" value="ranged" {$type_ranged} id="type_ranged" onclick="toggleType();" /><label for="type_ranged">{$lang->type_ranged}</label></li>
+
+<li id="ranged_selects" style="display:none;">
+
+<ul class="list_style">
+<li><div class="smalltext">{$lang->start_time}</div>
+
+<select name="start_day">
+										{$start_days}
+									</select>
+<select name="start_month">
+<option value="1" {$start_month['1']}>{$lang->month_1}</option>
+<option value="2" {$start_month['2']}>{$lang->month_2}</option>
+<option value="3" {$start_month['3']}>{$lang->month_3}</option>
+<option value="4" {$start_month['4']}>{$lang->month_4}</option>
+<option value="5" {$start_month['5']}>{$lang->month_5}</option>
+<option value="6" {$start_month['6']}>{$lang->month_6}</option>
+<option value="7" {$start_month['7']}>{$lang->month_7}</option>
+<option value="8" {$start_month['8']}>{$lang->month_8}</option>
+<option value="9" {$start_month['9']}>{$lang->month_9}</option>
+<option value="10" {$start_month['10']}>{$lang->month_10}</option>
+<option value="11" {$start_month['11']}>{$lang->month_11}</option>
+<option value="12" {$start_month['12']}>{$lang->month_12}</option>
+</select>
+<select name="start_year">
+										{$start_years}
+									</select>
+<span class="smalltext">&nbsp;&nbsp;&nbsp;{$lang->enter_time}</span>
+<input type="text" class="textbox" name="start_time" value=" {$start_time}" size="7" />
+
+</li>
+
+<li><div class="smalltext">{$lang->end_time}</div>
+
+<select name="end_day">
+										{$end_days}
+									</select>
+<select name="end_month">
+<option value="1" {$end_month['1']}>{$lang->month_1}</option>
+<option value="2" {$end_month['2']}>{$lang->month_2}</option>
+<option value="3" {$end_month['3']}>{$lang->month_3}</option>
+<option value="4" {$end_month['4']}>{$lang->month_4}</option>
+<option value="5" {$end_month['5']}>{$lang->month_5}</option>
+<option value="6" {$end_month['6']}>{$lang->month_6}</option>
+<option value="7" {$end_month['7']}>{$lang->month_7}</option>
+<option value="8" {$end_month['8']}>{$lang->month_8}</option>
+<option value="9" {$end_month['9']}>{$lang->month_9}</option>
+<option value="10" {$end_month['10']}>{$lang->month_10}</option>
+<option value="11" {$end_month['11']}>{$lang->month_11}</option>
+<option value="12" {$end_month['12']}>{$lang->month_12}</option>
+</select>
+<select name="end_year">
+										{$end_years}
+									</select>
+<span class="smalltext">&nbsp;&nbsp;&nbsp;{$lang->enter_time}</span>
+<input type="text" class="textbox" name="end_time" value="{$end_time}" size="7" /></li>
+
+<li>
+<div class="smalltext">{$lang->timezone}</div>
+<div>
+									{$timezones}<br />
+<label class="smalltext"><input type="checkbox" name="ignoretimezone" value="1" {$ignore_timezone} /> {$lang->ignore_timezone} </label>
+</div>
+</li>
+
+
+<li>
+
+<div class="smalltext">{$lang->repeats}</div>
+
+<select name="repeats" id="repeats" onchange="toggleRepeats();">
+<option value="0">{$lang->does_not_repeat}</option>
+<option value="1" {$repeats_sel[1]}>{$lang->repeats_daily}</option>
+<option value="2" {$repeats_sel[2]}>{$lang->repeats_weekdays}</option>
+<option value="3" {$repeats_sel[3]}>{$lang->repeats_weekly}</option>
+<option value="4" {$repeats_sel[4]}>{$lang->repeats_monthly}</option>
+<option value="5" {$repeats_sel[5]}>{$lang->repeats_yearly}</option>
+</select>
+
+<div class="repeats_type" id="repeats_type_1">
+										{$lang->repeats_every}
+										<input type="text" class="textbox" name="repeats_1_days" value="{$repeats_1_days}" size="2" /> {$lang->day_or_days}
+									</div>
+
+
+<div class="repeats_type" id="repeats_type_3">
+										{$lang->repeats_every}
+										<input type="text" class="textbox" name="repeats_3_weeks" value="{$repeats_3_weeks}" size="2" /> {$lang->week_or_weeks_on}
+										<br />
+<div>
+
+<div class="smalltext"><label><input type="checkbox" name="repeats_3_days[0]" value="1" {$repeats_3_days[0]} /> {$lang->sunday}</label></div>
+<div class="smalltext"><label><input type="checkbox" name="repeats_3_days[1]" value="1" {$repeats_3_days[1]} /> {$lang->monday}</label></div>
+<div class="smalltext"><label><input type="checkbox" name="repeats_3_days[2]" value="1" {$repeats_3_days[2]} /> {$lang->tuesday}</label></div>
+<div class="smalltext"><label><input type="checkbox" name="repeats_3_days[3]" value="1" {$repeats_3_days[3]} /> {$lang->wednesday}</label></div>
+
+
+<div class="smalltext"><label><input type="checkbox" name="repeats_3_days[4]" value="1" {$repeats_3_days[4]} /> {$lang->thursday}</label></div>
+<div class="smalltext"><label><input type="checkbox" name="repeats_3_days[5]" value="1" {$repeats_3_days[5]} /> {$lang->friday}</label></div>
+<div class="smalltext"><label><input type="checkbox" name="repeats_3_days[6]" value="1" {$repeats_3_days[6]} /> {$lang->saturday}</label></div>
+
+</div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="repeats_type" id="repeats_type_4">
+<div class="smalltext"><label>
+<input type="radio" name="repeats_4_type" id="repeats_4_type_1" value="1" {$repeats_4_type[1]} />
+											{$lang->repeats_on_day}</label>
+<input type="text" class="textbox" name="repeats_4_day" value=" {$repeats_4_day}" onfocus="$('#repeats_4_type_1').prop('checked', true);" size="2" /> {$lang->of_every} <input type="text" class="textbox" name="repeats_4_months" value=" {$repeats_4_months}" size="2" onfocus="$('#repeats_4_type_1').prop('checked', true);" /> {$lang->month_or_months}
+										</div>
+<div class="smalltext"><label>
+<input type="radio" name="repeats_4_type" id="repeats_4_type_2" value="2" {$repeats_4_type[2]} />
+											{$lang->repeats_on_the}</label>
+<select name="repeats_4_occurance" onfocus="$('#repeats_4_type_2').prop('checked', true);">
+<option value="1" {$repeats_4_occurance[1]}>{$lang->first}</option>
+<option value="2" {$repeats_4_occurance[2]}>{$lang->second}</option>
+<option value="3" {$repeats_4_occurance[3]}>{$lang->third}</option>
+<option value="4" {$repeats_4_occurance[4]}>{$lang->fourth}</option>
+<option value="last" {$repeats_4_occurance['last']}>{$lang->last}</option>
+</select>
+<select name="repeats_4_weekday" onfocus="$('#repeats_4_type_2').prop('checked', true);">
+<option value="0" {$repeats_4_weekday[0]}>{$lang->sunday}</option>
+<option value="1" {$repeats_4_weekday[1]}>{$lang->monday}</option>
+<option value="2" {$repeats_4_weekday[2]}>{$lang->tuesday}</option>
+<option value="3" {$repeats_4_weekday[3]}>{$lang->wednesday}</option>
+<option value="4" {$repeats_4_weekday[4]}>{$lang->thursday}</option>
+<option value="5" {$repeats_4_weekday[5]}>{$lang->friday}</option>
+<option value="6" {$repeats_4_weekday[6]}>{$lang->saturday}</option>
+</select>
+											{$lang->of_every}
+											<input type="text" class="textbox" name="repeats_4_months2" value=" {$repeats_4_months2}" size="2" onfocus="$('#repeats_4_type_2').prop('checked', true);" /> {$lang->month_or_months}
+										</div>
+</div>
+<div class="repeats_type" id="repeats_type_5">
+<div class="smalltext"><label>
+<input type="radio" name="repeats_5_type" value="1" id="repeats_5_type_1" {$repeats_5_type[1]} />
+											{$lang->repeats_on}</label>
+<input type="text" class="textbox" name="repeats_5_day" onfocus="$('#repeats_5_type_1').prop('checked', true);" value=" {$repeats_5_day}" size="2" />
+<select name="repeats_5_month" onfocus="$('#repeats_5_type_1').prop('checked', true);">
+<option value="1" {$repeats_5_month['1']}>{$lang->month_1}</option>
+<option value="2" {$repeats_5_month['2']}>{$lang->month_2}</option>
+<option value="3" {$repeats_5_month['3']}>{$lang->month_3}</option>
+<option value="4" {$repeats_5_month['4']}>{$lang->month_4}</option>
+<option value="5" {$repeats_5_month['5']}>{$lang->month_5}</option>
+<option value="6" {$repeats_5_month['6']}>{$lang->month_6}</option>
+<option value="7" {$repeats_5_month['7']}>{$lang->month_7}</option>
+<option value="8" {$repeats_5_month['8']}>{$lang->month_8}</option>
+<option value="9" {$repeats_5_month['9']}>{$lang->month_9}</option>
+<option value="10" {$repeats_5_month['10']}>{$lang->month_10}</option>
+<option value="11" {$repeats_5_month['11']}>{$lang->month_11}</option>
+<option value="12" {$repeats_5_month['12']}>{$lang->month_12}</option>
+</select>
+											{$lang->every}
+											<input type="text" class="textbox" name="repeats_5_years" value=" {$repeats_5_years}" onfocus="$('#repeats_5_type_1').prop('checked', true);" size="2" /> {$lang->year_or_years}
+										</div>
+<div class="smalltext"><label>
+<input type="radio" name="repeats_5_type" value="2" id="repeats_5_type_2" {$repeats_5_type[2]} />
+											{$lang->repeats_on_the}</label>
+<select name="repeats_5_occurance" onfocus="$('#repeats_5_type_2').prop('checked', true);">
+<option value="1" {$repeats_5_occurance[1]}>{$lang->first}</option>
+<option value="2" {$repeats_5_occurance[2]}>{$lang->second}</option>
+<option value="3" {$repeats_5_occurance[3]}>{$lang->third}</option>
+<option value="4" {$repeats_5_occurance[4]}>{$lang->fourth}</option>
+<option value="last" {$repeats_4_occurance['last']}>{$lang->last}</option>
+</select>
+<select name="repeats_5_weekday" onfocus="$('#repeats_5_type_2').prop('checked', true);">
+<option value="0" {$repeats_5_weekday[0]}>{$lang->sunday}</option>
+<option value="1" {$repeats_5_weekday[1]}>{$lang->monday}</option>
+<option value="2" {$repeats_5_weekday[2]}>{$lang->tuesday}</option>
+<option value="3" {$repeats_5_weekday[3]}>{$lang->wednesday}</option>
+<option value="4" {$repeats_5_weekday[4]}>{$lang->thursday}</option>
+<option value="5" {$repeats_5_weekday[5]}>{$lang->friday}</option>
+<option value="6" {$repeats_5_weekday[6]}>{$lang->saturday}</option>
+</select>
+											{$lang->of}
+											<select name="repeats_5_month2" onfocus="$('#repeats_5_type_2').prop('checked', true);">
+<option value="1" {$repeats_5_month2['1']}>{$lang->month_1}</option>
+<option value="2" {$repeats_5_month2['2']}>{$lang->month_2}</option>
+<option value="3" {$repeats_5_month2['3']}>{$lang->month_3}</option>
+<option value="4" {$repeats_5_month2['4']}>{$lang->month_4}</option>
+<option value="5" {$repeats_5_month2['5']}>{$lang->month_5}</option>
+<option value="6" {$repeats_5_month2['6']}>{$lang->month_6}</option>
+<option value="7" {$repeats_5_month2['7']}>{$lang->month_7}</option>
+<option value="8" {$repeats_5_month2['8']}>{$lang->month_8}</option>
+<option value="9" {$repeats_5_month2['9']}>{$lang->month_9}</option>
+<option value="10" {$repeats_5_month2['10']}>{$lang->month_10}</option>
+<option value="11" {$repeats_5_month2['11']}>{$lang->month_11}</option>
+<option value="12" {$repeats_5_month2['12']}>{$lang->month_12}</option>
+</select>
+											{$lang->every}
+											<input type="text" class="textbox" name="repeats_5_years2" value=" {$repeats_5_years}" size="2" onfocus="$('#repeats_5_type_2').prop('checked', true);" /> {$lang->year_or_years}
+										</div>
+</div>
+
+
+
+
+</li>
+
+
+</ul>
+
+
+</li>
+</ul>
+
+<script>
+<!--
+					toggleType();
+					toggleRepeats();
+				// -->
+</script>
+
+</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->event_details}{$smilieinserter}</div>
+<div class="formbit_field" data-width="80%"><textarea name="description" id="message">{$description}</textarea>
+			{$codebuttons}</div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->event_options}</div>
+<div class="formbit_field" data-width="80%"><input type="checkbox" class="checkbox" name="private" value="1" {$privatecheck} /> {$lang->private_option}
+	</div>
+</div>
+
+
+</div>
+<br />
+<input type="hidden" name="action" value="do_editevent" />
+<input type="hidden" name="eid" value="{$event['eid']}" />
+<div class="align_center"><input type="submit" class="button" value="{$lang->edit_event}" /></div>
+</form>
+{$footer}
+</body>
+</html>

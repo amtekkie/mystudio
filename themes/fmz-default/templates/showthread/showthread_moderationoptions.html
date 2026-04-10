@@ -1,0 +1,23 @@
+<div class="align_right">{$inlinemod}
+<form action="moderation.php" method="post" style="margin-top: 0; margin-bottom: 0;" id="moderator_options">
+	<input type="hidden" name="modtype" value="thread" />
+	<input type="hidden" name="tid" value="{$tid}" />
+	<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+	<span class="smalltext">
+	<strong>{$lang->moderation_options}</strong></span>
+	<select name="action" id="moderator_options_selector">
+		<option value="delayedmoderation">{$lang->delayed_moderation}</option>
+		{$standardthreadtools}
+		{$customthreadtools}
+	</select>
+	{$gobutton}
+</form>
+<br />
+<script type="text/javascript">
+<!--
+	$("#moderator_options_selector").on('change', function() {
+		$("#moderator_options").trigger('submit');
+	})
+//-->
+</script>
+</div>

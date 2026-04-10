@@ -1,0 +1,81 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->warn_user}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+{$existing_warnings}
+{$warn_errors}
+<form action="warnings.php" method="post" name="input">
+	<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+	<input type="hidden" name="action" value="do_warn" />
+	<input type="hidden" name="uid" value="{$user['uid']}" />
+
+	<div class="tborder clear">
+		
+			<div class="thead">{$lang->warn_user}</div>
+		
+		
+			<div class="tcat"><span class="smalltext">{$lang->warn_user_desc}</span></div>
+		
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->username}</div>
+<div class="formbit_field" data-width="80%">{$user_link}</div>
+</div>
+
+{$post}
+		
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->warning_note}</div>
+<div class="formbit_field" data-width="80%"><textarea name="notes">{$notes}</textarea></div>
+</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="20%">{$lang->warning_type}</div>
+<div class="formbit_field" data-width="80%">	<script>
+				// <!--
+					function checkType(id)
+					{
+						var checked = '';
+
+                      $('.types_check').each(function(e, val)
+						{
+							if($(this).prop('checked') == true)
+							{
+								checked = $(this).val();
+							}
+						});
+						$('.types').each(function(e)
+						{
+							$(this).hide();
+						});
+						if($('#type_'+checked))
+						{
+							$('#type_'+checked).show();
+						}
+					}
+				// -->
+</script><ul class="list_style">
+					{$types}
+					{$custom_warning}
+				</ul>
+<script>
+				// <!--
+					checkType();
+				// -->
+</script></div>
+</div>
+
+{$pm_notify}
+      
+      
+      
+	</div>
+<br />
+<div class="align_center"><input type="submit" class="button" value="{$lang->warn_user}" /></div>
+</form>
+{$footer}
+</body>
+</html>

@@ -1,0 +1,90 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->board_stats}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+<h4 class="mb-3"><i class="bi bi-bar-chart-line me-2"></i>{$lang->board_stats}</h4>
+
+<!-- Totals + Averages row -->
+<div class="row g-3 mb-3">
+	<div class="col-md-6">
+		<div class="card h-100">
+			<div class="card-header fw-semibold"><i class="bi bi-hash me-1"></i>{$lang->totals}</div>
+			<ul class="list-group list-group-flush" style="background:transparent">
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--glass-border)">
+					<span>{$lang->posts}</span><strong>{$stats['numposts']}</strong>
+				</li>
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+					<span>{$lang->threads}</span><strong>{$stats['numthreads']}</strong>
+				</li>
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+					<span>{$lang->members}</span><strong>{$stats['numusers']}</strong>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card h-100">
+			<div class="card-header fw-semibold"><i class="bi bi-graph-up me-1"></i>{$lang->averages}</div>
+			<ul class="list-group list-group-flush" style="background:transparent">
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--glass-border)">
+					<span>{$lang->ppd}</span><strong>{$postsperday}</strong>
+				</li>
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+					<span>{$lang->tpd}</span><strong>{$threadsperday}</strong>
+				</li>
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+					<span>{$lang->mpd}</span><strong>{$membersperday}</strong>
+				</li>
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+					<span>{$lang->ppm}</span><strong>{$postspermember}</strong>
+				</li>
+				<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+					<span>{$lang->rpt}</span><strong>{$repliesperthread}</strong>
+				</li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<!-- General info -->
+<div class="card mb-3">
+	<div class="card-header fw-semibold"><i class="bi bi-info-circle me-1"></i>{$lang->general}</div>
+	<ul class="list-group list-group-flush" style="background:transparent">
+		<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--glass-border)">
+			<span>{$lang->newest_member}</span><strong>{$stats['newest_user']}</strong>
+		</li>
+		<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+			<span>{$lang->members_posted}</span><strong>{$havepostedpercent}</strong>
+		</li>
+		<li class="list-group-item d-flex justify-content-between" style="background:transparent;border-color:var(--tekbb-border)">
+			<span>{$lang->theme_bootbb_stats_top_poster}</span><strong>{$topposter} — {$topposterposts}</strong>
+		</li>
+		<li class="list-group-item d-flex justify-content-between flex-wrap" style="background:transparent;border-color:var(--tekbb-border)">
+			<span>{$lang->theme_bootbb_stats_popular_forum}</span><strong>{$topforum} — {$topforumposts} {$lang->theme_bootbb_stats_posts}, {$topforumthreads} {$lang->theme_bootbb_stats_threads}</strong>
+		</li>
+	</ul>
+</div>
+
+<!-- Most replied + Most viewed -->
+<div class="row g-3 mb-3">
+	<div class="col-md-6">
+		<div class="card h-100">
+			<div class="card-header fw-semibold"><i class="bi bi-chat-dots me-1"></i>{$lang->most_replied_threads}</div>
+			<div class="list-group list-group-flush">{$mostreplies}</div>
+		</div>
+	</div>
+	<div class="col-md-6">
+		<div class="card h-100">
+			<div class="card-header fw-semibold"><i class="bi bi-eye me-1"></i>{$lang->most_viewed_threads}</div>
+			<div class="list-group list-group-flush">{$mostviews}</div>
+		</div>
+	</div>
+</div>
+
+{$footer}
+</body>
+</html>

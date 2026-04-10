@@ -1,0 +1,28 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->forum_subscriptions}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+
+{$usercpnav}
+<div class="col-md-9">
+<div>
+
+<div class="thead">{$lang->forum_subscriptions}</div>
+<div class="tcat rowbit d-md-block d-none d-md-block">
+<span class="forumbit_main" data-width="55%">{$lang->forumbit_forum}</span>
+<span class="forumbit_stats forumbit_posts align_center" data-width="10%">{$lang->forumbit_posts}</span>
+<span class="forumbit_stats forumbit_threads align_center" data-width="10%">{$lang->forumbit_threads}</span>	
+<span class="forumbit_lastpost" data-width="25%">{$lang->forumbit_lastpost}</span>	
+</div>
+{$forums}
+</div>
+</div>
+</div>
+
+{$footer}
+</body>
+</html>

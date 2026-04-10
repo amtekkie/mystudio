@@ -1,0 +1,65 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->private_messaging}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="private.php" method="post" name="pmForm">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+{$usercpnav}
+<div class="col-md-9">
+<div class="tborder">
+
+<div class="thead">
+{$lang->pm_search_results}</div>
+
+
+  
+<div class="tcat rowbit">
+  
+
+<span class="threadbit_main pmbit_main" data-width="40%">
+{$lang->message}</span>
+
+
+<span class="threadbit_stats pmbit_author align_center" data-width="20%">{$lang->sender}</span>
+
+<span class="threadbit_stats pmbit_folder align_center" data-width="20%">{$lang->folder}</span>
+
+<span class="threadbit_stats threadbit_lastpost pmbit_date" data-width="20%">
+
+<span data-moderation="1">
+{$lang->date_sent}</span>
+</span>
+<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ps-2"><input name="allbox" title="{$lang->check_all}" type="checkbox" class="form-check-input checkall" value="{$lang->check_all}" /></span>
+
+
+
+</div>
+  
+{$messagelist}
+
+<div class="tfoot">
+<input type="submit" class="button" name="moveto" value="{$lang->move_to}" /> {$folderoplist} {$lang->or}
+<input type="submit" class="button" name="delete" value="{$lang->delete}" /> {$lang->selected_messages}
+</div>
+
+</div>
+<br />
+<div class="float_left">{$multipage}</div>
+<div class="float_right">
+
+{$lang->jump_folder} {$folderjump}
+<input type="submit" class="button" name="hop" value="{$lang->go}" />
+
+</div>
+</div>
+</div>
+
+<input type="hidden" name="action" value="do_stuff" />
+</form>
+{$footer}
+</body>
+</html>

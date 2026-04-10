@@ -1,0 +1,8 @@
+{
+    "name": "User Profile Extras",
+    "description": "Adds profile banner customization (upload, solid color, gradient) and a status updates system with privacy levels and a dedicated feed page.",
+    "version": "1.0.0",
+    "author": "Tektove",
+    "author_url": "https://tektove.com",
+    "compatibility": "18*"
+}

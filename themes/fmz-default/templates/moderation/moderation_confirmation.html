@@ -1,0 +1,28 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->confirm_execute_tool}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="moderation.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+<input type="hidden" name="action" value="{$mybb->input['action']}" />
+<input type="hidden" name="modtype" value="{$mybb->input['modtype']}" />
+  <input type="hidden" name="tid" value="{$tid}" />
+<input type="hidden" name="confirm" value="1" />
+<div class="tborder">
+
+<div class="thead">{$thread['subject']} - {$lang->confirm_execute_tool}</div>
+
+
+<div class="trow1">{$lang->confirm_execute_tool_desc}</div>
+
+{$loginbox}
+</div>
+<br />
+<div><input type="submit" class="button" name="submit" value="{$lang->confirm_execute_tool}" /></div>
+</form>
+{$footer}
+</body>
+</html>

@@ -1,0 +1,4 @@
+<div class="dropdown d-inline-block">
+	<a href="private.php?action=read&amp;pmid={$message['pmid']}" id="private_message_{$message['pmid']}" class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">{$lang->multiple_recipients}</a>
+	<div class="dropdown-menu" id="private_message_{$message['pmid']}_popup"><div class="tcat"><strong>{$lang->to}</strong></div>{$to_users}{$bcc_users}</div>
+</div>

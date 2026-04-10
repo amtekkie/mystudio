@@ -1,0 +1,16 @@
+<div class="tborder mb-3">
+
+<div class="thead{$expthead} d-flex justify-content-between align-items-center">
+<h5 class="fw-bold mb-0"><a href="{$forum_url}" title="{$forum['description']}">{$lang->sub_forums_in}</a></h5>
+<div class="expcolimage" data-controls="cat_{$forum['fid']}"></div>
+</div>
+
+<div class="tbody" style="{$expdisplay}" id="cat_{$forum['fid']}_e">
+	<div class="tcat rowbit d-none d-md-flex">
+		<span class="forumbit_main col-md-8 col-md-9">{$lang->forumbit_forum}</span>
+		<span class="forumbit_lastpost align_center col-md-3 col-md-3">{$lang->forumbit_lastpost}</span>
+	</div>
+	{$forums}
+</div>
+
+</div>

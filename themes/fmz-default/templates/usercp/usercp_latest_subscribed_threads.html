@@ -1,0 +1,28 @@
+<div class="trow1 rowbit">
+
+
+<div class="threadbit_main" data-width="60%">
+
+<div class="threadbit_folder"><span class="thread_status {$folder}" title="{$folder_label}"></span></div>
+<div class="threadbit_title">
+
+<div>{$gotounread}{$thread['displayprefix']}<a href="{$thread['threadlink']}" class="{$new_class}">{$thread['subject']}</a></div>
+
+<div class="smalltext">{$thread['author']}</div>
+
+</div></div>
+
+
+<div class="threadbit_stats threadbit_replies align_center smalltext" data-width="7.5%" data-lang="{$lang->replies}">
+<a href="javascript:MyBB.whoPosted({$thread['tid']});">{$thread['replies']}</a></div>
+<div class="threadbit_stats threadbit_views align_center smalltext" data-width="7.5%" data-lang="{$lang->views}">{$thread['views']}</div>
+
+<div class="threadbit_lastpost smalltext" data-width="25%">
+
+
+<a href="{$thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}<br />{$lastpostdate}
+
+</div>
+
+
+</div>

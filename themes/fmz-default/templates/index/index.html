@@ -1,0 +1,25 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']}</title>
+{$headerinclude}
+<style>.navigation{display:none!important}</style>
+<script>
+<!--
+	lang.no_new_posts = "{$lang->no_new_posts}";
+	lang.click_mark_read = "{$lang->click_mark_read}";
+// -->
+</script>
+</head>
+<body>
+{$header}
+<div class="row g-4">
+<div class="{$fmz_index_col_class}">
+{$forums}
+{$boardstats}
+</div>
+{$fmz_sidebar}
+</div>
+<br class="clear" />
+{$footer}
+</body>
+</html>

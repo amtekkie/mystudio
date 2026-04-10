@@ -1,0 +1,11 @@
+ul.thread_tools,ul.thread_tools li{list-style:none;padding:0;margin:0}
+ul.thread_tools li{padding-left:24px;padding-bottom:4px;margin-bottom:3px;font-size:11px}
+ul.thread_tools li:before{display:inline-block;font-family:"bootstrap-icons";margin-right:5px;color:var(--bs-body-color)}
+ul.thread_tools li.printable:before{content:"\f4c7"}
+ul.thread_tools li.sendthread:before{content:"\f4e8"}
+ul.thread_tools li.subscription_add:before{content:"\f4fe"}
+ul.thread_tools li.subscription_remove:before{content:"\f235"}
+ul.thread_tools li.poll:before{content:"\f131"}
+.showthread_spinner{width:100%;margin:0 auto;display:block;text-align:center;padding:20px}
+
+		

@@ -1,0 +1,51 @@
+<div class="trow1 rowbit d-md-block d-none d-md-block">
+
+
+<div class="threadbit_main" data-width="60%">
+
+<div class="threadbit_folder"><span class="thread_status folder {$folder}" title="{$folder_label}"><span></span></span></div>
+<div class="threadbit_title">
+
+<div>{$gotounread}{$icon}{$thread['threadprefix']}<a href="{$thread['threadlink']}" class="{$new_class}">{$thread['subject']}</a></div>
+
+<div class="smalltext">{$lang->notification_method} {$notification_type}</div>
+
+</div></div>
+
+
+
+<div class="threadbit_stats threadbit_replies align_center smalltext" data-width="7.5%" data-lang="{$lang->replies}"><a href="javascript:MyBB.whoPosted({$thread['tid']});">{$thread['replies']}</a></div>
+
+<div class="threadbit_stats threadbit_views align_center smalltext" data-width="7.5%" data-lang="{$lang->views}">{$thread['views']}</div>
+
+<div class="threadbit_lastpost smalltext" data-width="25%">
+<span data-moderation="1">
+<a href="{$thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}, {$lastpostdate}
+</span>
+</div>
+<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ms-auto ps-2"><input type="checkbox" class="form-check-input" name="check[{$thread['tid']}]" value="{$thread['tid']}" /></span>
+
+</div>
+
+<div class="trow1 rowbit d-md-none d-lg-block d-lg-none">
+
+
+<div class="threadbit_main" data-width="70%">
+
+<div class="threadbit_folder"><span class="thread_status folder {$folder}" title="{$folder_label}"><span></span></span></div>
+<div class="threadbit_title">
+
+<div>{$gotounread}{$thread['threadprefix']}<a href="{$thread['threadlink']}" class="{$new_class}">{$thread['subject']}</a></div>
+
+<div class="smalltext">{$lang->notification_method} {$notification_type}</div>
+
+</div></div>
+
+<div class="threadbit_lastpost smalltext" data-width="30%">
+<span data-moderation="1">
+<a href="{$thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}, {$lastpostdate}
+</span>
+</div>
+
+
+</div>

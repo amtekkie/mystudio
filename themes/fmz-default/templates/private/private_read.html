@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>{$lang->viewing_pm} {$pm['subject']}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+
+{$usercpnav}
+<div class="col-md-9">
+	<div class="tborder">
+		<div class="thead">{$pm['subject']}</div>
+		{$action_time}
+		<div id="posts_container">
+			<div id="posts">{$message}</div>
+		</div>
+	</div>
+	{$quickreply}
+</div>
+</div>
+
+{$footer}
+</body>
+</html>

@@ -1,0 +1,136 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->warning_logs}</title>
+{$headerinclude}
+<link rel="stylesheet" href="{$mybb->asset_url}/jscripts/select2/select2.css?ver=1806">
+<script src="{$mybb->asset_url}/jscripts/select2/select2.min.js"></script>
+</head>
+<body>
+	{$header}
+
+		
+			{$modcp_nav}
+			<div class="col-md-9">
+				<div>
+					
+						<div class="thead">{$lang->warning_logs}</div>
+					
+<div class="tcat rowbit">
+
+<span class="modcpbit_warning_user" data-width="15%">{$lang->warned_user}</span>
+  
+  
+<span class="modcpbit_warning_issuedby" data-width="15%">{$lang->issued_by}</span>
+  
+<span class="modcpbit_warning_date" data-width="20%">{$lang->date_issued}</span>
+ 
+<span class="modcpbit_warning_expires" data-width="20%">{$lang->expires}</span>                                           
+                                               
+<span class="modcpbit_warning_details" data-width="15%">{$lang->details}</span>
+  
+<span class="modcpbit_warning_warning" data-width="15%">{$lang->warning}</span>
+  
+  
+</div>  
+					
+					{$warning_list}
+				</div>
+				{$multipage}
+				<br />
+				<form action="modcp.php" method="get">
+					<input type="hidden" name="action" value="warninglogs" />
+					<div>
+						
+							<div class="thead">{$lang->filter_warning_logs}</div>
+			
+                      
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->filter_warned_user}</div>
+<div class="formbit_field" data-width="75%"><input type="text" name="filter[username]" id="username" value="{$mybb->input['filter']['username']}" class="textbox" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->filter_issued_by}</div>
+<div class="formbit_field" data-width="75%"><input type="text" name="filter[mod_username]" value="{$mybb->input['filter']['mod_username']}" class="textbox" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->filter_reason}</div>
+<div class="formbit_field" data-width="75%"><input type="text" name="filter[reason]" value="{$mybb->input['filter']['reason']}" class="textbox" /></div>
+</div>
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->sort_by}</div>
+<div class="formbit_field" data-width="75%"><select name="filter[sortby]">
+									<option value="username"{$sortbysel['username']}>{$lang->username}</option>
+									<option value="issuedby"{$sortbysel['issuedby']}>{$lang->issued_by}</option>
+									<option value="dateline"{$sortbysel['dateline']}>{$lang->issued_date}</option>
+									<option value="expires"{$sortbysel['expires']}>{$lang->expiry_date}</option>
+								</select>
+								{$lang->in}
+								<select name="filter[order]">
+									<option value="asc"{$ordersel['asc']}>{$lang->asc}</option>
+									<option value="desc"{$ordersel['desc']}>{$lang->desc}</option>
+								</select>
+								{$lang->order}</div>
+</div>
+
+
+<div class="trow1 rowbit">
+<div class="formbit_label align_right" data-width="25%">{$lang->per_page}</div>
+<div class="formbit_field" data-width="75%"><input type="text" name="filter[per_page]" value="{$per_page}" class="textbox" /></div>
+</div>
+
+                      
+                      
+                     </div>
+
+                  
+					<br />
+					<div class="align_center">
+						<input type="submit" class="button" value="{$lang->filter_warning_logs}" />
+					</div>
+				</form>
+			</div>
+		
+
+	{$footer}
+
+<script>
+<!--
+if(use_xmlhttprequest == "1")
+{
+	MyBB.select2();
+	$("#username").select2({
+		placeholder: "{$lang->search_user}",
+		minimumInputLength: 2,
+		multiple: false,
+		allowClear: true,
+		ajax: { // instead of writing the function to execute the request we use Select2's convenient helper
+			url: "xmlhttp.php?action=get_users",
+			dataType: 'json',
+			data: function (term, page) {
+				return {
+					query: term, // search term
+				};
+			},
+			results: function (data, page) { // parse the results into the format expected by Select2.
+				// since we are using custom formatting functions we do not need to alter remote JSON data
+				return {results: data};
+			}
+		},
+		initSelection: function(element, callback) {
+			var value = $(element).val();
+			if (value !== "") {
+				callback({
+					id: value,
+					text: value
+				});
+			}
+		},
+	});
+}
+// -->
+</script>
+</body>
+</html>

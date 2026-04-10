@@ -1,0 +1,82 @@
+<div class="welcomeblock-wrap d-flex align-items-center justify-content-between gap-2 py-2">
+<div class="d-flex align-items-center gap-3">
+	<div class="fmz-avatar-wrap d-none d-md-block" style="position:relative;cursor:pointer" data-bs-toggle="modal" data-bs-target="#fmz_avatar_modal">
+		<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle" alt="Avatar" style="width:60px;height:60px;object-fit:cover;border:2px solid var(--tekbb-accent);margin-top:10px;display:block">
+		<div class="fmz-avatar-overlay rounded-circle" style="position:absolute;inset:0;margin-top:10px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);opacity:0;transition:opacity .2s;border-radius:50%">
+			<i class="bi bi-camera-fill text-white" style="font-size:18px"></i>
+		</div>
+	</div>
+	<div>
+		<span class="fw-semibold d-none d-md-block">{$lang->welcome_back}</span>
+		<div class="wb-actions d-flex align-items-center gap-1 flex-nowrap mt-md-1">
+			{$usercplink}
+			{$modcplink}
+			{$admincplink}
+			<a href="{$mybb->settings['bburl']}/member.php?action=logout&amp;logoutkey={$mybb->user['logoutkey']}" class="btn btn-sm btn-outline-accent"><i class="bi bi-box-arrow-right"></i><span class="d-none d-lg-inline ms-1">{$lang->welcome_logout}</span></a>
+		</div>
+	</div>
+</div>
+<div class="wb-right d-flex flex-column align-items-end gap-1">
+	<div class="d-flex align-items-center gap-1 flex-nowrap">
+		{$pmslink}
+		{$buddylink}
+	</div>
+	<div class="wb-search-links d-flex align-items-center gap-2 flex-nowrap">
+		<a href="{$mybb->settings['bburl']}/search.php?action=getnew" class="text-decoration-none small" style="color:var(--tekbb-accent)"><i class="bi bi-chat-left-text me-1"></i><span class="d-none d-lg-inline">{$lang->welcome_newposts}</span></a>
+		<a href="{$mybb->settings['bburl']}/search.php?action=getdaily" class="text-decoration-none small" style="color:var(--tekbb-muted)"><i class="bi bi-clock-history me-1"></i><span class="d-none d-lg-inline">{$lang->welcome_todaysposts}</span></a>
+	</div>
+</div>
+</div>
+
+<style>
+.fmz-avatar-wrap:hover .fmz-avatar-overlay{opacity:1!important}
+</style>
+
+<div class="modal fade" id="fmz_avatar_modal" tabindex="-1" aria-labelledby="fmz_avatar_label" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+<div class="modal-content">
+	<form enctype="multipart/form-data" action="{$mybb->settings['bburl']}/usercp.php" method="post" id="fmz_avatar_form">
+		<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+		<input type="hidden" name="action" value="do_avatar" />
+		<div class="modal-header">
+			<h6 class="modal-title" id="fmz_avatar_label"><i class="bi bi-person-bounding-box me-1"></i> {$lang->change_avatar}</h6>
+			<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+		</div>
+		<div class="modal-body">
+			<div class="text-center mb-3">
+				<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" id="fmz_avatar_preview" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;border:3px solid var(--tekbb-accent)" alt="Current Avatar" />
+			</div>
+			<div class="mb-3">
+				<label class="form-label small fw-semibold"><i class="bi bi-upload me-1"></i> {$lang->avatar_upload}</label>
+				<input type="file" name="avatarupload" class="form-control form-control-sm" accept="image/*" id="fmz_avatar_file" />
+			</div>
+			<div class="mb-2">
+				<label class="form-label small fw-semibold"><i class="bi bi-link-45deg me-1"></i> {$lang->avatar_url}</label>
+				<input type="text" name="avatarurl" class="form-control form-control-sm" placeholder="https://example.com/avatar.png" value="" />
+				<div class="form-text" style="font-size:11px">{$lang->avatar_url_gravatar}</div>
+			</div>
+		</div>
+		<div class="modal-footer d-flex justify-content-between">
+			<a href="{$mybb->settings['bburl']}/usercp.php?action=avatar&amp;remove=1&amp;my_post_key={$mybb->post_code}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> {$lang->remove_avatar}</a>
+			<input type="submit" name="submit" class="btn btn-sm btn-primary" value="{$lang->change_avatar}" />
+		</div>
+	</form>
+</div>
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+	var fi = document.getElementById('fmz_avatar_file');
+	var pv = document.getElementById('fmz_avatar_preview');
+	if(fi && pv){
+		fi.addEventListener('change', function(){
+			if(this.files && this.files[0]){
+				var r = new FileReader();
+				r.onload = function(e){ pv.src = e.target.result; };
+				r.readAsDataURL(this.files[0]);
+			}
+		});
+	}
+});
+</script>

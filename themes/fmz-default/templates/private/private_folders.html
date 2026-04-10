@@ -1,0 +1,42 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']} - {$lang->pm_folders}</title>
+{$headerinclude}
+</head>
+<body>
+{$header}
+<form action="private.php" method="post">
+<input type="hidden" name="my_post_key" value="{$mybb->post_code}" />
+
+{$usercpnav}
+<div class="col-md-9">
+<div class="tborder">
+
+<div class="thead">{$lang->existing_folders}</div>
+
+
+<div class="trow1"><span class="smalltext">{$lang->edit_folder_note}</span></div>
+
+{$folderlist}
+</div>
+<br />
+<div class="tborder">
+
+<div class="thead">{$lang->new_folders}</div>
+
+
+<div class="trow1"><span class="smalltext">{$lang->add_folders_note}</span></div>
+
+{$newfolders}
+</div>
+<br />
+<div>
+<input type="hidden" name="action" value="do_folders" />
+<input type="submit" class="button" name="submit" value="{$lang->update_folders}" />
+</div>
+</div>
+</div>
+</form>
+{$footer}
+</body>
+</html>

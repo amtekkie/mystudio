@@ -1,0 +1,30 @@
+<div class="{$bgcolor} forumdisplay_announcement rowbit">
+<div class="threadbit_main" data-width="60%" data-rate-thread="{$foruminfo['allowtratings']}">
+
+<div class="threadbit_folder"><span class="thread_status folder announcement" title="{$folder_label}"></span></div>
+<div class="threadbit_title">
+
+<div><a href="{$announcement['announcementlink']}"{$new_class}>{$announcement['subject']}</a></div>
+
+<div class="smalltext">{$announcement['profilelink']}</div>
+
+</div>
+
+
+</div>
+
+
+<div class="threadbit_stats threadbit_replies align_center smalltext" data-width="7.5%" data-lang="{$lang->replies}">-</div>
+
+<div class="threadbit_stats threadbit_views align_center smalltext" data-width="7.5%" data-lang="{$lang->views}">-</div>
+
+{$rating}
+
+<div class="threadbit_lastpost smalltext" data-width="25%">
+{$modann}
+<span data-moderation="{$ismod}">
+
+{$postdate}
+</span>
+	</div>
+</div>

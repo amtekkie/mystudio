@@ -1,0 +1,27 @@
+<html>
+<head>
+<title>{$thread['threadprefix']} {$thread['subject']} - {$lang->printable_version}</title>
+<meta http-equiv="Content-Type" content="text/html; charset={$charset}" />
+
+</head>
+<body>
+<div>
+
+<div><a href="index.php"><img src="{$theme['logo']}" alt="{$mybb->settings['bbname']}" title="{$mybb->settings['bbname']}" /></a></div>
+
+
+<div>
+<span class="largetext">{$thread['displaystyle']} <a href="{$thread['threadlink']}">{$thread['subject']}</a> - {$lang->printable_version}</span><br />
+<br />
++- {$mybb->settings['bbname']} (<em>{$mybb->settings['bburl']}</em>)<br />
+{$breadcrumb}
++{$tdepth} {$lang->thread} {$thread['displaystyle']} {$thread['subject']} (<em>/{$thread['threadlink']}</em>)<br />
+<br />
+{$multipage}</div>
+
+
+<div><br /><hr size="1" />{$postrows}</div>
+
+</div>
+</body>
+</html>
