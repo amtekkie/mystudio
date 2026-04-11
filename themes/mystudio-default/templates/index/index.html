@@ -1,0 +1,24 @@
+<html>
+<head>
+<title>{$mybb->settings['bbname']}</title>
+{$headerinclude}
+<script>
+<!--
+	lang.no_new_posts = "{$lang->no_new_posts}";
+	lang.click_mark_read = "{$lang->click_mark_read}";
+// -->
+</script>
+</head>
+<body>
+{$header}
+<div class="row g-4">
+<div class="{$ms_index_col_class}">
+{$forums}
+{$boardstats}
+</div>
+{$ms_sidebar}
+</div>
+<br class="clear" />
+{$footer}
+</body>
+</html>

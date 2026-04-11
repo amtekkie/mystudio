@@ -1,0 +1,24 @@
+<div class="d-none">{$welcomeblock}</div>
+<div id="ms-modal-outlet"></div>
+<script>
+(function(){
+	var outlet=document.getElementById('ms-modal-outlet');
+	var modals=document.querySelectorAll('.d-none .modal');
+	for(var i=0;i<modals.length;i++) outlet.appendChild(modals[i]);
+})();
+</script>
+
+<header class="ms-header">
+	<div class="container">
+		<a href="{$mybb->settings['bburl']}/index.php" class="ms-header-logo">{$ms_logo_html}</a>
+	</div>
+</header>
+
+<main class="container">
+<navigation>
+{$pm_notice}
+{$bannedwarning}
+{$bbclosedwarning}
+{$modnotice}
+{$pending_joinrequests}
+{$awaitingusers}

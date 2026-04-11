@@ -1,7 +1,0 @@
-{
-    "enable_banners": "1",
-    "banner_max_size": "2048",
-    "enable_statuses": "1",
-    "status_max_length": "1000",
-    "statuses_per_page": "20"
-}

@@ -1,0 +1,23 @@
+<div class="ms-forum-card">
+<div class="card h-100">
+<div class="card-body">
+	<div class="d-flex align-items-start gap-2 mb-2">
+		<div class="ms-card-icon forum_{$lightbulb['folder']} ajax_mark_read ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}">
+			<i class="bi bi-chat-left-fill"></i>
+		</div>
+		<div class="min-w-0">
+			<a href="{$forum_url}" class="fw-semibold d-block text-truncate">{$forum['name']}</a>
+			<div class="text-muted small text-truncate" style="max-width:200px">{$forum['description']}</div>
+		</div>
+	</div>
+	<div class="ms-card-stats d-flex gap-3 mb-1">
+		<span><i class="bi bi-chat-square-text me-1"></i>{$threads} {$lang->forumbit_threads}</span>
+		<span><i class="bi bi-chat-square-dots me-1"></i>{$posts} {$lang->forumbit_posts}</span>
+	</div>
+	{$subforums}
+</div>
+<div class="ms-card-lastpost">
+	{$lastpost}
+</div>
+</div>
+</div>

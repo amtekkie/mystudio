@@ -4,22 +4,22 @@
 # Allow directory traversal
 !*/
 
-# FMZ Studio plugin files
-!inc/plugins/fmz.php
-!inc/plugins/fmzstudio/
-!inc/plugins/fmzstudio/**
-!admin/modules/fmzstudio/
-!admin/modules/fmzstudio/**
-!jscripts/fmzstudio/
-!jscripts/fmzstudio/**
+# MyStudio plugin files
+!inc/plugins/ms.php
+!inc/plugins/mystudio/
+!inc/plugins/mystudio/**
+!admin/modules/mystudio/
+!admin/modules/mystudio/**
+!jscripts/mystudio/
+!jscripts/mystudio/**
 
-# FMZ Default theme (ships with plugin)
+# MyStudio Default theme (ships with plugin)
 !themes/
-!themes/fmz-default/
-!themes/fmz-default/**
+!themes/mystudio-default/
+!themes/mystudio-default/**
 
 # Exclude runtime artifacts inside themes
-themes/**/.fmz_last_sync
+themes/**/.ms_last_sync
 
 # Allow gitignore and README
 !.gitignore

@@ -1,0 +1,56 @@
+{$ignore_bit}{$deleted_bit}
+<a id="pid{$post['pid']}"></a>
+<div class="card mb-3 {$unapproved_shade}" style="{$post_visibility}" id="post_{$post['pid']}">
+<div class="row g-0">
+	<!-- Sidebar: visible md+ -->
+	<div class="col-md-2 d-none d-md-block border-end bg-body-secondary">
+		<div class="text-center p-2">
+			{$post['useravatar']}
+			<div class="mt-2">
+				<strong class="d-block">{$post['profilelink']}</strong>
+				{$post['onlinestatus']}
+				<div class="small text-muted">{$post['usertitle']}</div>
+			</div>
+			<div class="small text-muted mt-1">
+				<span class="postbit_userstars">{$post['userstars']}</span>
+				{$post['groupimage']}
+			</div>
+			<div class="d-flex flex-wrap justify-content-center gap-1 mt-2 pt-2 border-top">
+				{$post['user_details']}
+			</div>
+		</div>
+	</div>
+	<div class="col-md-10 d-flex flex-column">
+		<!-- Mobile author bar -->
+		<div class="d-flex align-items-center gap-2 p-2 d-md-none border-bottom bg-body-secondary">
+			{$post['useravatar']}
+			<div>
+				<strong>{$post['profilelink']}</strong> {$post['onlinestatus']}
+				<div class="small text-muted">{$post['usertitle']}</div>
+			</div>
+		</div>
+		<div class="post_content p-3">
+			<div class="small text-muted border-bottom pb-2 mb-3">
+				{$post['posturl']}
+				{$post['icon']}
+				<h1 aria-label="{$lang->postbit_post} {$post_number} {$lang->by} {$post['username']}" style="display:inline;font-size:0;"></h1>
+				<span class="post_date">{$post['postdate']}</span>
+				<span class="post_edit" id="edited_by_{$post['pid']}">{$post['editedmsg']}</span>
+				{$post['subject_extra']}
+			</div>
+			<div class="post_body scaleimages" id="pid_{$post['pid']}">{$post['message']}</div>
+			{$post['attachments']}
+			{$post['signature']}
+			<div class="post_meta small text-muted mt-3" id="post_meta_{$post['pid']}">{$post['iplogged']}</div>
+		</div>
+		<div class="post_controls d-flex justify-content-between align-items-center flex-wrap gap-2 mt-auto">
+			<div class="postbit_buttons author_buttons">
+				{$post['button_email']}{$post['button_pm']}{$post['button_www']}{$post['button_find']}{$post['button_rep']}
+			</div>
+			<div class="postbit_buttons post_management_buttons">
+				{$post['button_edit']}{$post['button_quickdelete']}{$post['button_quickrestore']}{$post['button_quote']}{$post['button_multiquote']}{$post['button_report']}{$post['button_like']}{$post['button_warn']}{$post['button_purgespammer']}{$post['button_reply_pm']}{$post['button_replyall_pm']}{$post['button_forward_pm']}{$post['button_delete_pm']}
+			</div>
+		</div>
+	</div>
+</div>
+</div>

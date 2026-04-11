@@ -1,0 +1,44 @@
+{$ignore_bit}{$deleted_bit}
+<a id="pid{$post['pid']}"></a>
+<div class="card mb-3 {$unapproved_shade}" style="{$post_visibility}" id="post_{$post['pid']}">
+<div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom bg-body-secondary">
+	{$post['useravatar']}
+	<div class="flex-grow-1 min-w-0">
+		<div class="d-flex align-items-center gap-1 flex-wrap">
+			<strong>{$post['profilelink']}</strong> {$post['onlinestatus']}
+			<span class="small text-muted postbit_userstars">{$post['userstars']}</span>
+			{$post['groupimage']}
+		</div>
+		<div class="small text-muted text-truncate">{$post['usertitle']}</div>
+	</div>
+	<div class="d-none d-md-flex flex-wrap gap-1 justify-content-end" style="max-width:50%">
+		{$post['user_details']}
+	</div>
+</div>
+<div class="post_content p-3">
+	<div class="small text-muted border-bottom pb-2 mb-3">
+		{$post['posturl']}
+		{$post['icon']}
+		<h1 aria-label="{$lang->postbit_post} {$post_number} {$lang->by} {$post['username']}" style="display:inline;font-size:0;"></h1>
+		<span class="post_date">{$post['postdate']}</span>
+		{$post['subject_extra']}
+	</div>
+	<div class="post_body scaleimages" id="pid_{$post['pid']}">
+		{$post['message']}
+	</div>
+	{$post['attachments']}
+	{$post['signature']}
+	<div class="post_meta small text-muted mt-3" id="post_meta_{$post['pid']}">
+		{$post['iplogged']}
+		<div class="text-end small" id="edited_by_{$post['pid']}">{$post['editedmsg']}</div>
+	</div>
+</div>
+<div class="post_controls d-flex justify-content-between align-items-center flex-wrap gap-2">
+	<div class="postbit_buttons author_buttons">
+		{$post['button_email']}{$post['button_pm']}{$post['button_www']}{$post['button_find']}{$post['button_rep']}
+	</div>
+	<div class="postbit_buttons post_management_buttons">
+		{$post['button_edit']}{$post['button_quickdelete']}{$post['button_quickrestore']}{$post['button_quote']}{$post['button_multiquote']}{$post['button_report']}{$post['button_like']}{$post['button_warn']}{$post['button_purgespammer']}{$post['button_reply_pm']}{$post['button_replyall_pm']}{$post['button_forward_pm']}{$post['button_delete_pm']}
+	</div>
+</div>
+</div>

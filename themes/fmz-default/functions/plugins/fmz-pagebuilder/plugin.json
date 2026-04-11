@@ -1,8 +1,0 @@
-{
-    "name": "FMZ Page Builder",
-    "description": "Visual drag-and-drop page builder for creating custom pages with WYSIWYG editing, styling controls, animations, and header/footer components.",
-    "version": "2.1.0",
-    "author": "Tektove",
-    "author_url": "https://tektove.com",
-    "compatibility": "18*"
-}

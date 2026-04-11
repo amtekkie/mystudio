@@ -1,14 +1,14 @@
-# FMZ Studio Documentation
+# MyStudio Documentation
 
-> **Version 2.1.0** — Comprehensive documentation for the FMZ Studio platform and FMZ Default Theme for MyBB 1.8.
+> **Version 2.1.0** — Comprehensive documentation for the MyStudio platform and MyStudio Default Theme for MyBB 1.8.
 
 ---
 
 ## 1. Introduction
 
-**FMZ Studio** is a file-based theme management platform for MyBB 1.8. It replaces the traditional database-only approach to theme development with a modern workflow where themes live on disk as editable files — HTML templates, CSS stylesheets, JavaScript, JSON configuration, and PHP hooks — that are synced to the MyBB database automatically.
+**MyStudio** is a file-based theme management platform for MyBB 1.8. It replaces the traditional database-only approach to theme development with a modern workflow where themes live on disk as editable files — HTML templates, CSS stylesheets, JavaScript, JSON configuration, and PHP hooks — that are synced to the MyBB database automatically.
 
-### What FMZ Studio Provides
+### What MyStudio Provides
 
 | Feature | Description |
 |---------|-------------|
@@ -23,9 +23,9 @@
 | **Color Palette System** | 32-color dual palette (16 light + 16 dark) with 12 quick presets and per-variable CSS override. |
 | **Licensing** | AES-256-CBC + HMAC-SHA256 encrypted license system with server-side validation. |
 
-### What is FMZ Default Theme
+### What is MyStudio Default Theme
 
-**FMZ Default** is the reference theme built on **Bootstrap 5.3.8** with **Bootstrap Icons 1.11.3** (self-hosted). It demonstrates every FMZ Studio feature and ships with five mini-plugins:
+**MyStudio Default** is the reference theme built on **Bootstrap 5.3.8** with **Bootstrap Icons 1.11.3** (self-hosted). It demonstrates every MyStudio feature and ships with five mini-plugins:
 
 1. **Forum Display Extras** — avatar last posters, user modal, subforum columns, card layout
 2. **Forum Icons** — custom Bootstrap Icons or uploaded images per forum
@@ -66,12 +66,12 @@
 Upload the following to your MyBB root directory:
 
 ```
-inc/plugins/fmz.php               → /mybb/inc/plugins/fmz.php
-inc/plugins/fmzstudio/core.php     → /mybb/inc/plugins/fmzstudio/core.php
-inc/plugins/fmzstudio/license.php  → /mybb/inc/plugins/fmzstudio/license.php
-admin/modules/fmzstudio/           → /mybb/admin/modules/fmzstudio/
-jscripts/fmzstudio/                → /mybb/jscripts/fmzstudio/
-themes/fmz-default/                → /mybb/themes/fmz-default/
+inc/plugins/ms.php               → /mybb/inc/plugins/ms.php
+inc/plugins/mystudio/core.php     → /mybb/inc/plugins/mystudio/core.php
+inc/plugins/mystudio/license.php  → /mybb/inc/plugins/mystudio/license.php
+admin/modules/mystudio/           → /mybb/admin/modules/mystudio/
+jscripts/mystudio/                → /mybb/jscripts/mystudio/
+themes/mystudio-default/                → /mybb/themes/mystudio-default/
 ```
 
 ### Step 2: Set Permissions
@@ -88,19 +88,19 @@ jscripts/            — deployed JS files
 ### Step 3: Activate Plugin
 
 1. Go to **Admin CP → Configuration → Plugins**.
-2. Find **FMZ Studio** and click **Install & Activate**.
-3. The plugin creates 4 hidden settings (`fmz_enabled`, `fmz_max_upload_mb`, `fmz_dev_auto_sync`, `fmz_dev_sync_interval`) and required directories.
+2. Find **MyStudio** and click **Install & Activate**.
+3. The plugin creates 4 hidden settings (`ms_enabled`, `ms_max_upload_mb`, `ms_dev_auto_sync`, `ms_dev_sync_interval`) and required directories.
 
 ### Step 4: Activate License
 
-1. Go to **Admin CP → FMZ Studio → License**.
+1. Go to **Admin CP → MyStudio → License**.
 2. Enter your license key and click **Activate**.
 3. The license is validated against the Blesta License Manager server and stored encrypted in the database.
 
 ### Step 5: Sync & Activate Theme
 
-1. Go to **Admin CP → FMZ Studio → Manage Themes**.
-2. Click **Sync** next to **FMZ Default**.
+1. Go to **Admin CP → MyStudio → Manage Themes**.
+2. Click **Sync** next to **MyStudio Default**.
 3. Click **Set Default** to activate the theme.
 4. Hard-refresh the frontend: **Ctrl+Shift+R**.
 
@@ -109,17 +109,17 @@ jscripts/            — deployed JS files
 If you plan to use the Page Builder with clean URLs, add these rules to your `.htaccess`:
 
 ```apache
-# FMZ Page Builder — clean URLs
+# MyStudio Page Builder — clean URLs
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([a-zA-Z0-9\-_/]+)$ misc.php?fmz_page=$1 [L,QSA]
+RewriteRule ^([a-zA-Z0-9\-_/]+)$ misc.php?ms_page=$1 [L,QSA]
 ```
 
 ---
 
 ## 4. Architecture Overview
 
-FMZ Studio operates as a bridge between the filesystem and MyBB's database-driven theme system.
+MyStudio operates as a bridge between the filesystem and MyBB's database-driven theme system.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -129,7 +129,7 @@ FMZ Studio operates as a bridge between the filesystem and MyBB's database-drive
 │  └────┬─────┘ └────┬─────┘ └────┬─────┘ └───────┬───────┘  │
 │       │             │            │                │           │
 │  ┌────▼─────────────▼────────────▼────────────────▼───────┐  │
-│  │              FMZStudio Core Class (core.php)           │  │
+│  │              MyStudio Core Class (core.php)           │  │
 │  │  Import │ Export │ Sync │ FileOps │ Options │ Plugins  │  │
 │  └────┬───────────────────────────────────────────────────┘  │
 └───────┼──────────────────────────────────────────────────────┘
@@ -170,47 +170,47 @@ FMZ Studio operates as a bridge between the filesystem and MyBB's database-drive
 
 5. **JS Deployment** — JavaScript files from `themes/{slug}/js/` are copied to `jscripts/` during sync.
 
-6. **Frontend Loading** — At `global_intermediate`, FMZ Studio loads the active theme's language files, option values, hooks, and mini-plugins. At `pre_output_page`, mini-plugin CSS/JS assets are injected.
+6. **Frontend Loading** — At `global_intermediate`, MyStudio loads the active theme's language files, option values, hooks, and mini-plugins. At `pre_output_page`, mini-plugin CSS/JS assets are injected.
 
 ### Plugin Loading Order
 
 ```
 global_start
-  └── fmz_global_start()          → Pre-initialize template variables (PHP 8.3 compat)
+  └── ms_global_start()          → Pre-initialize template variables (PHP 8.3 compat)
 global_intermediate
-  └── fmz_load_theme_extras()     → Load in this order:
+  └── ms_load_theme_extras()     → Load in this order:
         1. Language files (lang/{language}/*.php)
-        2. Theme options (default.json → $mybb->fmz_theme_options)
+        2. Theme options (default.json → $mybb->ms_theme_options)
         3. Theme hooks (functions/hooks.php)
         4. Mini plugins (functions/plugins/*/init.php)
 pre_output_page
-  └── fmz_inject_mini_plugin_assets() → Inject CSS <link> and JS <script> tags
-  └── Theme hooks (e.g. fmzdefault_inject_custom_code)
-  └── Mini-plugin hooks (e.g. fmz_fde_inject_output)
+  └── ms_inject_mini_plugin_assets() → Inject CSS <link> and JS <script> tags
+  └── Theme hooks (e.g. msdefault_inject_custom_code)
+  └── Mini-plugin hooks (e.g. ms_fde_inject_output)
 ```
 
 ---
 
 ## 5. File Structure Reference
 
-### FMZ Studio Core Files
+### MyStudio Core Files
 
 ```
 mybb/
 ├── inc/plugins/
-│   ├── fmz.php                          # Plugin entry point (625 lines)
+│   ├── ms.php                          # Plugin entry point (625 lines)
 │   │                                     # Install/uninstall, global hooks, auto-sync
-│   └── fmzstudio/
-│       ├── core.php                     # FMZStudio class (2042 lines)
+│   └── mystudio/
+│       ├── core.php                     # MyStudio class (2042 lines)
 │       │                                 # Import, export, sync, file ops, options, plugins
-│       └── license.php                  # FMZLicense class (503 lines)
+│       └── license.php                  # MSLicense class (503 lines)
 │                                         # AES-256-CBC + HMAC encrypted licensing
 │
-├── admin/modules/fmzstudio/
+├── admin/modules/mystudio/
 │   ├── module_meta.php                  # ACP menu, sidebar, permissions (113 lines)
-│   └── fmzstudio.php                   # ACP pages & API endpoints (3878 lines)
+│   └── mystudio.php                   # ACP pages & API endpoints (3878 lines)
 │
-└── jscripts/fmzstudio/
+└── jscripts/mystudio/
     ├── editor.js                        # Monaco-based theme file editor
     ├── pagebuilder.js                   # Monaco-based page builder editor
     └── pagebuilder.css                  # Page builder UI styles
@@ -258,11 +258,11 @@ themes/{slug}/
 │   ├── options.php                      # Theme option definitions
 │   └── plugins/                         # Mini-plugin directory
 │       ├── plugins_enabled.json         # Enable/disable state per plugin
-│       ├── fmz-forum-display-extras/
-│       ├── fmz-forum-icons/
-│       ├── fmz-profile-extras/
-│       ├── fmz-wysiwyg/
-│       └── fmz-pagebuilder/
+│       ├── ms-forum-display-extras/
+│       ├── ms-forum-icons/
+│       ├── ms-profile-extras/
+│       ├── ms-wysiwyg/
+│       └── ms-pagebuilder/
 │
 ├── vendor/                              # Third-party libraries
 │   ├── bootstrap.min.css                # Bootstrap 5.3.8
@@ -297,31 +297,31 @@ functions/plugins/{plugin-id}/
 
 ## 6. Admin Control Panel
 
-FMZ Studio adds a top-level **FMZ Studio** section to the Admin CP navigation (position 50) with a brush icon. It appears only when the FMZ plugin is active.
+MyStudio adds a top-level **MyStudio** section to the Admin CP navigation (position 50) with a brush icon. It appears only when the MyStudio plugin is active.
 
 ### Sidebar Navigation
 
 | # | Menu Item | Route | Icon |
 |---|-----------|-------|------|
-| 1 | Manage Themes | `fmzstudio-manage` | `bi-palette2` |
-| 2 | Import / Export | `fmzstudio-import_export` | `bi-arrow-left-right` |
-| 3 | Global FMZ Options | `fmzstudio-options` | `bi-sliders` |
-| 4 | Header & Footer | `fmzstudio-options_header_footer` | `bi-layout-text-window` |
-| 5 | Page Manager | `fmzstudio-pages` | `bi-file-earmark-richtext` |
-| 6 | *Plugin Settings* | `fmzstudio-plugin_settings` | *(per plugin)* |
-| 7 | Manage Plugins | `fmzstudio-plugins` | `bi-plug` |
-| 8 | Studio Settings | `fmzstudio-settings` | `bi-gear` |
-| 9 | License | `fmzstudio-license` | `bi-key` |
+| 1 | Manage Themes | `mystudio-manage` | `bi-palette2` |
+| 2 | Import / Export | `mystudio-import_export` | `bi-arrow-left-right` |
+| 3 | Global MyStudio Options | `mystudio-options` | `bi-sliders` |
+| 4 | Header & Footer | `mystudio-options_header_footer` | `bi-layout-text-window` |
+| 5 | Page Manager | `mystudio-pages` | `bi-file-earmark-richtext` |
+| 6 | *Plugin Settings* | `mystudio-plugin_settings` | *(per plugin)* |
+| 7 | Manage Plugins | `mystudio-plugins` | `bi-plug` |
+| 8 | Studio Settings | `mystudio-settings` | `bi-gear` |
+| 9 | License | `mystudio-license` | `bi-key` |
 
 **Note:** "Page Manager" only appears when the Page Builder mini-plugin is enabled. Plugin Settings entries are generated dynamically for each enabled mini-plugin that has an `options.php` or `admin.php`.
 
-The sidebar fires the `admin_fmzstudio_menu` hook for extensibility.
+The sidebar fires the `admin_mystudio_menu` hook for extensibility.
 
 ---
 
 ### 6.1 Manage Themes
 
-**Route:** `fmzstudio-manage`
+**Route:** `mystudio-manage`
 
 The default landing page. Displays a table of all themes — both synced (in database) and unsynced (on disk only).
 
@@ -348,7 +348,7 @@ The default landing page. Displays a table of all themes — both synced (in dat
 
 ### 6.2 Import / Export
 
-**Route:** `fmzstudio-import_export`
+**Route:** `mystudio-import_export`
 
 **Export Section:**
 - Lists all synced themes with a **Download ZIP** button each.
@@ -367,9 +367,9 @@ The default landing page. Displays a table of all themes — both synced (in dat
 
 ---
 
-### 6.3 Global FMZ Options
+### 6.3 Global MyStudio Options
 
-**Route:** `fmzstudio-options`
+**Route:** `mystudio-options`
 
 Manages color mode, color palettes, layout, and effects for the active theme. Values are saved to `themes/{slug}/default.json`.
 
@@ -389,7 +389,7 @@ See [Theme Options System](#8-theme-options-system) for the complete option refe
 
 ### 6.4 Header & Footer
 
-**Route:** `fmzstudio-options_header_footer`
+**Route:** `mystudio-options_header_footer`
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -408,7 +408,7 @@ See [Theme Options System](#8-theme-options-system) for the complete option refe
 
 ### 6.5 Page Manager
 
-**Route:** `fmzstudio-pages`
+**Route:** `mystudio-pages`
 
 Requires the **Page Builder** mini-plugin to be enabled. See [Page Builder](#105-page-builder) for full documentation.
 
@@ -421,13 +421,13 @@ Requires the **Page Builder** mini-plugin to be enabled. See [Page Builder](#105
 | **Front Page** | Dropdown: Default (Forum Index) / Portal / Any published page |
 | **Clean URLs** | Pages accessible at `/page-slug` via mod_rewrite |
 
-**Database Table:** `fmz_pages` — columns: `pid`, `title`, `slug`, `content`, `status`, `meta_title`, `meta_description`, `allowed_groups`, `custom_css`, `custom_js`, `author_uid`, `created_at`, `updated_at`, `disporder`.
+**Database Table:** `ms_pages` — columns: `pid`, `title`, `slug`, `content`, `status`, `meta_title`, `meta_description`, `allowed_groups`, `custom_css`, `custom_js`, `author_uid`, `created_at`, `updated_at`, `disporder`.
 
 ---
 
 ### 6.6 Manage Plugins
 
-**Route:** `fmzstudio-plugins`
+**Route:** `mystudio-plugins`
 
 Lists all mini-plugins discovered in `themes/{slug}/functions/plugins/`. Displayed as two separate tables:
 
@@ -453,7 +453,7 @@ Lists all mini-plugins discovered in `themes/{slug}/functions/plugins/`. Display
 
 ### 6.7 Plugin Settings
 
-**Route:** `fmzstudio-plugin_settings&plugin={id}`
+**Route:** `mystudio-plugin_settings&plugin={id}`
 
 Auto-generated form from the plugin's `options.php` file. Supports all option types:
 
@@ -478,7 +478,7 @@ Values are saved to the plugin's `default.json` file.
 
 ### 6.8 Theme Editor
 
-**Route:** `fmzstudio-manage&action=editor&slug={slug}`
+**Route:** `mystudio-manage&action=editor&slug={slug}`
 
 A full-page IDE powered by **Monaco Editor v0.50.0** (loaded from CDN). Requires a valid license.
 
@@ -523,11 +523,11 @@ A full-page IDE powered by **Monaco Editor v0.50.0** (loaded from CDN). Requires
 
 ### 6.9 Studio Settings
 
-**Route:** `fmzstudio-settings`
+**Route:** `mystudio-settings`
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| **Enable FMZ Studio** | Yes/No | Yes | Master on/off switch for the entire plugin |
+| **Enable MyStudio** | Yes/No | Yes | Master on/off switch for the entire plugin |
 | **Max Upload Size (MB)** | Numeric | 20 | Maximum ZIP file size for theme import (1–500 MB) |
 | **Auto-Sync** | Yes/No | No | Automatically sync file changes to database on page load |
 | **Sync Interval** | Numeric | 2 | File change check interval in seconds (1–60) |
@@ -538,7 +538,7 @@ A full-page IDE powered by **Monaco Editor v0.50.0** (loaded from CDN). Requires
 
 ### 6.10 License
 
-**Route:** `fmzstudio-license`
+**Route:** `mystudio-license`
 
 Displays a standard MyBB admin form for license management.
 
@@ -554,17 +554,17 @@ License data is stored encrypted in the MyBB settings table. See [Licensing Syst
 
 ---
 
-## 7. FMZ Default Theme
+## 7. MyStudio Default Theme
 
-The FMZ Default theme is a complete MyBB frontend theme built on Bootstrap 5.3.8 with 42 template groups, 7 stylesheets, and comprehensive hook-based customization.
+The MyStudio Default theme is a complete MyBB frontend theme built on Bootstrap 5.3.8 with 42 template groups, 7 stylesheets, and comprehensive hook-based customization.
 
 ### 7.1 theme.json — Theme Manifest
 
-Every FMZ Studio theme requires a `theme.json` file at its root. This file defines the theme's identity, stylesheets, and JavaScript files.
+Every MyStudio theme requires a `theme.json` file at its root. This file defines the theme's identity, stylesheets, and JavaScript files.
 
 ```json
 {
-    "name": "FMZ Default",
+    "name": "MyStudio Default",
     "version": "1839",
     "properties": {
         "editortheme": "default.css",
@@ -666,7 +666,7 @@ templates/
 
 ### 7.4 JavaScript Engine (main.js)
 
-The FMZ Default theme includes a single `main.js` file deployed to `jscripts/` during sync. It defines the `TekBB` client-side module.
+The MyStudio Default theme includes a single `main.js` file deployed to `jscripts/` during sync. It defines the `TekBB` client-side module.
 
 **Features:**
 - Color mode switching (light/dark toggle with `localStorage` persistence)
@@ -682,17 +682,17 @@ The theme's `functions/hooks.php` (718 lines) registers four hooks and includes 
 
 | Hook | Function | Purpose |
 |------|----------|---------|
-| `pre_output_page` | `fmzdefault_inject_custom_code()` | Injects palette CSS overrides, header styles, logo/favicon, navigation links, footer content, loading bar, and avatar modal CSS/JS into the page |
-| `member_profile_end` | `fmzdefault_profile_avatar_modal()` | Adds avatar change modal to profile pages (upload, URL, or gallery) |
-| `member_profile_end` | `fmzdefault_profile_stat_modals()` | Adds reputation and referral stat modals with inline AJAX rating |
-| `index_end` | `fmzdefault_index_sidebar()` | Renders stats sidebar (board stats, who's online, birthdays) when enabled |
-| *(direct call)* | `fmzdefault_load_language()` | Loads language files for all frontend pages |
+| `pre_output_page` | `msdefault_inject_custom_code()` | Injects palette CSS overrides, header styles, logo/favicon, navigation links, footer content, loading bar, and avatar modal CSS/JS into the page |
+| `member_profile_end` | `msdefault_profile_avatar_modal()` | Adds avatar change modal to profile pages (upload, URL, or gallery) |
+| `member_profile_end` | `msdefault_profile_stat_modals()` | Adds reputation and referral stat modals with inline AJAX rating |
+| `index_end` | `msdefault_index_sidebar()` | Renders stats sidebar (board stats, who's online, birthdays) when enabled |
+| *(direct call)* | `msdefault_load_language()` | Loads language files for all frontend pages |
 
-**How `fmzdefault_inject_custom_code()` works:**
+**How `msdefault_inject_custom_code()` works:**
 
-1. Reads theme options from `$mybb->fmz_theme_options`.
+1. Reads theme options from `$mybb->ms_theme_options`.
 2. Generates a `<style>` block with CSS custom property overrides for any color that differs from the default palette.
-3. Injects header class (`fmz-header-default`, `fmz-header-centered`, `fmz-header-minimal`).
+3. Injects header class (`ms-header-default`, `ms-header-centered`, `ms-header-minimal`).
 4. Processes logo (image > icon+text > board name) and favicon.
 5. Builds custom navigation `<li>` elements from JSON link data.
 6. Processes footer text (with `{boardname}` replacement).
@@ -711,9 +711,9 @@ Language files live in `lang/{language_code}/` as PHP files that populate `$l` a
 
 | Category | Example Keys |
 |----------|-------------|
-| Navigation | `fmz_nav_forums`, `fmz_nav_more`, `fmz_nav_toggle` |
-| Welcome (Guest) | `fmz_welcome_subtitle`, placeholders for username/password |
-| Footer | `fmz_footer_about`, `fmz_footer_quick_links`, `fmz_footer_home`, `fmz_footer_powered_by` |
+| Navigation | `ms_nav_forums`, `ms_nav_more`, `ms_nav_toggle` |
+| Welcome (Guest) | `ms_welcome_subtitle`, placeholders for username/password |
+| Footer | `ms_footer_about`, `ms_footer_quick_links`, `ms_footer_home`, `ms_footer_powered_by` |
 | Profile | Avatar modal strings, stat modal strings |
 | Sidebar | Board stats labels, who's online labels |
 
@@ -723,12 +723,12 @@ Language files live in `lang/{language_code}/` as PHP files that populate `$l` a
 
 In `hooks.php`, set a global:
 ```php
-$GLOBALS['fmz_my_text'] = $lang->fmz_my_custom_key;
+$GLOBALS['ms_my_text'] = $lang->ms_my_custom_key;
 ```
 
 In templates:
 ```html
-<p>{$fmz_my_text}</p>
+<p>{$ms_my_text}</p>
 ```
 
 ---
@@ -746,9 +746,9 @@ Self-hosted in `vendor/` to avoid CDN dependencies:
 
 Referenced in `templates/ungrouped/headerinclude.html`:
 ```html
-<link rel="stylesheet" href="{$mybb->asset_url}/themes/fmz-default/vendor/bootstrap.min.css">
-<link rel="stylesheet" href="{$mybb->asset_url}/themes/fmz-default/vendor/bootstrap-icons.min.css">
-<script src="{$mybb->asset_url}/themes/fmz-default/vendor/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="{$mybb->asset_url}/themes/mystudio-default/vendor/bootstrap.min.css">
+<link rel="stylesheet" href="{$mybb->asset_url}/themes/mystudio-default/vendor/bootstrap-icons.min.css">
+<script src="{$mybb->asset_url}/themes/mystudio-default/vendor/bootstrap.bundle.min.js"></script>
 ```
 
 ---
@@ -923,7 +923,7 @@ Mini-plugins are theme-scoped extensions that live inside a theme's `functions/p
 
 **Key properties:**
 - **Self-contained** — each plugin is a directory with its own manifest, code, options, and assets.
-- **Auto-discovered** — FMZ Studio scans `functions/plugins/*/plugin.json` to find plugins.
+- **Auto-discovered** — MyStudio scans `functions/plugins/*/plugin.json` to find plugins.
 - **Auto-injected assets** — CSS and JS files in the plugin's `css/` and `js/` directories are automatically added to all frontend pages when the plugin is enabled. No manual registration needed.
 - **Runtime hooks** — plugins register MyBB hooks in `init.php` and they work exactly like standard MyBB plugin hooks.
 - **Options system** — define options in PHP, render forms automatically, save to JSON.
@@ -941,12 +941,12 @@ Enable
   └── init.php is loaded on every page load
 
 Runtime (every page load)
-  └── fmz_load_theme_extras() calls loadMiniPlugins()
+  └── ms_load_theme_extras() calls loadMiniPlugins()
       └── For each enabled plugin:
-          1. Read plugin's default.json → expose as $mybb->fmz_plugin_options[plugin_id]
-          2. Set $fmz_plugin_dir, $fmz_plugin_id, $fmz_theme_slug globals
+          1. Read plugin's default.json → expose as $mybb->ms_plugin_options[plugin_id]
+          2. Set $ms_plugin_dir, $ms_plugin_id, $ms_theme_slug globals
           3. Include init.php (which registers hooks)
-  └── fmz_inject_mini_plugin_assets() injects CSS/JS <link>/<script> tags
+  └── ms_inject_mini_plugin_assets() injects CSS/JS <link>/<script> tags
 
 Disable
   └── Set plugin_id: false in plugins_enabled.json
@@ -987,12 +987,12 @@ The `init.php` file is included at runtime when the plugin is enabled. It has ac
 |----------|------|-------------|
 | `$mybb` | MyBB object | MyBB core object with `$mybb->input`, `$mybb->user`, etc. |
 | `$plugins` | pluginSystem | Hook registration object (`$plugins->add_hook()`) |
-| `$fmz_plugin_options` | array | This plugin's merged option values |
-| `$fmz_plugin_dir` | string | Absolute path to this plugin's directory |
-| `$fmz_plugin_id` | string | This plugin's ID |
-| `$fmz_theme_slug` | string | Active theme slug |
-| `$mybb->fmz_theme_options` | array | All theme-level option values |
-| `$mybb->fmz_plugin_options['plugin-id']` | array | Any plugin's option values by ID |
+| `$ms_plugin_options` | array | This plugin's merged option values |
+| `$ms_plugin_dir` | string | Absolute path to this plugin's directory |
+| `$ms_plugin_id` | string | This plugin's ID |
+| `$ms_theme_slug` | string | Active theme slug |
+| `$mybb->ms_theme_options` | array | All theme-level option values |
+| `$mybb->ms_plugin_options['plugin-id']` | array | Any plugin's option values by ID |
 
 **Example init.php:**
 
@@ -1008,8 +1008,8 @@ function my_plugin_inject(&$contents)
     global $mybb;
     
     // Access this plugin's options
-    $opts = isset($mybb->fmz_plugin_options['my-plugin']) 
-          ? $mybb->fmz_plugin_options['my-plugin'] 
+    $opts = isset($mybb->ms_plugin_options['my-plugin']) 
+          ? $mybb->ms_plugin_options['my-plugin'] 
           : [];
     
     // Check if feature is enabled
@@ -1030,7 +1030,7 @@ function my_plugin_index()
 
 ### 9.5 Plugin Options (options.php)
 
-Define options as a PHP array. FMZ Studio renders the form automatically.
+Define options as a PHP array. MyStudio renders the form automatically.
 
 ```php
 <?php
@@ -1097,7 +1097,7 @@ No registration or configuration is needed. Just place your files in the right d
 
 ### 9.7 Plugin Admin Panel (admin.php)
 
-Plugins can define custom admin pages by creating an `admin.php` file. When present, a "Settings" link appears in the plugin list that loads this file within the FMZ Studio admin context.
+Plugins can define custom admin pages by creating an `admin.php` file. When present, a "Settings" link appears in the plugin list that loads this file within the MyStudio admin context.
 
 ---
 
@@ -1105,7 +1105,7 @@ Plugins can define custom admin pages by creating an `admin.php` file. When pres
 
 ### 10.1 Forum Display Extras
 
-**ID:** `fmz-forum-display-extras`  
+**ID:** `ms-forum-display-extras`  
 **Version:** 1.0.0  
 **Files:** `plugin.json`, `init.php`, `options.php`, `default.json`
 
@@ -1129,7 +1129,7 @@ When clicking a last poster avatar, a modal shows:
 - User avatar (large), formatted username (with usergroup colors), user title
 - Post count, reputation score, registration date
 - Action buttons: View Profile, Send PM (if permitted), Rate User (if permitted)
-- Data fetched via AJAX: `xmlhttp.php?action=fmz_fde_usercard&uid=N`
+- Data fetched via AJAX: `xmlhttp.php?action=ms_fde_usercard&uid=N`
 
 #### Card Layout
 
@@ -1142,10 +1142,10 @@ When `forum_layout` is set to `cards`, forums display as CSS grid cards with:
 
 | Hook | Function | Purpose |
 |------|----------|---------|
-| `build_forumbits_forum` | `fmz_fde_enrich_forum()` | Batch-loads avatars, formats usernames, optionally swaps to card template |
-| `forumdisplay_thread` | `fmz_fde_enrich_thread()` | Batch-loads thread avatars, outputs `$GLOBALS['fmz_thread_lastposter_avatar']` |
-| `pre_output_page` | `fmz_fde_inject_output()` | Injects inline CSS/JS for avatars, modal, subforum columns, card layout |
-| `xmlhttp` | `fmz_fde_xmlhttp_usercard()` | AJAX endpoint returning JSON user card data with permission checks |
+| `build_forumbits_forum` | `ms_fde_enrich_forum()` | Batch-loads avatars, formats usernames, optionally swaps to card template |
+| `forumdisplay_thread` | `ms_fde_enrich_thread()` | Batch-loads thread avatars, outputs `$GLOBALS['ms_thread_lastposter_avatar']` |
+| `pre_output_page` | `ms_fde_inject_output()` | Injects inline CSS/JS for avatars, modal, subforum columns, card layout |
+| `xmlhttp` | `ms_fde_xmlhttp_usercard()` | AJAX endpoint returning JSON user card data with permission checks |
 
 #### Security
 
@@ -1156,7 +1156,7 @@ When `forum_layout` is set to `cards`, forums display as CSS grid cards with:
 
 ### 10.2 Forum Icons
 
-**ID:** `fmz-forum-icons`  
+**ID:** `ms-forum-icons`  
 **Version:** 1.0.0  
 **Files:** `plugin.json`, `init.php`
 
@@ -1169,9 +1169,9 @@ Allows admins to assign custom Bootstrap Icons or uploaded images as forum/categ
    - **Bootstrap Icon** — searchable grid of 63 popular icons or type any BI class name
    - **Upload Image** — upload PNG/JPG/GIF/SVG/WebP (max 256KB)
 
-2. **Data stored** in `fmz_forum_icons` database table (auto-created):
+2. **Data stored** in `ms_forum_icons` database table (auto-created):
    ```sql
-   CREATE TABLE fmz_forum_icons (
+   CREATE TABLE ms_forum_icons (
        fid INT PRIMARY KEY,
        icon_type VARCHAR(10),   -- 'bi' or 'image'
        icon_value VARCHAR(255)  -- class name or filename
@@ -1184,13 +1184,13 @@ Allows admins to assign custom Bootstrap Icons or uploaded images as forum/categ
 
 **File Storage:** `uploads/forum_icons/forum_{fid}.{ext}`
 
-**Auto-Installation:** Creates `fmz_forum_icons` table and `uploads/forum_icons/` directory on first load if they don't exist.
+**Auto-Installation:** Creates `ms_forum_icons` table and `uploads/forum_icons/` directory on first load if they don't exist.
 
 ---
 
 ### 10.3 Profile Extras
 
-**ID:** `fmz-profile-extras`  
+**ID:** `ms-profile-extras`  
 **Version:** 1.0.0  
 **Files:** `plugin.json`, `init.php`, `options.php`, `css/profile-extras.css`, `js/profile-extras.js`
 
@@ -1230,7 +1230,7 @@ A mini social feed system:
 
 #### AJAX Actions
 
-All routed through `usercp.php?fmz_action=...`:
+All routed through `usercp.php?ms_action=...`:
 
 | Action | Description |
 |--------|-------------|
@@ -1247,21 +1247,21 @@ All routed through `usercp.php?fmz_action=...`:
 #### Database Tables (Auto-Created)
 
 ```sql
-CREATE TABLE fmz_user_banners (
+CREATE TABLE ms_user_banners (
     bid INT AUTO_INCREMENT PRIMARY KEY,
     uid INT, type VARCHAR(20), value TEXT,
     text_color VARCHAR(7), link_color VARCHAR(7),
     is_active TINYINT DEFAULT 0, dateline INT
 );
 
-CREATE TABLE fmz_user_statuses (
+CREATE TABLE ms_user_statuses (
     sid INT AUTO_INCREMENT PRIMARY KEY,
     uid INT, message TEXT,
     privacy ENUM('public','private','buddies') DEFAULT 'public',
     dateline INT
 );
 
-CREATE TABLE fmz_status_comments (
+CREATE TABLE ms_status_comments (
     cid INT AUTO_INCREMENT PRIMARY KEY,
     sid INT, uid INT, message TEXT, dateline INT
 );
@@ -1271,7 +1271,7 @@ CREATE TABLE fmz_status_comments (
 
 ### 10.4 WYSIWYG Editor
 
-**ID:** `fmz-wysiwyg`  
+**ID:** `ms-wysiwyg`  
 **Version:** 1.0.0  
 **Files:** `plugin.json`, `init.php`, `options.php`, `default.json`, `css/wysiwyg.css`, `js/wysiwyg.js`, `vendor/highlight.min.js`, `vendor/atom-one-dark.min.css`
 
@@ -1362,7 +1362,7 @@ Fonts prefixed with `google:` trigger automatic Google Fonts CDN `<link>` loadin
 | `max_image_size_kb` | Numeric | `2048` | Max image file size in KB |
 | `max_images_per_post` | Numeric | `10` | Max images per post (0 = unlimited) |
 
-Images are uploaded via `xmlhttp.php?action=fmz_wysiwyg_upload` and stored as MyBB attachments. FMZ WYSIWYG plugin settings (max size, max images per post) supersede global attachment settings.
+Images are uploaded via `xmlhttp.php?action=ms_wysiwyg_upload` and stored as MyBB attachments. MyStudio WYSIWYG plugin settings (max size, max images per post) supersede global attachment settings.
 
 ##### Code Blocks (3)
 
@@ -1428,7 +1428,7 @@ Parsed via `parse_message_end` hook:
 
 ### 10.5 Page Builder
 
-**ID:** `fmz-pagebuilder`  
+**ID:** `ms-pagebuilder`  
 **Version:** 1.0.0  
 **Files:** `plugin.json`, `init.php`, `renderer.php`
 
@@ -1450,8 +1450,8 @@ Creates standalone pages on your forum with a Monaco HTML editor, clean URL rout
 
 #### How to Use
 
-1. Enable the **Page Builder** plugin in **FMZ Studio → Manage Plugins**.
-2. Go to **FMZ Studio → Page Manager** to create, edit, and manage pages.
+1. Enable the **Page Builder** plugin in **MyStudio → Manage Plugins**.
+2. Go to **MyStudio → Page Manager** to create, edit, and manage pages.
 3. Click **Add Page** — Monaco editor opens with a template variable file tree.
 4. Write page HTML using standard HTML/CSS plus MyBB template variables.
 5. Set status to **Published** and save.
@@ -1463,30 +1463,30 @@ Requires Apache `mod_rewrite` or Nginx equivalent:
 
 **Apache (.htaccess):**
 ```apache
-# FMZ Page Builder — clean URLs
+# MyStudio Page Builder — clean URLs
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^([a-zA-Z0-9\-_/]+)$ misc.php?fmz_page=$1 [L,QSA]
+RewriteRule ^([a-zA-Z0-9\-_/]+)$ misc.php?ms_page=$1 [L,QSA]
 ```
 
 **Nginx:**
 ```nginx
 location / {
-    try_files $uri $uri/ /misc.php?fmz_page=$uri&$args;
+    try_files $uri $uri/ /misc.php?ms_page=$uri&$args;
 }
 ```
 
 #### Front Page Override
 
-1. Go to **FMZ Studio → Page Manager**.
+1. Go to **MyStudio → Page Manager**.
 2. Select a published page from the **Front Page** dropdown (options: Default / Portal / published pages).
 3. Click **Save** — the selected page replaces the forum index.
-4. Stored in cache as `fmz_front_page`.
+4. Stored in cache as `ms_front_page`.
 
 #### Rendering Engine (renderer.php)
 
 The renderer processes page content through these steps:
-1. Load page data from `fmz_pages` table by slug.
+1. Load page data from `ms_pages` table by slug.
 2. Check user group permissions against `allowed_groups`.
 3. Evaluate MyBB template variables (`{$variable}` syntax).
 4. Process conditional blocks (`<if>...<else>...</if>`).
@@ -1523,17 +1523,17 @@ Stage 3: Post-Sync
 
 When enabled in **Studio Settings**, auto-sync provides live reload during development:
 
-1. **Polling Script** — Injected before `</body>` on frontend pages. Polls `xmlhttp.php?action=fmz_dev_sync_check` at the configured interval.
+1. **Polling Script** — Injected before `</body>` on frontend pages. Polls `xmlhttp.php?action=ms_dev_sync_check` at the configured interval.
 
-2. **Change Detection** — Computes MD5 hash of all `path|mtime|size` entries in the theme directory. Compared against cached `fmz_dev_last_hash`.
+2. **Change Detection** — Computes MD5 hash of all `path|mtime|size` entries in the theme directory. Compared against cached `ms_dev_last_hash`.
 
-3. **Sync Trigger** — When hash changes, sends POST to `xmlhttp.php?action=fmz_dev_sync_run`, which calls `syncToDatabase()`.
+3. **Sync Trigger** — When hash changes, sends POST to `xmlhttp.php?action=ms_dev_sync_run`, which calls `syncToDatabase()`.
 
 4. **Page Reload** — After successful sync, the polling script reloads the page.
 
 **Requirements:**
 - Admin user (`cancp=1`) must be logged in.
-- `fmz_dev_auto_sync` setting must be enabled.
+- `ms_dev_auto_sync` setting must be enabled.
 
 **Performance Note:** Auto-sync is designed for development only. The polling interval defaults to 2 seconds. Disable in production environments.
 
@@ -1569,7 +1569,7 @@ When saving a single file via the editor (`api_savefile`), `syncSingleFile()` ha
 
 ### 12.1 Overview
 
-FMZ Studio uses an encrypted license system to validate installations. License data is stored in the MyBB database as encrypted blobs — no plaintext keys are stored.
+MyStudio uses an encrypted license system to validate installations. License data is stored in the MyBB database as encrypted blobs — no plaintext keys are stored.
 
 Write-operation API endpoints in the admin module (editor save, option save, theme sync, etc.) require a valid license. Read-only operations (browsing themes) do not.
 
@@ -1663,20 +1663,20 @@ License subscriptions and renewals are managed through the Blesta billing platfo
    - `templates/header/header.html`
    - `templates/footer/footer.html`
 
-5. **Sync** in Admin CP → FMZ Studio → Manage → click **Sync**.
+5. **Sync** in Admin CP → MyStudio → Manage → click **Sync**.
 
 6. **Set as Default** to activate.
 
 #### Method 2: Copy an Existing Theme
 
-1. **Duplicate:** `cp -r themes/fmz-default/ themes/my-custom/`
+1. **Duplicate:** `cp -r themes/mystudio-default/ themes/my-custom/`
 2. **Edit `theme.json`** — change the `"name"` field.
 3. **Sync** the new theme.
 4. **Customize** templates, CSS, and options.
 
 #### Method 3: Import a ZIP
 
-1. Go to **Admin CP → FMZ Studio → Import**.
+1. Go to **Admin CP → MyStudio → Import**.
 2. Upload a `.zip` file containing a theme directory with `theme.json`.
 3. Select a parent theme.
 4. The theme is extracted, synced, and ready to use.
@@ -1687,7 +1687,7 @@ License subscriptions and renewals are managed through the Blesta billing platfo
 
 #### Method 1: Built-in Monaco Editor
 
-1. Go to **FMZ Studio → Manage** → click **Edit**.
+1. Go to **MyStudio → Manage** → click **Edit**.
 2. Monaco opens with a file tree on the left.
 3. Click any file to open in a tab.
 4. Press **Ctrl+S** to save and sync.
@@ -1697,7 +1697,7 @@ License subscriptions and renewals are managed through the Blesta billing platfo
 1. Open `themes/{slug}/` in your IDE.
 2. Edit files and save.
 3. If **Auto-Sync** is enabled, changes sync on next page load.
-4. Otherwise, click **Sync** in FMZ Studio → Manage.
+4. Otherwise, click **Sync** in MyStudio → Manage.
 
 #### Method 3: MyBB ACP Template Editor
 
@@ -1705,7 +1705,7 @@ License subscriptions and renewals are managed through the Blesta billing platfo
 2. Select the theme's template set.
 3. Edit templates using MyBB's built-in editor.
 
-> **Note:** ACP template edits are database-only. Use FMZ Studio's reverse sync or manually update `.html` files to persist to disk.
+> **Note:** ACP template edits are database-only. Use MyStudio's reverse sync or manually update `.html` files to persist to disk.
 
 #### Editing CSS
 
@@ -1726,7 +1726,7 @@ License subscriptions and renewals are managed through the Blesta billing platfo
 
 #### Via Admin CP
 
-1. **FMZ Studio → Manage** → click **Delete**.
+1. **MyStudio → Manage** → click **Delete**.
 2. Theme is removed from database.
 3. Optionally delete `themes/{slug}/` from disk.
 
@@ -1746,7 +1746,7 @@ License subscriptions and renewals are managed through the Blesta billing platfo
 #### Step 1: Create Plugin Directory
 
 ```
-themes/fmz-default/functions/plugins/my-plugin/
+themes/mystudio-default/functions/plugins/my-plugin/
 ```
 
 #### Step 2: Create plugin.json
@@ -1776,8 +1776,8 @@ function my_plugin_inject(&$contents)
 {
     global $mybb;
     
-    $opts = isset($mybb->fmz_plugin_options['my-plugin']) 
-          ? $mybb->fmz_plugin_options['my-plugin'] 
+    $opts = isset($mybb->ms_plugin_options['my-plugin']) 
+          ? $mybb->ms_plugin_options['my-plugin'] 
           : [];
     
     $css = '<style>.my-custom-class { color: red; }</style>';
@@ -1842,7 +1842,7 @@ Create `css/styles.css` and/or `js/script.js`. These are automatically injected 
 
 #### Step 7: Enable the Plugin
 
-1. **FMZ Studio → Manage Plugins**.
+1. **MyStudio → Manage Plugins**.
 2. Your plugin appears in the list.
 3. Click **Enable**.
 4. Click **Settings** to configure options.
@@ -1853,7 +1853,7 @@ Create `css/styles.css` and/or `js/script.js`. These are automatically injected 
 
 #### Editing Code
 
-- Open `init.php` in your IDE or the FMZ Studio editor.
+- Open `init.php` in your IDE or the MyStudio editor.
 - Changes take effect immediately if auto-sync is enabled, or on next page load.
 
 #### Editing Options
@@ -1890,7 +1890,7 @@ my_plugin_install(); // Run on load
 
 ### 13.6 Deleting a Mini-Plugin
 
-1. **Disable** in FMZ Studio → Manage Plugins.
+1. **Disable** in MyStudio → Manage Plugins.
 2. **Delete** the plugin directory: `functions/plugins/my-plugin/`
 3. **Clean up database** if the plugin created tables:
    ```sql
@@ -1920,7 +1920,7 @@ Open `themes/{slug}/functions/options.php` and add a new entry:
 #### Step 2: Use in hooks.php
 
 ```php
-$opts = isset($mybb->fmz_theme_options) ? $mybb->fmz_theme_options : [];
+$opts = isset($mybb->ms_theme_options) ? $mybb->ms_theme_options : [];
 $value = !empty($opts['my_new_option']) ? $opts['my_new_option'] : '1';
 
 if ($value === '1') {
@@ -1991,7 +1991,7 @@ function my_custom_showthread()
 {
     global $mybb, $thread, $lang;
     
-    $opts = isset($mybb->fmz_theme_options) ? $mybb->fmz_theme_options : [];
+    $opts = isset($mybb->ms_theme_options) ? $mybb->ms_theme_options : [];
     
     $GLOBALS['my_custom_content'] = '<div class="alert alert-info">Custom content</div>';
 }
@@ -2036,14 +2036,14 @@ function my_ajax_handler()
 
 #### Method 1: Theme Options (Recommended)
 
-1. **FMZ Studio → Global FMZ Options**.
+1. **MyStudio → Global MyStudio Options**.
 2. Scroll to **Color Palette Light** or **Color Palette Dark**.
 3. Click any swatch to open the color picker.
 4. **Save** — only changed colors generate CSS overrides.
 
 #### Method 2: Quick Presets
 
-1. **FMZ Studio → Global FMZ Options**.
+1. **MyStudio → Global MyStudio Options**.
 2. Click any preset swatch (Teal, Ocean, Indigo, etc.).
 3. All accent-related colors are set automatically for both palettes.
 4. Click **Save**.
@@ -2075,18 +2075,18 @@ For visual consistency:
 
 #### Changing Header Layout
 
-1. **FMZ Studio → Header & Footer → Header Style**.
+1. **MyStudio → Header & Footer → Header Style**.
 2. Choose: Default, Centered, or Minimal.
 
 The header element gets a CSS class:
-- `fmz-header-default` — logo left, nav right
-- `fmz-header-centered` — logo centered above nav
-- `fmz-header-minimal` — text-only compact header
+- `ms-header-default` — logo left, nav right
+- `ms-header-centered` — logo centered above nav
+- `ms-header-minimal` — text-only compact header
 
 #### Custom Header CSS
 
 ```css
-.fmz-header-centered .navbar-brand {
+.ms-header-centered .navbar-brand {
     font-size: 2rem;
 }
 ```
@@ -2094,9 +2094,9 @@ The header element gets a CSS class:
 #### Editing the Header Template
 
 Edit `templates/header/header.html`. Key template variables:
-- `{$fmz_logo_html}` — the logo (image/icon/text)
-- `{$fmz_header_class}` — CSS class for header style
-- `{$fmz_custom_nav}` — custom navigation `<li>` items
+- `{$ms_logo_html}` — the logo (image/icon/text)
+- `{$ms_header_class}` — CSS class for header style
+- `{$ms_custom_nav}` — custom navigation `<li>` items
 
 ---
 
@@ -2104,7 +2104,7 @@ Edit `templates/header/header.html`. Key template variables:
 
 #### Method 1: Theme Options (No Code)
 
-1. **FMZ Studio → Header & Footer → Custom Navigation Links**.
+1. **MyStudio → Header & Footer → Custom Navigation Links**.
 2. Click **Add Link**.
 3. Fill in: **Text** (display text), **URL** (destination), **Icon** (optional BI class).
 4. Drag to reorder. Click × to remove.
@@ -2128,7 +2128,7 @@ Edit `templates/header/header.html` and add `<li>` items:
 
 #### Logo
 
-1. **FMZ Studio → Header & Footer → Upload Logo Image**.
+1. **MyStudio → Header & Footer → Upload Logo Image**.
 2. Upload PNG/JPG/SVG/WebP/GIF.
 3. Set **Width** and **Height** (pixels, 0 = auto).
 4. Click **Save**.
@@ -2149,7 +2149,7 @@ Injected as `<link rel="icon">` and `<link rel="shortcut icon">`. Existing favic
 
 ### 13.13 Enabling the Stats Sidebar
 
-1. **FMZ Studio → Global FMZ Options → Layout**.
+1. **MyStudio → Global MyStudio Options → Layout**.
 2. Set **Show Stats as Sidebar** to **Yes**.
 3. Click **Save**.
 
@@ -2163,7 +2163,7 @@ The forum index uses a two-column layout:
 
 #### Importing
 
-1. **FMZ Studio → Import / Export**.
+1. **MyStudio → Import / Export**.
 2. Upload a `.zip` file.
 3. Select parent theme.
 4. Click **Import**.
@@ -2176,7 +2176,7 @@ The forum index uses a two-column layout:
 
 #### Exporting
 
-1. **FMZ Studio → Import / Export**.
+1. **MyStudio → Import / Export**.
 2. Click **Download ZIP** next to any theme.
 3. Download the complete `themes/{slug}/` directory as a ZIP.
 
@@ -2190,14 +2190,14 @@ The forum index uses a two-column layout:
 
 ---
 
-## 14. FMZStudio Core API Reference
+## 14. MyStudio Core API Reference
 
-The `FMZStudio` class (`inc/plugins/fmzstudio/core.php`, 2042 lines) provides all theme management functionality.
+The `MyStudio` class (`inc/plugins/mystudio/core.php`, 2042 lines) provides all theme management functionality.
 
 **Instantiation:**
 ```php
-require_once MYBB_ROOT . 'inc/plugins/fmzstudio/core.php';
-$fmzCore = new FMZStudio();
+require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
+$msCore = new MyStudio();
 ```
 
 ### 14.1 Import / Export Methods
@@ -2386,7 +2386,7 @@ Merge plugin defaults with saved values.
 
 #### `loadMiniPlugins($slug): void`
 
-Load all enabled mini-plugins' `init.php` files. Sets globals: `$fmz_plugin_options`, `$fmz_plugin_dir`, `$fmz_plugin_id`, `$fmz_theme_slug`.
+Load all enabled mini-plugins' `init.php` files. Sets globals: `$ms_plugin_options`, `$ms_plugin_dir`, `$ms_plugin_id`, `$ms_theme_slug`.
 
 #### `getMiniPluginAssets($slug): array`
 
@@ -2420,7 +2420,7 @@ Remove temporary directory after export operations.
 
 ## 15. Editor API Endpoints
 
-All endpoints are accessed through the FMZ Studio admin module. Base URL: `admin/index.php?module=fmzstudio-{action}`.
+All endpoints are accessed through the MyStudio admin module. Base URL: `admin/index.php?module=mystudio-{action}`.
 
 All write endpoints require CSRF token (`my_post_key`) and valid license.
 
@@ -2442,7 +2442,7 @@ All write endpoints require CSRF token (`my_post_key`) and valid license.
 
 ## 16. Image Upload API
 
-**Endpoint:** `xmlhttp.php?action=fmz_wysiwyg_upload`  
+**Endpoint:** `xmlhttp.php?action=ms_wysiwyg_upload`  
 **Method:** POST (multipart/form-data)
 
 **Validation checks:**
@@ -2451,8 +2451,8 @@ All write endpoints require CSRF token (`my_post_key`) and valid license.
 3. Valid posthash (links attachment to draft post)
 4. MIME type must be image (jpg, png, gif, webp, bmp)
 5. File extension must match MIME
-6. File size must be within FMZ WYSIWYG limit (supersedes global attachment settings)
-7. Images-per-post limit enforced from FMZ WYSIWYG settings
+6. File size must be within MyStudio WYSIWYG limit (supersedes global attachment settings)
+7. Images-per-post limit enforced from MyStudio WYSIWYG settings
 
 **Save path:** MyBB's attachment directory (`uploads/YYYYMM/{filename}.attach`)
 
@@ -2473,7 +2473,7 @@ Images are stored as standard MyBB attachments, served via `attachment.php`, and
 
 ## 17. Page Builder API
 
-All Page Builder API calls go through `admin/index.php?module=fmzstudio-pages_api`.
+All Page Builder API calls go through `admin/index.php?module=mystudio-pages_api`.
 
 | Sub-Action | Method | Parameters | Description |
 |------------|--------|------------|-------------|
@@ -2512,7 +2512,7 @@ Write operations in the admin module require a valid license. Read-only operatio
 
 ### Upload Validation
 
-Image uploads via `xmlhttp.php?action=fmz_wysiwyg_upload` and `api_upload_asset`:
+Image uploads via `xmlhttp.php?action=ms_wysiwyg_upload` and `api_upload_asset`:
 - Login required
 - CSRF token validated
 - MIME type checked via `ext-fileinfo`
@@ -2521,7 +2521,7 @@ Image uploads via `xmlhttp.php?action=fmz_wysiwyg_upload` and `api_upload_asset`
 
 ### Permission System
 
-The admin module defines 6 permission keys checked via `admin_fmzstudio_permissions()`:
+The admin module defines 6 permission keys checked via `admin_mystudio_permissions()`:
 - `manage` — Manage themes (sync, activate, delete)
 - `import_export` — Import and export themes
 - `options` — Edit theme options
@@ -2529,7 +2529,7 @@ The admin module defines 6 permission keys checked via `admin_fmzstudio_permissi
 - `settings` — Edit studio settings
 - `pages` — Manage pages
 
-Extensible via the `admin_fmzstudio_permissions` hook.
+Extensible via the `admin_mystudio_permissions` hook.
 
 ---
 
@@ -2537,8 +2537,8 @@ Extensible via the `admin_fmzstudio_permissions` hook.
 
 ### Theme not showing changes after editing files
 
-1. Check **Auto-Sync** is enabled: **ACP → FMZ Studio → Studio Settings**.
-2. If disabled, click **Sync** in **FMZ Studio → Manage**.
+1. Check **Auto-Sync** is enabled: **ACP → MyStudio → Studio Settings**.
+2. If disabled, click **Sync** in **MyStudio → Manage**.
 3. Clear theme cache: delete files inside `cache/themes/`.
 4. Hard-refresh: **Ctrl+Shift+R**.
 
@@ -2550,14 +2550,14 @@ Extensible via the `admin_fmzstudio_permissions` hook.
 
 ### Mini Plugin not loading
 
-1. Confirm the plugin is **enabled** in **FMZ Studio → Manage Plugins**.
+1. Confirm the plugin is **enabled** in **MyStudio → Manage Plugins**.
 2. Verify `plugin.json` has a valid `"id"` field.
 3. Verify `init.php` exists and has no syntax errors.
 4. Check PHP error log for details.
 
 ### WYSIWYG Editor not appearing
 
-1. Ensure the **FMZ WYSIWYG Editor** plugin is enabled.
+1. Ensure the **MyStudio WYSIWYG Editor** plugin is enabled.
 2. Check browser console for JavaScript errors.
 3. Verify `headerinclude.html` loads jQuery and Bootstrap before WYSIWYG scripts.
 4. Make sure SCEditor is not conflicting — WYSIWYG hides it via CSS.
@@ -2579,12 +2579,12 @@ Extensible via the `admin_fmzstudio_permissions` hook.
 ### Front page not working
 
 1. Ensure the selected page is **Published** (not draft).
-2. Go to **FMZ Studio → Page Manager** and re-select the front page.
+2. Go to **MyStudio → Page Manager** and re-select the front page.
 3. Clear MyBB cache: **ACP → Tools & Maintenance → Cache Manager → Rebuild All**.
 
 ### Broken layout after import
 
-1. Re-sync: **FMZ Studio → Manage → Sync**.
+1. Re-sync: **MyStudio → Manage → Sync**.
 2. Check Bootstrap vendor files exist in `vendor/`.
 3. Verify `headerinclude.html` references correct vendor paths.
 4. Set the theme as default: **ACP → Themes**.
@@ -2609,8 +2609,8 @@ Extensible via the `admin_fmzstudio_permissions` hook.
 
 ### Status updates not working
 
-1. Enable **Status Updates** in **FMZ Studio → Manage Plugins → Profile Extras → Settings**.
-2. Check `fmz_user_statuses` table exists in database.
+1. Enable **Status Updates** in **MyStudio → Manage Plugins → Profile Extras → Settings**.
+2. Check `ms_user_statuses` table exists in database.
 3. Verify user is logged in (guests cannot post statuses).
 
 ### Editor not loading
