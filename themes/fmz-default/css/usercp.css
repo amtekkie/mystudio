@@ -49,4 +49,12 @@ span.pmstatus_fw_pm:before{content:"\f4e8";font-family:'bootstrap-icons'}
 :root[data-theme="dark"] .usercp_nav_item:hover{color:var(--tekbb-accent)}
 :root[data-theme="dark"] .cp_options td:first-child{color:var(--tekbb-muted)}
 
+/* Disable trow hover on nav sidebar, apply hover to individual items */
+.usercp_nav .trow1:hover,
+.modcp_nav .trow1:hover{background:transparent}
+.usercp_nav .usercp_nav_item,
+.modcp_nav .modcp_nav_item{padding:6px 10px;border-radius:.375rem;transition:background .2s ease,color .2s ease}
+.usercp_nav .usercp_nav_item:hover,
+.modcp_nav .modcp_nav_item:hover{background:var(--tekbb-accent-subtle);color:var(--tekbb-accent)}
+
 		

@@ -1,36 +1,26 @@
-<div class="welcomeblock-wrap d-flex align-items-center justify-content-between gap-2 py-2">
-<div class="d-flex align-items-center gap-3">
-	<div class="fmz-avatar-wrap d-none d-md-block" style="position:relative;cursor:pointer" data-bs-toggle="modal" data-bs-target="#fmz_avatar_modal">
-		<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle" alt="Avatar" style="width:60px;height:60px;object-fit:cover;border:2px solid var(--tekbb-accent);margin-top:10px;display:block">
-		<div class="fmz-avatar-overlay rounded-circle" style="position:absolute;inset:0;margin-top:10px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);opacity:0;transition:opacity .2s;border-radius:50%">
-			<i class="bi bi-camera-fill text-white" style="font-size:18px"></i>
-		</div>
-	</div>
-	<div>
-		<span class="fw-semibold d-none d-md-block">{$lang->welcome_back}</span>
-		<div class="wb-actions d-flex align-items-center gap-1 flex-nowrap mt-md-1">
-			{$usercplink}
-			{$modcplink}
-			{$admincplink}
-			<a href="{$mybb->settings['bburl']}/member.php?action=logout&amp;logoutkey={$mybb->user['logoutkey']}" class="btn btn-sm btn-outline-accent"><i class="bi bi-box-arrow-right"></i><span class="d-none d-lg-inline ms-1">{$lang->welcome_logout}</span></a>
-		</div>
-	</div>
-</div>
-<div class="wb-right d-flex flex-column align-items-end gap-1">
-	<div class="d-flex align-items-center gap-1 flex-nowrap">
+<div class="dropdown fmz-user-dropdown">
+	<a href="#" class="d-flex align-items-center gap-2 text-decoration-none" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="fmzUserDropdown">
+		<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle fmz-nav-avatar" alt="Avatar">
+		<i class="bi bi-chevron-down fmz-dd-caret"></i>
+	</a>
+	<ul class="dropdown-menu dropdown-menu-end fmz-user-menu" aria-labelledby="fmzUserDropdown">
+		<li class="dropdown-header fmz-user-header">
+			<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;border:2px solid var(--tekbb-accent)" alt="">
+			<div class="mt-1 fw-semibold">{$mybb->user['username']}</div>
+			<button type="button" class="btn btn-sm btn-outline-accent mt-1" data-bs-toggle="modal" data-bs-target="#fmz_avatar_modal"><i class="bi bi-camera-fill me-1"></i>{$lang->change_avatar}</button>
+		</li>
+		<li><hr class="dropdown-divider"></li>
+		{$usercplink}
 		{$pmslink}
 		{$buddylink}
-	</div>
-	<div class="wb-search-links d-flex align-items-center gap-2 flex-nowrap">
-		<a href="{$mybb->settings['bburl']}/search.php?action=getnew" class="text-decoration-none small" style="color:var(--tekbb-accent)"><i class="bi bi-chat-left-text me-1"></i><span class="d-none d-lg-inline">{$lang->welcome_newposts}</span></a>
-		<a href="{$mybb->settings['bburl']}/search.php?action=getdaily" class="text-decoration-none small" style="color:var(--tekbb-muted)"><i class="bi bi-clock-history me-1"></i><span class="d-none d-lg-inline">{$lang->welcome_todaysposts}</span></a>
-	</div>
+		<li><a class="dropdown-item" href="{$mybb->settings['bburl']}/search.php?action=getnew"><i class="bi bi-chat-left-text me-2"></i>{$lang->welcome_newposts}</a></li>
+		<li><a class="dropdown-item" href="{$mybb->settings['bburl']}/search.php?action=getdaily"><i class="bi bi-clock-history me-2"></i>{$lang->welcome_todaysposts}</a></li>
+		{$modcplink}
+		{$admincplink}
+		<li><hr class="dropdown-divider"></li>
+		<li><a class="dropdown-item text-danger" href="{$mybb->settings['bburl']}/member.php?action=logout&amp;logoutkey={$mybb->user['logoutkey']}"><i class="bi bi-box-arrow-right me-2"></i>{$lang->welcome_logout}</a></li>
+	</ul>
 </div>
-</div>
-
-<style>
-.fmz-avatar-wrap:hover .fmz-avatar-overlay{opacity:1!important}
-</style>
 
 <div class="modal fade" id="fmz_avatar_modal" tabindex="-1" aria-labelledby="fmz_avatar_label" aria-hidden="true">
 <div class="modal-dialog modal-dialog-centered" style="max-width:440px">

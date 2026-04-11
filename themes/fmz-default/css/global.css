@@ -147,6 +147,7 @@ a.btn-light:hover,     a.btn-dark:hover    { color: var(--bs-btn-hover-color, #f
 .thead a:link, .thead a:visited, .thead a:hover { color: var(--tekbb-text-inv); }
 
 .tcat {
+  background: var(--tekbb-accent-subtle);
   color: var(--tekbb-muted);
   padding: 6px 12px;
   font-size: .85rem;
@@ -318,12 +319,19 @@ a.button:focus, button:focus, input.button:focus {
 .pagination .pagination_current { padding: 4px 10px; font-weight: 700; background: var(--tekbb-accent); color: var(--tekbb-text-inv); border-radius: .5rem; }
 
 /* === Blockquote / codeblock === */
-blockquote { background: var(--glass-bg); backdrop-filter: blur(8px) saturate(1.2); -webkit-backdrop-filter: blur(8px) saturate(1.2); border-left: 4px solid var(--tekbb-accent); padding: 12px 16px; margin: 8px 0; border-radius: 0 .5rem .5rem 0; }
-blockquote cite { font-weight: 600; border-bottom: 1px solid var(--tekbb-border); display: block; padding-bottom: 6px; margin-bottom: 8px; font-style: normal; }
-blockquote cite > span { float: right; font-weight: normal; color: var(--tekbb-muted); }
+blockquote { background: var(--glass-bg); backdrop-filter: blur(8px) saturate(1.2); -webkit-backdrop-filter: blur(8px) saturate(1.2); border-left: 4px solid var(--tekbb-accent); padding: 12px 16px; margin: 8px 0; border-radius: 0 .5rem .5rem 0; border: none; font-size: 100%; }
+blockquote blockquote { background: var(--tekbb-accent-subtle); backdrop-filter: none; -webkit-backdrop-filter: none; border-left: 4px solid color-mix(in srgb, var(--tekbb-accent) 50%, transparent); margin: 8px 0 4px; padding: 10px 14px; border-radius: 0 .5rem .5rem 0; }
+blockquote blockquote blockquote { border-left-color: color-mix(in srgb, var(--tekbb-accent) 30%, transparent); }
+blockquote cite { font-weight: 600; border-bottom: 1px solid var(--tekbb-border); display: block; padding-bottom: 6px; margin-bottom: 8px; font-style: normal; color: var(--tekbb-accent); overflow: hidden; font-size: .9rem; }
+blockquote cite > span { float: right; font-weight: normal; color: var(--tekbb-muted); font-size: .8rem; }
+blockquote cite span.highlight { float: none; font-weight: bold; padding-bottom: 0; }
+.quick_jump { display: inline-block; width: 16px; height: 16px; vertical-align: middle; text-decoration: none; margin-left: 4px; background: none; border: none; padding: 0; }
+.quick_jump::before { content: '\F144'; font-family: 'bootstrap-icons'; font-size: .75rem; color: var(--tekbb-muted); transition: color .15s; }
+.quick_jump:hover::before { color: var(--tekbb-accent); }
 .codeblock { background: var(--glass-bg); backdrop-filter: blur(8px) saturate(1.2); -webkit-backdrop-filter: blur(8px) saturate(1.2); border: 1px solid var(--glass-border); padding: 12px; border-radius: .5rem; }
 .codeblock .title { font-weight: 600; border-bottom: 1px solid var(--tekbb-border); padding-bottom: 6px; margin-bottom: 8px; }
-.codeblock code { overflow: auto; max-height: 200px; display: block; font-size: .85rem; }
+.codeblock code { overflow: auto; max-height: 200px; display: block; font-size: .85rem; white-space: pre-wrap; background: #f6f8fa; color: #1f2328; padding: 10px; border-radius: .375rem; font-family: Monaco, Consolas, 'Courier New', monospace; position: relative; border: 1px solid #d1d9e0; }
+[data-bs-theme="dark"] .codeblock code { background: #161b22; color: #e6edf3; border-color: #30363d; }
 
 /* === Editor === */
 .editor { background: var(--glass-bg-heavy); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: .5rem; }
@@ -346,8 +354,7 @@ blockquote cite > span { float: right; font-weight: normal; color: var(--tekbb-m
 
 /* === Footer === */
 #footer { background: var(--glass-bg-heavy); backdrop-filter: blur(20px) saturate(1.5); -webkit-backdrop-filter: blur(20px) saturate(1.5); color: var(--tekbb-footer-color); border-top: 1px solid var(--glass-border); }
-#welcomeblock { color: var(--tekbb-footer-color); }
-#welcomeblock a:hover { color: var(--tekbb-accent); }
+/* Welcome block colors handled via navbar integration */
 #footer a:link, #footer a:visited { color: var(--tekbb-footer-color); }
 #footer a:hover { color: var(--tekbb-accent); }
 #copyright { background: var(--tekbb-heading-bg); color: var(--tekbb-text-inv); }
@@ -470,7 +477,6 @@ hr { height: 1px; border: 0; background: var(--tekbb-border); }
 .highlight { background: #fef3c7; }
 :root[data-theme="dark"] .highlight { background: rgba(254,243,199,.1); }
 .strong { font-weight: bold; }
-blockquote { font-size: 100%; }
 form { margin: 0; padding: 0; }
 form #message { width: 100%; }
 legend { display: block; width: 100%; font-size: 1.125rem; color: var(--bs-body-color); border: 0; border-bottom: 2px solid var(--tekbb-accent); padding-bottom: 4px; margin-bottom: 8px; }
@@ -926,6 +932,7 @@ div.error p em::before{content:"\f33a";font-family:"bootstrap-icons";font-size:1
 .subject_editable form input{display:inline-block;width:auto !important;height:auto !important;border-radius:.5rem}
 .subject_editable form{display:inline-block}
 label strong,label b{font-weight:500}
+label{text-transform:capitalize}
 
 /* === BS3 visibility shims === */
 @media(max-width:767.98px){.hidden-xs{display:none !important}}
@@ -935,16 +942,7 @@ label strong,label b{font-weight:500}
 .visible-xs{display:none !important}
 @media(max-width:767.98px){.visible-xs{display:block !important}}
 
-/* === Welcome block — compact mode below md === */
-@media(max-width:767.98px){
-  .welcomeblock-wrap{flex-wrap:nowrap !important;gap:4px !important;justify-content:space-between !important}
-  .welcomeblock-wrap>.d-flex:first-child{gap:0 !important}
-  .wb-right{flex-direction:row !important;align-items:center !important;gap:4px !important;margin-left:auto}
-  .wb-right>div{gap:4px !important}
-  .wb-search-links a{font-size:0 !important}
-  .wb-search-links a i{font-size:14px !important}
-  .wb-actions,.wb-right,.wb-right>div,.wb-search-links{flex-wrap:nowrap !important}
-}
+/* === Welcome block — now handled via avatar dropdown === */
 
 /* === Calendar mini === */
 .calendar-mini-header{padding:7px 10px;text-align:center}
@@ -1022,11 +1020,28 @@ label > input[type="radio"] {
 
 /* === Misc === */
 img.mycode_img.img-fluid{display:inline-block}
-.navbar{border-radius:0;background:var(--glass-bg-heavy)!important;backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);color:var(--bs-body-color);border-bottom:1px solid var(--glass-border)!important;box-shadow:0 1px 12px rgba(0,0,0,.04)}
+.navbar{border-radius:0;background:var(--tekbb-nav-bg)!important;color:var(--bs-body-color);border-bottom:1px solid var(--glass-border)!important;box-shadow:0 1px 12px rgba(0,0,0,.04);padding-top:.35rem;padding-bottom:.35rem}
 :root[data-theme="dark"] .navbar .navbar-toggler-icon{filter:invert(1)}
-.navbar .nav-link{color:var(--tekbb-accent)}
-.navbar .nav-link:hover{color:var(--tekbb-accent-hover)}
+.navbar .nav-link{color:var(--tekbb-accent);font-size:.875rem;font-weight:500;padding:.35rem .65rem!important;border-radius:.375rem;transition:background .15s,color .15s}
+.navbar .nav-link:hover{color:var(--tekbb-accent-hover);background:var(--tekbb-accent-subtle)}
+.navbar .nav-link.active,.navbar .nav-link[aria-current="page"]{background:var(--tekbb-accent-subtle);color:var(--tekbb-accent)}
 @media(max-width:767.98px){.navbar-nav .nav-item{width:100%}}
+
+/* --- User avatar dropdown --- */
+.fmz-nav-avatar{width:34px;height:34px;object-fit:cover;border:2px solid var(--tekbb-accent);transition:border-color .2s,box-shadow .2s}
+.fmz-user-dropdown>a:hover .fmz-nav-avatar,.fmz-user-dropdown.show .fmz-nav-avatar{border-color:var(--tekbb-accent-hover);box-shadow:0 0 0 3px var(--tekbb-accent-subtle)}
+.fmz-dd-caret{font-size:.6rem;color:var(--tekbb-muted);transition:transform .2s}
+.fmz-user-dropdown.show .fmz-dd-caret{transform:rotate(180deg)}
+.fmz-nav-sep{width:1px;height:24px;background:var(--glass-border);flex-shrink:0}
+.fmz-user-menu{min-width:220px;border:1px solid var(--glass-border);border-radius:.75rem;box-shadow:var(--glass-shadow);background:var(--tekbb-surface);padding:.5rem 0;margin-top:.35rem!important;z-index:1080}
+.fmz-user-menu .dropdown-item{font-size:.85rem;padding:.45rem 1rem;color:var(--bs-body-color)}
+.fmz-user-menu .dropdown-item:hover{background:var(--tekbb-accent-subtle);color:var(--tekbb-accent)}
+.fmz-user-menu .dropdown-item.text-danger:hover{background:rgba(220,38,38,.08)}
+.fmz-user-menu .dropdown-divider{border-color:var(--glass-border);margin:.35rem 0}
+.fmz-user-header{text-align:center;padding:.75rem 1rem .5rem;white-space:normal}
+
+/* --- Guest action buttons --- */
+.fmz-guest-actions .btn{font-size:.82rem}
 
 /* Header Style Variants */
 .fmz-header-default .container{display:flex;flex-wrap:wrap;align-items:center}
@@ -1100,6 +1115,10 @@ img.mycode_img.img-fluid{display:inline-block}
   border-radius: .5rem !important;
 }
 .select2-search-choice-close { filter: var(--tekbb-icon-filter, none); }
+.select2-container { width: 100% !important; }
+.select2-container .select2-choice > .select2-chosen { min-width: 0; }
+.select2-drop .select2-search input,
+.select2-container-multi .select2-choices .select2-search-field input { font-family: inherit; }
 :root[data-theme="dark"] .select2-search-choice-close { filter: invert(1); }
 :root[data-theme="dark"] .select2-container .select2-choice .select2-arrow b { filter: invert(1); }
 .select2-results .select2-no-results,
@@ -1180,14 +1199,18 @@ img.mycode_img.img-fluid{display:inline-block}
 .form-control, .form-select {
   background: var(--glass-bg-heavy) !important;
   border-color: var(--glass-border) !important;
-  border-radius: .5rem !important;
   transition: border-color .2s ease, box-shadow .2s ease !important;
+}
+.form-control:not(.input-group .form-control),
+.form-select:not(.input-group .form-select) {
+  /* border-radius: .5rem; */
 }
 .form-control:focus, .form-select:focus {
   background: var(--glass-bg-heavy) !important;
   border-color: var(--tekbb-accent) !important;
   box-shadow: 0 0 0 3px var(--tekbb-accent-subtle), var(--glass-glow) !important;
 }
+.input-group>.input-group-text{background:var(--glass-bg-heavy);border-color:var(--glass-border)}
 
 /* === BS5 Modal glass === */
 .modal-content {
@@ -1205,18 +1228,10 @@ img.mycode_img.img-fluid{display:inline-block}
   border-top-color: var(--glass-border) !important;
 }
 .modal-backdrop.show {
-  backdrop-filter: blur(6px) saturate(1.2);
-  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  opacity: .5;
 }
 
-/* === Welcome block glass === */
-#welcomeblock {
-  background: var(--glass-bg) !important;
-  backdrop-filter: blur(16px) saturate(1.4) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
-  border-top: 1px solid var(--glass-border) !important;
-  border-bottom: 1px solid var(--glass-border) !important;
-}
+/* Welcome block is now integrated into the navbar — no separate #welcomeblock needed */
 
 /* === Showthread toolbar glass === */
 main .d-flex.rounded-2.border {

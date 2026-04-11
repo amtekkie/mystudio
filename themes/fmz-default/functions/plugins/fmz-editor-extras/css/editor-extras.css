@@ -1,0 +1,441 @@
+/**
+ * Editor Extras — Bootstrap Icons Toolbar + UI Enhancements
+ * Replaces famfamfam.png sprite icons with Bootstrap Icons.
+ * Requires Bootstrap Icons CSS to be loaded in the page.
+ */
+
+/* ==========================================================================
+   BOOTSTRAP ICONS TOOLBAR REPLACEMENT
+   ========================================================================== */
+
+/* Hide the sprite background on all toolbar buttons */
+.ee-bi-icons .sceditor-button div {
+    background-image: none !important;
+    background-position: unset !important;
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 0 !important;       /* hide any text inside the div */
+    overflow: hidden;
+    color: #555;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* All icons render via ::before only */
+.ee-bi-icons .sceditor-button div::before {
+    font-family: 'bootstrap-icons' !important;
+    font-size: 15px;
+    line-height: 18px;
+    display: block;
+    text-align: center;
+    color: inherit;
+}
+
+.ee-bi-icons .sceditor-button {
+    width: 18px;
+    height: 22px;
+    padding: 4px 5px;
+}
+
+.ee-bi-icons .sceditor-button:hover div {
+    color: var(--tekbb-accent, #0d9488);
+}
+
+/* --- Icon Mappings (Bootstrap Icons unicode codepoints) --- */
+.ee-bi-icons .sceditor-button-bold div::before         { content: "\f5f0"; }
+.ee-bi-icons .sceditor-button-italic div::before        { content: "\f5f4"; }
+.ee-bi-icons .sceditor-button-underline div::before     { content: "\f5f6"; }
+.ee-bi-icons .sceditor-button-strike div::before        { content: "\f5f5"; }
+.ee-bi-icons .sceditor-button-subscript div::before     { content: "\f5f7"; }
+.ee-bi-icons .sceditor-button-superscript div::before   { content: "\f5f7"; }
+.ee-bi-icons .sceditor-button-left div::before          { content: "\f5c7"; }
+.ee-bi-icons .sceditor-button-center div::before        { content: "\f5c4"; }
+.ee-bi-icons .sceditor-button-right div::before         { content: "\f5c9"; }
+.ee-bi-icons .sceditor-button-justify div::before       { content: "\f44b"; }
+.ee-bi-icons .sceditor-button-font div::before          { content: "\f3da"; }
+.ee-bi-icons .sceditor-button-size div::before          { content: "\f5f7"; } /* type */
+.ee-bi-icons .sceditor-button-color div::before         { content: "\f4b1"; } /* palette */
+.ee-bi-icons .sceditor-button-removeformat div::before  { content: "\f331"; } /* eraser */
+.ee-bi-icons .sceditor-button-bulletlist div::before    { content: "\f478"; }
+.ee-bi-icons .sceditor-button-orderedlist div::before   { content: "\f475"; }
+.ee-bi-icons .sceditor-button-indent div::before        { content: "\f5c5"; }
+.ee-bi-icons .sceditor-button-outdent div::before       { content: "\f5c6"; }
+.ee-bi-icons .sceditor-button-table div::before         { content: "\f5aa"; }
+.ee-bi-icons .sceditor-button-code div::before          { content: "\f2c6"; } /* code-slash */
+.ee-bi-icons .sceditor-button-quote div::before         { content: "\f255"; } /* chat-quote */
+.ee-bi-icons .sceditor-button-horizontalrule div::before{ content: "\f63b"; } /* dash-lg */
+.ee-bi-icons .sceditor-button-image div::before         { content: "\f42a"; }
+.ee-bi-icons .sceditor-button-email div::before         { content: "\f32f"; } /* envelope */
+.ee-bi-icons .sceditor-button-link div::before          { content: "\f470"; } /* link-45deg */
+.ee-bi-icons .sceditor-button-link.ee-has-link div::before { color: #dc3545; }
+
+/* Hide unlink button — link button handles both states */
+/* Hide php button — code button with syntax highlighting covers all languages */
+.ee-bi-icons .sceditor-button-unlink,
+.ee-bi-icons .sceditor-button-php { display: none !important; }
+.ee-bi-icons .sceditor-button-video div::before         { content: "\f21f"; } /* camera-video */
+.ee-bi-icons .sceditor-button-youtube div::before       { content: "\f62b"; }
+.ee-bi-icons .sceditor-button-emoticon div::before      { content: "\f327"; } /* emoji-smile */
+.ee-bi-icons .sceditor-button-maximize div::before      { content: "\f14d"; } /* arrows-fullscreen */
+.ee-bi-icons .sceditor-button-source div::before        { content: "\f1c9"; } /* braces { } */
+.ee-bi-icons .sceditor-button-date div::before          { content: "\f1f6"; } /* calendar */
+.ee-bi-icons .sceditor-button-time div::before          { content: "\f293"; } /* clock */
+.ee-bi-icons .sceditor-button-print div::before         { content: "\f501"; }
+.ee-bi-icons .sceditor-button-cut div::before           { content: "\f528"; } /* scissors */
+.ee-bi-icons .sceditor-button-copy div::before          { content: "\f290"; } /* clipboard */
+.ee-bi-icons .sceditor-button-paste div::before         { content: "\f290"; }
+.ee-bi-icons .sceditor-button-pastetext div::before     { content: "\f290"; }
+.ee-bi-icons .sceditor-button-ltr div::before           { content: "\f5c7"; }
+.ee-bi-icons .sceditor-button-rtl div::before           { content: "\f5c9"; }
+.ee-bi-icons .sceditor-button-format div::before        { content: "\f5c8"; } /* text-paragraph */
+
+/* Custom buttons added by Editor Extras */
+.ee-bi-icons .sceditor-button-emoji div::before         { content: "\f327"; } /* emoji-smile */
+.ee-bi-icons .sceditor-button-gif div::before           { content: "GIF"; font-family: Arial, sans-serif !important; font-size: 9px; font-weight: 900; letter-spacing: -0.5px; } /* text-based GIF label */
+.ee-bi-icons .sceditor-button-spoiler div::before       { content: "\f340"; } /* eye-slash */
+
+/* Subscript / Superscript distinct icons */
+.ee-bi-icons .sceditor-button-subscript div::before     { content: "₂"; font-family: inherit !important; font-weight: 700; }
+.ee-bi-icons .sceditor-button-superscript div::before   { content: "²"; font-family: inherit !important; font-weight: 700; }
+
+/* Grip handle */
+.ee-bi-icons div.sceditor-grip {
+    background-image: none !important;
+}
+.ee-bi-icons div.sceditor-grip::before {
+    content: "\f3fd";
+    font-family: 'bootstrap-icons' !important;
+    font-size: 10px;
+    color: #aaa;
+}
+
+/* ==========================================================================
+   EDITOR CONTAINER GLASS MORPHISM THEME
+   ========================================================================== */
+
+.ee-themed .sceditor-container {
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.18));
+    background: var(--glass-bg, rgba(255,255,255,0.08));
+    backdrop-filter: blur(8px) saturate(1.2);
+    -webkit-backdrop-filter: blur(8px) saturate(1.2);
+    border-radius: .5rem;
+}
+
+/* Keep the actual editing area opaque and readable */
+.ee-themed .sceditor-container iframe,
+.ee-themed .sceditor-container textarea {
+    background: var(--bs-body-bg, #fff) !important;
+    color: var(--bs-body-color, #212529) !important;
+}
+
+.ee-themed div.sceditor-toolbar {
+    background: var(--glass-bg-heavy, rgba(255,255,255,0.12));
+    border-bottom: 1px solid var(--glass-border, rgba(255,255,255,0.18));
+    border-radius: .5rem .5rem 0 0;
+    padding: 4px 6px 3px;
+}
+
+.ee-themed div.sceditor-group {
+    background: transparent;
+    border-bottom: none;
+    margin: 1px 3px 1px 0;
+}
+
+.ee-themed .sceditor-button:hover {
+    background: var(--glass-bg, rgba(255,255,255,0.12));
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   EMOJI PICKER
+   ========================================================================== */
+
+.ee-emoji-picker {
+    position: absolute;
+    z-index: 5000;
+    background: var(--bs-body-bg, #fff);
+    border: 1px solid var(--glass-border, #ddd);
+    border-radius: .5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+    width: 320px;
+    max-height: 360px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ee-emoji-picker-search {
+    border: none;
+    border-bottom: 1px solid var(--glass-border, #ddd);
+    padding: 8px 12px;
+    width: 100%;
+    font-size: 14px;
+    outline: none;
+    background: transparent;
+    color: var(--bs-body-color, #333);
+}
+
+.ee-emoji-picker-categories {
+    display: flex;
+    border-bottom: 1px solid var(--glass-border, #ddd);
+    padding: 4px 6px;
+    gap: 2px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.ee-emoji-picker-categories button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.ee-emoji-picker-categories button:hover,
+.ee-emoji-picker-categories button.active {
+    background: var(--glass-bg-heavy, #eee);
+}
+
+.ee-emoji-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    padding: 8px;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 260px;
+}
+
+.ee-emoji-picker-grid span {
+    font-size: 22px;
+    text-align: center;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    line-height: 1.2;
+}
+
+.ee-emoji-picker-grid span:hover {
+    background: var(--glass-bg-heavy, #eee);
+}
+
+/* ==========================================================================
+   GIF PICKER
+   ========================================================================== */
+
+.ee-gif-picker {
+    position: absolute;
+    z-index: 5000;
+    background: var(--bs-body-bg, #fff);
+    border: 1px solid var(--glass-border, #ddd);
+    border-radius: .5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+    width: 380px;
+    max-height: 420px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ee-gif-picker-search {
+    border: none;
+    border-bottom: 1px solid var(--glass-border, #ddd);
+    padding: 8px 12px;
+    width: 100%;
+    font-size: 14px;
+    outline: none;
+    background: transparent;
+    color: var(--bs-body-color, #333);
+}
+
+.ee-gif-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    padding: 8px;
+    overflow-y: auto;
+    flex: 1;
+    max-height: 360px;
+}
+
+.ee-gif-picker-grid img {
+    width: 100%;
+    border-radius: 4px;
+    cursor: pointer;
+    display: block;
+}
+
+.ee-gif-picker-grid img:hover {
+    opacity: 0.8;
+}
+
+.ee-gif-picker .ee-gif-loading {
+    text-align: center;
+    padding: 20px;
+    color: #888;
+}
+
+.ee-gif-picker .ee-gif-attribution {
+    text-align: center;
+    padding: 4px;
+    font-size: 11px;
+    color: #999;
+    border-top: 1px solid var(--glass-border, #ddd);
+}
+
+/* ==========================================================================
+   @MENTION AUTOCOMPLETE
+   ========================================================================== */
+
+.ee-mention-dropdown {
+    position: absolute;
+    z-index: 5000;
+    background: var(--bs-body-bg, #fff);
+    border: 1px solid var(--glass-border, #ddd);
+    border-radius: .375rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    min-width: 180px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.ee-mention-item {
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--bs-body-color, #333);
+}
+
+.ee-mention-item:hover,
+.ee-mention-item.active {
+    background: var(--glass-bg-heavy, #eee);
+    color: var(--tekbb-accent, #0d9488);
+}
+
+/* ==========================================================================
+   IMAGE UPLOAD OVERLAY
+   ========================================================================== */
+
+.ee-upload-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(13,148,136,0.15);
+    border: 3px dashed var(--tekbb-accent, #0d9488);
+    border-radius: .5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.ee-upload-overlay span {
+    background: var(--tekbb-accent, #0d9488);
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: .375rem;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   IMAGE RESIZE — attachment row (hidden record for form association)
+   ========================================================================== */
+
+.ee-attachment-row { display: none; }
+
+/* ==========================================================================
+   AUTOSAVE INDICATOR
+   ========================================================================== */
+
+.ee-autosave-indicator {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    font-size: 11px;
+    color: #999;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.ee-autosave-indicator.show {
+    opacity: 1;
+}
+
+/* ==========================================================================
+   CODE BLOCK ENHANCEMENTS — Line Numbers + Copy Button
+   ========================================================================== */
+
+/* Title bar: flex layout for label + copy button */
+.codeblock .title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Copy button */
+.ee-code-copy {
+    background: none;
+    border: 1px solid var(--glass-border, rgba(255,255,255,0.18));
+    border-radius: .25rem;
+    color: var(--bs-body-color, #666);
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 13px;
+    line-height: 1.4;
+    transition: color .15s, background .15s, border-color .15s;
+    display: inline-flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.ee-code-copy:hover {
+    color: var(--tekbb-accent, #0d9488);
+    background: var(--glass-bg, rgba(255,255,255,0.08));
+    border-color: var(--tekbb-accent, #0d9488);
+}
+
+/* Line numbers — table-based layout */
+.ee-code-table {
+    width: 100%;
+    border-collapse: collapse;
+    line-height: 1.5;
+}
+
+.ee-code-table td {
+    padding: 0;
+    vertical-align: top;
+    border: none;
+    background: none;
+}
+
+td.ee-line-num {
+    width: 3em;
+    min-width: 3em;
+    max-width: 3em;
+    text-align: right;
+    padding-right: .75em !important;
+    color: #8b949e;
+    border-right: 1px solid #d1d9e0;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: none;
+    white-space: nowrap;
+    font-size: .8em;
+}
+
+td.ee-line-code {
+    padding-left: .75em !important;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+[data-bs-theme="dark"] td.ee-line-num {
+    color: #6e7681;
+    border-right-color: #30363d;
+}

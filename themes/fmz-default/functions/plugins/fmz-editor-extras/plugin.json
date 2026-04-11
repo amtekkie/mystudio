@@ -1,0 +1,8 @@
+{
+    "name": "Editor Extras",
+    "description": "Enhances SCEditor with Bootstrap Icons toolbar, paste fixes, image paste/drag-drop upload, emoji/GIF picker, code syntax highlighting with line numbers, auto-save, word count, and @mentions.",
+    "version": "2.0.0",
+    "author": "Tektove",
+    "author_url": "https://tektove.com",
+    "compatibility": "18*"
+}
