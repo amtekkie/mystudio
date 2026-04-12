@@ -1,17 +1,9 @@
 <br />
-<div>
+<div class="tborder">
 
-<div class="thead">{$lang->latest_threads}<a href="search.php?action=finduserthreads&amp;uid={$mybb->user['uid']}" class="float_right smalltext">{$lang->find_all_threads}</a></div>
-
-  
-<div class="tcat rowbit d-none d-md-flex" style="padding:10px 16px">
-  
-<span data-width="60%" class="threadbit_main">{$lang->thread} / {$lang->author}</span>
-
-  <span class="threadbit_stats threadbit_replies align_center" data-width="7.5%">{$lang->replies}</span>
-  <span class="threadbit_stats threadbit_views align_center" data-width="7.5%">{$lang->views}</span>
-<span class="threadbit_lastpost" data-width="25%">{$lang->lastpost}</span>
-
+<div class="thead d-flex justify-content-between align-items-center">
+	<span>{$lang->latest_threads}</span>
+	<a href="search.php?action=finduserthreads&amp;uid={$mybb->user['uid']}" class="small">{$lang->find_all_threads}</a>
 </div>
 
 {$latest_threads_threads}

@@ -18,36 +18,12 @@
 
 <div class="thead">{$lang->attachments_manager} {$usagenote}</div>
 
-<div class="tcat rowbit">
-  
-<span class="attachmentbit_main threadbit_main" data-width="50%">
-{$lang->attachments_attachment}
-</span>
- 
-<span class="threadbit_stats attachmentbit_size align_center" data-width="12.5%">
-{$lang->ms_attachments_size}
-</span>
-
-
-<span class="threadbit_stats attachmentbit_downloads align_center" data-width="12.5%">
-{$lang->ms_attachments_downloads}
-</span>
-
-<span class="threadbit_lastpost" data-width="25%">
-  
-<span class="threadbit_modbit">
-<input name="allbox" title="{$lang->ms_select_all}" type="checkbox" class="checkbox checkall" value="1" />
-  </span>
-  
-
-  
-  <span data-moderation="1">
-    {$lang->date_uploaded}
-  </span>
-  
-  
-  </span>
-  
+<div class="tcat d-none d-md-flex align-items-center gap-3 px-3 py-2 border-bottom">
+	<div class="flex-grow-1 min-w-0">{$lang->attachments_attachment}</div>
+	<div class="text-center" style="min-width:70px;flex-shrink:0">{$lang->ms_attachments_size}</div>
+	<div class="text-center" style="min-width:80px;flex-shrink:0">{$lang->ms_attachments_downloads}</div>
+	<div class="text-end" style="width:160px;flex-shrink:0"><span data-moderation="1">{$lang->date_uploaded}</span></div>
+	<div class="d-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0"><input name="allbox" title="{$lang->ms_select_all}" type="checkbox" class="form-check-input checkall" value="1" /></div>
 </div>  
   
 

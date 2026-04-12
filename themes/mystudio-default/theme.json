@@ -10,6 +10,11 @@
     },
     "stylesheets": [
         {
+            "name": "color-default.css",
+            "attachedto": "",
+            "order": 1
+        },
+        {
             "name": "editor.css",
             "attachedto": "",
             "order": 2

@@ -1,13 +1,22 @@
-<div class="trow1 rowbit">
-  
-  
-<div class="threadit_main draftbit_main" data-width="25%">{$draft['subject']}</div>
-
-  
- 
-<div class="threadbit_stats draftbit_details align_center" data-width="25%" data-lang="{$lang->ms_drafts_details}">
-
-<a href="#" data-link-role="drafit-{$id}_modal">{$lang->ms_drafts_view}</a>
+<div class="forumbit-row d-flex align-items-center gap-3 px-3 py-2">
+<div class="flex-grow-1 min-w-0">
+	<div class="fw-semibold">{$draft['subject']}</div>
+	<div class="d-md-none small text-muted mt-1">
+		<a href="#" data-link-role="drafit-{$id}_modal">{$lang->ms_drafts_view}</a>
+		<span class="mx-1">&middot;</span>{$savedate}
+		<span class="mx-1">&middot;</span><a href="{$editurl}">{$lang->edit_draft}</a>
+	</div>
+</div>
+<div class="d-none d-md-flex text-center small" style="min-width:80px;flex-shrink:0">
+	<a href="#" data-link-role="drafit-{$id}_modal">{$lang->ms_drafts_view}</a>
+</div>
+<div class="d-none d-md-flex text-center small text-muted" style="min-width:100px;flex-shrink:0">{$savedate}</div>
+<div class="d-none d-md-flex text-end small" style="min-width:80px;flex-shrink:0">
+	<a href="{$editurl}">{$lang->edit_draft}</a>
+</div>
+<div class="d-none d-md-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0">
+	<input type="checkbox" class="form-check-input" name="deletedraft[{$id}]" value="{$type}" />
+</div>
 
 <div class="modal" data-modal="drafit-{$id}_modal">
 <div>
@@ -15,20 +24,4 @@
 <div class="trow1">{$detail}</div>
 </div>
 </div>
-
 </div>
-  
-<div class="threadbit_stats draftbit_saved align_center" data-width="25%" data-lang="{$lang->draft_saved}">{$savedate}</div>  
-
-
-<div class="threadbit_stats draftbit_details threadbit_lastpost" data-width="25%">
-
-  <span data-moderation="1">
-<a href="{$editurl}" data-lastpost-time="{$lang->edit_draft}">{$lang->edit_draft}</a>
-  
-</span>
-</div>
-<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ms-auto ps-2"><input type="checkbox" class="form-check-input" name="deletedraft[{$id}]" value="{$type}" /></span>
-
-
-  </div>

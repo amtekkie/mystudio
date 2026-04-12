@@ -112,15 +112,12 @@ function ms_pb_serve_page($rawSlug)
     // ── Detect if template includes the standard shell parts ──
     $hasHeaderInclude = (strpos($rawContent, '{$headerinclude}') !== false);
 
-    // ── Theme color mode ──
-    $ms_color_mode = 'light';
-    if (isset($mybb->ms_theme_options['color_mode']) && $mybb->ms_theme_options['color_mode'] !== '') {
-        $ms_color_mode = htmlspecialchars_uni($mybb->ms_theme_options['color_mode']);
-    }
+    // ── Theme color mode (dark only) ──
+    $ms_color_mode = 'dark';
 
     // ── Build the full page HTML ──
     $page_html = '<!DOCTYPE html>
-<html lang="en" data-bs-theme="' . $ms_color_mode . '" data-theme="' . $ms_color_mode . '" data-theme-mode="' . $ms_color_mode . '">
+<html lang="en" data-bs-theme="dark" data-theme="dark">
 <head>
 <title>' . $metaTitle . ' - ' . $mybb->settings['bbname'] . '</title>
 ' . ($hasHeaderInclude ? '' : $headerinclude) . '

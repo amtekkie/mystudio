@@ -1,14 +1,13 @@
-<div class="row trow1">
-<div class="col-md-7">
-<a href="{$similar_thread['threadlink']}">{$similar_thread['subject']}</a>
-<div class="smalltext"><avatarep_suid_[{$similar_thread['uid']}]>{$similar_thread['profilelink']}</div>
+<div class="d-flex align-items-center gap-3 px-3 py-2 trow1">
+<div class="flex-grow-1 min-w-0">
+	<a href="{$similar_thread['threadlink']}" class="fw-semibold">{$similar_thread['subject']}</a>
+	<div class="small text-muted mt-1">
+		{$similar_thread['profilelink']}
+		<span class="d-none d-md-inline"><span class="mx-1">&middot;</span><i class="bi bi-reply"></i> <a href="javascript:MyBB.whoPosted({$similar_thread['tid']});">{$similar_thread['replies']}</a> | <i class="bi bi-eye"></i> {$similar_thread['views']}</span>
+	</div>
 </div>
-<div class="align_center smalltext col-md-1 d-none d-md-block" data-lang="{$lang->replies}"><a href="javascript:MyBB.whoPosted({$similar_thread['tid']});">{$similar_thread['replies']}</a></div>
-
-<div class="align_center smalltext col-md-1 d-none d-md-block" data-lang="{$lang->views}">{$similar_thread['views']}</div>
-
-<div class="smalltext col-md-3 align_right">
-<a href="{$similar_thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}<br />
-{$lastpostdate}
-    </div>
- </div>
+<div class="d-none d-md-block small text-end text-muted" style="width:200px;flex-shrink:0">
+	<a href="{$similar_thread['lastpostlink']}">{$lastpostdate}</a><br>
+	{$lang->by} {$lastposterlink}
+</div>
+</div>

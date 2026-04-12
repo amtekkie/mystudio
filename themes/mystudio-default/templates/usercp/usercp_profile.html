@@ -14,22 +14,22 @@
 {$errors}
 <div>
 
-<div class="thead">{$lang->edit_profile}</div>
+<div class="tcat">{$lang->edit_profile}</div>
  
-<div class="trow1 rowbit cp_row">
+<div class="trow1 cp_row">
 
-<div data-width="50%">{$requiredfields}
+{$requiredfields}
   
   
 <fieldset><legend>{$lang->profile_optional}</legend>
 
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->birthday}</div>
-<div class="formbit_field" data-width="75%"><select name="bday1">
+<div class="mb-3">
+<label class="formbit_label">{$lang->birthday}</label>
+<div class="formbit_field"><select name="bday1" class="form-select form-select-sm d-inline-block" style="width:auto">
 <option value="">&nbsp;</option>
 {$bdaydaysel}
-</select> <select name="bday2">
+</select> <select name="bday2" class="form-select form-select-sm d-inline-block" style="width:auto">
 <option value="">&nbsp;</option>
 <option value="1" {$bdaymonthsel['1']}>{$lang->month_1}</option>
 <option value="2" {$bdaymonthsel['2']}>{$lang->month_2}</option>
@@ -43,12 +43,12 @@
 <option value="10" {$bdaymonthsel['10']}>{$lang->month_10}</option>
 <option value="11" {$bdaymonthsel['11']}>{$lang->month_11}</option>
 <option value="12" {$bdaymonthsel['12']}>{$lang->month_12}</option>
-</select> <input type="text" class="textbox" size="4" maxlength="4" name="bday3" value="{$bday['2']}" /></div>
+</select> <input type="text" class="form-control form-control-sm d-inline-block" style="width:80px" maxlength="4" name="bday3" value="{$bday['2']}" /></div>
 </div>
   
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->birthdayprivacy}</div>
-<div class="formbit_field" data-width="75%"><select name="birthdayprivacy">
+<div class="mb-3">
+<label class="formbit_label">{$lang->birthdayprivacy}</label>
+<div class="formbit_field"><select name="birthdayprivacy" class="form-select form-select-sm">
 <option value="all"{$allselected}>{$lang->birthdayprivacyall}</option>
 <option value="none"{$noneselected}>{$lang->birthdayprivacynone}</option>
 <option value="age"{$ageselected}>{$lang->birthdayprivacyage}</option>
@@ -56,14 +56,11 @@
 </div>
   
 {$website}
-  </fieldset>   {$customfields}</div>
+  </fieldset>   {$customfields}
 
-<div data-width="50%">{$customtitle}
+{$customtitle}
 {$contactfields}
-  {$awaysection}</div>
-
-
-</div>
+  {$awaysection}
   
 </div>
   

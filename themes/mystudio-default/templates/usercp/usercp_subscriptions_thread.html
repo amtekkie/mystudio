@@ -1,51 +1,29 @@
-<div class="trow1 rowbit d-md-block d-none d-md-block">
-
-
-<div class="threadbit_main" data-width="60%">
-
-<div class="threadbit_folder"><span class="thread_status folder {$folder}" title="{$folder_label}"><span></span></span></div>
-<div class="threadbit_title">
-
-<div>{$gotounread}{$icon}{$thread['threadprefix']}<a href="{$thread['threadlink']}" class="{$new_class}">{$thread['subject']}</a></div>
-
-<div class="smalltext">{$lang->notification_method} {$notification_type}</div>
-
-</div></div>
-
-
-
-<div class="threadbit_stats threadbit_replies align_center smalltext" data-width="7.5%" data-lang="{$lang->replies}"><a href="javascript:MyBB.whoPosted({$thread['tid']});">{$thread['replies']}</a></div>
-
-<div class="threadbit_stats threadbit_views align_center smalltext" data-width="7.5%" data-lang="{$lang->views}">{$thread['views']}</div>
-
-<div class="threadbit_lastpost smalltext" data-width="25%">
-<span data-moderation="1">
-<a href="{$thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}, {$lastpostdate}
-</span>
+<div class="forumbit-row inline_row d-flex align-items-center gap-3 px-3 py-2">
+<div class="d-none d-md-flex align-items-center justify-content-center" style="width:28px;flex-shrink:0">
+	<span class="thread_status folder {$folder}" title="{$folder_label}"><span></span></span>
 </div>
-<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ms-auto ps-2"><input type="checkbox" class="form-check-input" name="check[{$thread['tid']}]" value="{$thread['tid']}" /></span>
-
+<div class="flex-grow-1 min-w-0">
+	<div class="d-flex align-items-center gap-1 flex-wrap">
+		<span class="thread_status {$folder} d-md-none" title="{$folder_label}"></span>
+		{$gotounread}{$icon}{$thread['threadprefix']}
+		<a href="{$thread['threadlink']}" class="{$new_class} fw-semibold">{$thread['subject']}</a>
+	</div>
+	<div class="small text-muted mt-1">
+		<span>{$lang->notification_method} {$notification_type}</span>
+		<span class="d-none d-md-inline"><span class="mx-1">&middot;</span><i class="bi bi-reply"></i> <a href="javascript:MyBB.whoPosted({$thread['tid']});">{$thread['replies']}</a> | <i class="bi bi-eye"></i> {$thread['views']}</span>
+	</div>
+	<div class="d-md-none small text-muted mt-1">
+		<span class="me-2"><i class="bi bi-reply"></i> {$thread['replies']}</span>
+		<span class="me-2"><i class="bi bi-eye"></i> {$thread['views']}</span>
+		<span>&middot; <a href="{$thread['lastpostlink']}">{$lang->lastpost}</a> {$lang->by} {$lastposterlink} &middot; {$lastpostdate}</span>
+	</div>
 </div>
-
-<div class="trow1 rowbit d-md-none d-lg-block d-lg-none">
-
-
-<div class="threadbit_main" data-width="70%">
-
-<div class="threadbit_folder"><span class="thread_status folder {$folder}" title="{$folder_label}"><span></span></span></div>
-<div class="threadbit_title">
-
-<div>{$gotounread}{$thread['threadprefix']}<a href="{$thread['threadlink']}" class="{$new_class}">{$thread['subject']}</a></div>
-
-<div class="smalltext">{$lang->notification_method} {$notification_type}</div>
-
-</div></div>
-
-<div class="threadbit_lastpost smalltext" data-width="30%">
-<span data-moderation="1">
-<a href="{$thread['lastpostlink']}" data-lastpost-time="">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}, {$lastpostdate}
-</span>
+<div class="d-none d-md-flex small align-items-center text-end" style="width:160px;flex-shrink:0">
+	<span class="min-w-0 flex-grow-1">
+		<a href="{$thread['lastpostlink']}">{$lang->lastpost}</a> {$lang->by} {$lastposterlink}, {$lastpostdate}
+	</span>
 </div>
-
-
+<div class="d-none d-md-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0">
+	<input type="checkbox" class="form-check-input" name="check[{$thread['tid']}]" value="{$thread['tid']}" />
+</div>
 </div>

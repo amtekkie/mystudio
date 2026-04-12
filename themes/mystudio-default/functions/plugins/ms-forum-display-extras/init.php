@@ -437,8 +437,8 @@ function ms_fde_xmlhttp_usercard()
     // Set JSON header
     header('Content-Type: application/json; charset=' . $charset);
 
-    // Permission check: guests must be able to view profiles
-    if (empty($mybb->user['uid']) && $mybb->usergroup['canviewprofiles'] != 1) {
+    // Permission check
+    if ($mybb->usergroup['canviewprofiles'] != 1) {
         echo json_encode(array('success' => false, 'error' => 'No permission'));
         exit;
     }
@@ -459,12 +459,6 @@ function ms_fde_xmlhttp_usercard()
 
     if (!$user) {
         echo json_encode(array('success' => false, 'error' => 'User not found'));
-        exit;
-    }
-
-    // Respect "hidden from member list" / invisible settings
-    if ($mybb->usergroup['canviewprofiles'] != 1) {
-        echo json_encode(array('success' => false, 'error' => 'No permission'));
         exit;
     }
 

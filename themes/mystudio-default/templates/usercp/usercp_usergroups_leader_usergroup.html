@@ -1,12 +1,8 @@
-<div class="trow1 rowbit">
-  
-<div class="usergroupsbit_usergroup" data-width="40%">
-{$usergroup['title']} 
+<div class="forumbit-row d-flex align-items-center gap-3 px-3 py-2">
+<div class="flex-grow-1 min-w-0">
+	<div class="fw-semibold">{$usergroup['title']}</div>
+	<div class="d-md-none small text-muted mt-1">{$usergroup['users']} {$memberlistlink} &middot; {$usergroup['joinrequests']} {$moderaterequestslink}</div>
 </div>
-  
-<div class="usergroupsbit_members threadbit_stats align_center" data-width="30%" data-title="{$lang->usergroup_members}">{$usergroup['users']} {$memberlistlink}</div>
-   
-<div class="usergroupsbit_requests threadbit_stats align_center" data-width="30%" data-lang="{$lang->join_requests}">  {$usergroup['joinrequests']} {$moderaterequestslink}</div>
-
-  
+<div class="d-none d-md-flex text-center small" style="min-width:100px;flex-shrink:0">{$usergroup['users']} {$memberlistlink}</div>
+<div class="d-none d-md-flex text-end small" style="min-width:100px;flex-shrink:0">{$usergroup['joinrequests']} {$moderaterequestslink}</div>
 </div>

@@ -1623,289 +1623,8 @@ if ($action === 'api_saveoptions') {
     } else {
         flash_message('No options found for this theme.', 'error');
     }
-    $redirect = $redirectTo ? $redirectTo : "index.php?module=mystudio-options";
+    $redirect = $redirectTo ? $redirectTo : "index.php?module=mystudio-options_header_footer";
     admin_redirect($redirect);
-}
-
-/* ====================================================================
-   Global MyStudio Options Page
-   ==================================================================== */
-
-if ($action === 'options') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
-    $page->add_breadcrumb_item("Global MyStudio Options");
-
-    $page->output_header("MyStudio - Global MyStudio Options");
-
-    $activeSlug = $ms->getActiveThemeSlug();
-
-    if (!$activeSlug) {
-        echo '<p>No active theme found.</p>';
-        $page->output_footer();
-        exit;
-    }
-
-    $allOptions = $ms->getThemeOptions($activeSlug);
-    if (!$allOptions) {
-        echo '<div class="alert"><p>The active theme does not provide any configurable options.</p></div>';
-        $page->output_footer();
-        exit;
-    }
-
-    $values = $ms->getMergedThemeOptions($activeSlug);
-
-    // Filter options for global page
-    $globalOpts = array();
-    $groups = array();
-    foreach ($allOptions as $key => $def) {
-        $optPage = isset($def['page']) ? $def['page'] : '';
-        if ($optPage !== 'global') continue;
-        if (!empty($def['group'])) {
-            $groups[$def['group']][$key] = $def;
-        } else {
-            $globalOpts[$key] = $def;
-        }
-    }
-
-    $form = new Form("index.php?module=mystudio-manage&action=api_saveoptions", "post", "", 1);
-    echo $form->generate_hidden_field('slug', $activeSlug);
-    echo $form->generate_hidden_field('page_filter', 'global');
-    echo $form->generate_hidden_field('redirect_to', 'index.php?module=mystudio-options');
-
-    // â”€â”€ Color Mode â”€â”€
-    $form_container = new FormContainer("Global MyStudio Options");
-    foreach ($globalOpts as $key => $def) {
-        // Render color_mode first, then layout/effects after palette
-        if ($key !== 'color_mode') continue;
-        ms_render_option_row($form, $form_container, $key, $def, $values, $mybb);
-    }
-    $form_container->end();
-
-    // â”€â”€ Palette CSS â”€â”€
-    echo '<style>
-.ms-pal-table{width:100%;border-collapse:collapse;font-size:13px}
-.ms-pal-table th{text-align:left;padding:6px 8px;background:#f5f5f5;border-bottom:2px solid #ddd;font-size:12px;text-transform:uppercase;color:#666}
-.ms-pal-table td{padding:5px 8px;border-bottom:1px solid #eee;vertical-align:middle}
-.ms-pal-table tr:hover{background:#fafafa}
-.ms-pal-cell{display:flex;align-items:center;gap:6px}
-.ms-pal-cell input[type=color]{width:26px;height:26px;border:1px solid rgba(0,0,0,.15);padding:0;cursor:pointer;border-radius:4px;flex-shrink:0}
-.ms-pal-cell code{font-size:11px;color:#666;min-width:62px}
-.ms-pal-cell .ms-reset-btn{font-size:10px;background:none;border:1px solid #ccc;border-radius:3px;padding:1px 5px;cursor:pointer;color:#888}
-</style>';
-
-    // â”€â”€ Quick Presets â”€â”€
-    $presets = array(
-        'teal' => array(
-            'label' => 'Teal', 'swatch' => '#0d9488',
-            'light' => array('accent'=>'#0d9488','accent_hover'=>'#0f766e','heading_bg'=>'#0d9488','border'=>'#ccfbf1','link'=>'#0d9488','link_hover'=>'#0f766e','btn_bg'=>'#0d9488','btn_hover'=>'#0f766e'),
-            'dark'  => array('accent'=>'#2dd4bf','accent_hover'=>'#5eead4','heading_bg'=>'#0d9488','border'=>'#134e4a','link'=>'#2dd4bf','link_hover'=>'#5eead4','btn_bg'=>'#2dd4bf','btn_hover'=>'#5eead4'),
-        ),
-        'ocean' => array(
-            'label' => 'Ocean', 'swatch' => '#0369a1',
-            'light' => array('accent'=>'#0369a1','accent_hover'=>'#075985','heading_bg'=>'#0369a1','border'=>'#bae6fd','link'=>'#0369a1','link_hover'=>'#075985','btn_bg'=>'#0369a1','btn_hover'=>'#075985'),
-            'dark'  => array('accent'=>'#38bdf8','accent_hover'=>'#7dd3fc','heading_bg'=>'#0369a1','border'=>'#0c4a6e','link'=>'#38bdf8','link_hover'=>'#7dd3fc','btn_bg'=>'#38bdf8','btn_hover'=>'#7dd3fc'),
-        ),
-        'indigo' => array(
-            'label' => 'Indigo', 'swatch' => '#4338ca',
-            'light' => array('accent'=>'#4338ca','accent_hover'=>'#3730a3','heading_bg'=>'#4338ca','border'=>'#c7d2fe','link'=>'#4338ca','link_hover'=>'#3730a3','btn_bg'=>'#4338ca','btn_hover'=>'#3730a3'),
-            'dark'  => array('accent'=>'#818cf8','accent_hover'=>'#a5b4fc','heading_bg'=>'#4338ca','border'=>'#312e81','link'=>'#818cf8','link_hover'=>'#a5b4fc','btn_bg'=>'#818cf8','btn_hover'=>'#a5b4fc'),
-        ),
-        'purple' => array(
-            'label' => 'Purple', 'swatch' => '#7e22ce',
-            'light' => array('accent'=>'#7e22ce','accent_hover'=>'#6b21a8','heading_bg'=>'#7e22ce','border'=>'#e9d5ff','link'=>'#7e22ce','link_hover'=>'#6b21a8','btn_bg'=>'#7e22ce','btn_hover'=>'#6b21a8'),
-            'dark'  => array('accent'=>'#c084fc','accent_hover'=>'#d8b4fe','heading_bg'=>'#7e22ce','border'=>'#581c87','link'=>'#c084fc','link_hover'=>'#d8b4fe','btn_bg'=>'#c084fc','btn_hover'=>'#d8b4fe'),
-        ),
-        'rose' => array(
-            'label' => 'Rose', 'swatch' => '#be123c',
-            'light' => array('accent'=>'#be123c','accent_hover'=>'#9f1239','heading_bg'=>'#be123c','border'=>'#fecdd3','link'=>'#be123c','link_hover'=>'#9f1239','btn_bg'=>'#be123c','btn_hover'=>'#9f1239'),
-            'dark'  => array('accent'=>'#fb7185','accent_hover'=>'#fda4af','heading_bg'=>'#be123c','border'=>'#881337','link'=>'#fb7185','link_hover'=>'#fda4af','btn_bg'=>'#fb7185','btn_hover'=>'#fda4af'),
-        ),
-        'amber' => array(
-            'label' => 'Amber', 'swatch' => '#b45309',
-            'light' => array('accent'=>'#b45309','accent_hover'=>'#92400e','heading_bg'=>'#b45309','border'=>'#fde68a','link'=>'#b45309','link_hover'=>'#92400e','btn_bg'=>'#b45309','btn_hover'=>'#92400e'),
-            'dark'  => array('accent'=>'#fbbf24','accent_hover'=>'#fcd34d','heading_bg'=>'#b45309','border'=>'#78350f','link'=>'#fbbf24','link_hover'=>'#fcd34d','btn_bg'=>'#fbbf24','btn_hover'=>'#fcd34d'),
-        ),
-        'emerald' => array(
-            'label' => 'Emerald', 'swatch' => '#059669',
-            'light' => array('accent'=>'#059669','accent_hover'=>'#047857','heading_bg'=>'#059669','border'=>'#a7f3d0','link'=>'#059669','link_hover'=>'#047857','btn_bg'=>'#059669','btn_hover'=>'#047857'),
-            'dark'  => array('accent'=>'#34d399','accent_hover'=>'#6ee7b7','heading_bg'=>'#059669','border'=>'#064e3b','link'=>'#34d399','link_hover'=>'#6ee7b7','btn_bg'=>'#34d399','btn_hover'=>'#6ee7b7'),
-        ),
-        'crimson' => array(
-            'label' => 'Crimson', 'swatch' => '#dc2626',
-            'light' => array('accent'=>'#dc2626','accent_hover'=>'#b91c1c','heading_bg'=>'#dc2626','border'=>'#fecaca','link'=>'#dc2626','link_hover'=>'#b91c1c','btn_bg'=>'#dc2626','btn_hover'=>'#b91c1c'),
-            'dark'  => array('accent'=>'#f87171','accent_hover'=>'#fca5a5','heading_bg'=>'#dc2626','border'=>'#7f1d1d','link'=>'#f87171','link_hover'=>'#fca5a5','btn_bg'=>'#f87171','btn_hover'=>'#fca5a5'),
-        ),
-        'sapphire' => array(
-            'label' => 'Sapphire', 'swatch' => '#1d4ed8',
-            'light' => array('accent'=>'#1d4ed8','accent_hover'=>'#1e40af','heading_bg'=>'#1d4ed8','border'=>'#bfdbfe','link'=>'#1d4ed8','link_hover'=>'#1e40af','btn_bg'=>'#1d4ed8','btn_hover'=>'#1e40af'),
-            'dark'  => array('accent'=>'#60a5fa','accent_hover'=>'#93bbfd','heading_bg'=>'#1d4ed8','border'=>'#1e3a5f','link'=>'#60a5fa','link_hover'=>'#93bbfd','btn_bg'=>'#60a5fa','btn_hover'=>'#93bbfd'),
-        ),
-        'coral' => array(
-            'label' => 'Coral', 'swatch' => '#c2410c',
-            'light' => array('accent'=>'#c2410c','accent_hover'=>'#9a3412','heading_bg'=>'#c2410c','border'=>'#fed7aa','link'=>'#c2410c','link_hover'=>'#9a3412','btn_bg'=>'#c2410c','btn_hover'=>'#9a3412'),
-            'dark'  => array('accent'=>'#fb923c','accent_hover'=>'#fdba74','heading_bg'=>'#c2410c','border'=>'#7c2d12','link'=>'#fb923c','link_hover'=>'#fdba74','btn_bg'=>'#fb923c','btn_hover'=>'#fdba74'),
-        ),
-        'slate' => array(
-            'label' => 'Slate', 'swatch' => '#475569',
-            'light' => array('accent'=>'#475569','accent_hover'=>'#334155','heading_bg'=>'#475569','border'=>'#cbd5e1','link'=>'#475569','link_hover'=>'#334155','btn_bg'=>'#475569','btn_hover'=>'#334155'),
-            'dark'  => array('accent'=>'#94a3b8','accent_hover'=>'#cbd5e1','heading_bg'=>'#475569','border'=>'#334155','link'=>'#94a3b8','link_hover'=>'#cbd5e1','btn_bg'=>'#94a3b8','btn_hover'=>'#cbd5e1'),
-        ),
-        'pink' => array(
-            'label' => 'Pink', 'swatch' => '#db2777',
-            'light' => array('accent'=>'#db2777','accent_hover'=>'#be185d','heading_bg'=>'#db2777','border'=>'#fbcfe8','link'=>'#db2777','link_hover'=>'#be185d','btn_bg'=>'#db2777','btn_hover'=>'#be185d'),
-            'dark'  => array('accent'=>'#f472b6','accent_hover'=>'#f9a8d4','heading_bg'=>'#db2777','border'=>'#831843','link'=>'#f472b6','link_hover'=>'#f9a8d4','btn_bg'=>'#f472b6','btn_hover'=>'#f9a8d4'),
-        ),
-    );
-    $presetsJson = json_encode($presets);
-
-    echo '<div style="margin:12px 0 16px;padding:14px 18px;background:#fff;border:1px solid #e5e7eb;border-radius:8px">';
-    echo '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
-    echo '<strong style="font-size:13px;color:#374151"><i class="bi bi-palette me-1"></i> Quick Presets</strong>';
-    echo '<span style="font-size:11px;color:#9ca3af">Click to apply a color scheme â€” all palette fields update instantly</span>';
-    echo '</div>';
-    echo '<div id="ms-presets" style="display:flex;flex-wrap:wrap;gap:8px">';
-    foreach ($presets as $id => $preset) {
-        echo '<button type="button" class="ms-preset-btn" data-preset="' . htmlspecialchars_uni($id) . '" '
-           . 'style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border:2px solid transparent;border-radius:8px;background:#f9fafb;cursor:pointer;transition:all .15s" '
-           . 'title="' . htmlspecialchars_uni($preset['label']) . '">'
-           . '<span style="width:28px;height:28px;border-radius:50%;background:' . htmlspecialchars_uni($preset['swatch']) . ';border:2px solid rgba(0,0,0,.1);display:block"></span>'
-           . '<span style="font-size:10px;color:#6b7280;font-weight:500">' . htmlspecialchars_uni($preset['label']) . '</span>'
-           . '</button>';
-    }
-    echo '</div>';
-    echo '</div>';
-
-    // â”€â”€ Render palette groups (no preview strip) â”€â”€
-    $groupLabels = array(
-        'palette_light' => 'Color Palette â€” Light Mode',
-        'palette_dark'  => 'Color Palette â€” Dark Mode',
-    );
-
-    $activeMode = isset($values['color_mode']) ? $values['color_mode'] : 'light';
-
-    foreach (array('palette_light', 'palette_dark') as $groupId) {
-        if (empty($groups[$groupId])) continue;
-
-        $mode = ($groupId === 'palette_dark') ? 'dark' : 'light';
-        $hideStyle = ($mode !== $activeMode) ? ' style="display:none"' : '';
-        echo '<div class="ms-palette-group" data-palette-mode="' . $mode . '"' . $hideStyle . '>';
-
-        $label = isset($groupLabels[$groupId]) ? $groupLabels[$groupId] : $groupId;
-        $modeIcon = ($groupId === 'palette_dark') ? '&#x1F319;' : '&#x2600;&#xFE0F;';
-        $form_container = new FormContainer($modeIcon . ' ' . $label);
-
-        // Compact table â€” no preview strip
-        $tableHtml = '<table class="ms-pal-table"><thead><tr><th>Color</th><th>Value</th><th>CSS Variable</th></tr></thead><tbody>';
-        foreach ($groups[$groupId] as $key => $def) {
-            $val = isset($values[$key]) ? $values[$key] : (isset($def['default']) ? $def['default'] : '');
-            $defaultVal = isset($def['default']) ? $def['default'] : '';
-            $cssVar = isset($def['css_var']) ? $def['css_var'] : '';
-
-            $resetBtn = '';
-            if ($defaultVal && strtolower($val) !== strtolower($defaultVal)) {
-                $resetBtn = ' <button type="button" class="ms-reset-btn" data-default="' . htmlspecialchars_uni($defaultVal) . '" title="Reset to ' . htmlspecialchars_uni($defaultVal) . '">&#x21A9;</button>';
-            }
-
-            $tableHtml .= '<tr>'
-                        . '<td><strong>' . htmlspecialchars_uni($def['title']) . '</strong></td>'
-                        . '<td><div class="ms-pal-cell">'
-                        . '<input type="color" name="opt_' . htmlspecialchars_uni($key) . '" value="' . htmlspecialchars_uni($val) . '" class="ms-palette-input" data-group="' . $groupId . '" data-default="' . htmlspecialchars_uni($defaultVal) . '" />'
-                        . '<code class="ms-hex-label">' . htmlspecialchars_uni($val) . '</code>'
-                        . $resetBtn
-                        . '</div></td>'
-                        . '<td><code style="font-size:11px;color:#999">' . htmlspecialchars_uni($cssVar) . '</code></td>'
-                        . '</tr>';
-        }
-        $tableHtml .= '</tbody></table>';
-        $form_container->output_row('', '', $tableHtml);
-
-        $form_container->end();
-        echo '</div>';
-    }
-
-    // â”€â”€ Layout & Effects â”€â”€
-    $layoutOpts = array('show_sidebar', 'loading_bar');
-    $hasLayout = false;
-    foreach ($layoutOpts as $lk) {
-        if (isset($globalOpts[$lk])) { $hasLayout = true; break; }
-    }
-    if ($hasLayout) {
-        $form_container = new FormContainer("Layout & Effects");
-        foreach ($layoutOpts as $lk) {
-            if (isset($globalOpts[$lk])) {
-                ms_render_option_row($form, $form_container, $lk, $globalOpts[$lk], $values, $mybb);
-            }
-        }
-        $form_container->end();
-    }
-
-    $buttons = array($form->generate_submit_button("Save Options"));
-    $form->output_submit_wrapper($buttons);
-    echo $form->end();
-
-    echo '<script>
-(function(){
-  function initPaletteUI(){
-    document.querySelectorAll(".ms-palette-input").forEach(function(el){
-      el.addEventListener("input",function(){
-        var label=this.parentNode.querySelector(".ms-hex-label");
-        if(label) label.textContent=this.value;
-        var defVal=this.getAttribute("data-default");
-        var resetBtn=this.parentNode.querySelector(".ms-reset-btn");
-        if(resetBtn&&defVal){
-          resetBtn.style.display=(this.value.toLowerCase()===defVal.toLowerCase())?"none":"inline";
-        }
-      });
-    });
-    document.querySelectorAll(".ms-reset-btn").forEach(function(btn){
-      btn.addEventListener("click",function(){
-        var def=this.getAttribute("data-default");
-        var cell=this.closest(".ms-pal-cell");
-        var input=cell?cell.querySelector("input[type=color]"):null;
-        if(input&&def){input.value=def;input.dispatchEvent(new Event("input"));}
-        this.style.display="none";
-      });
-    });
-    document.querySelectorAll("[name=\'opt_color_mode\']").forEach(function(radio){
-      radio.addEventListener("change",function(){
-        var mode=this.value;
-        document.querySelectorAll(".ms-palette-group").forEach(function(g){
-          g.style.display=(g.getAttribute("data-palette-mode")===mode)?"":"none";
-        });
-      });
-    });
-    var presets=' . $presetsJson . ';
-    document.querySelectorAll(".ms-preset-btn").forEach(function(btn){
-      btn.addEventListener("click",function(){
-        var id=this.getAttribute("data-preset");
-        var preset=presets[id];
-        if(!preset) return;
-        ["light","dark"].forEach(function(mode){
-          var colors=preset[mode];
-          if(!colors) return;
-          for(var key in colors){
-            var input=document.querySelector("[name=\'opt_"+mode+"_"+key+"\']");
-            if(input){
-              input.value=colors[key];
-              input.dispatchEvent(new Event("input"));
-            }
-          }
-        });
-        document.querySelectorAll(".ms-preset-btn").forEach(function(b){
-          b.style.borderColor="transparent";b.style.background="#f9fafb";
-        });
-        this.style.borderColor=preset.swatch;this.style.background="#f0fdf4";
-      });
-    });
-  }
-  document.addEventListener("DOMContentLoaded",function(){initPaletteUI();});
-})();
-</script>';
-
-
-
-    $page->output_footer();
-    exit;
 }
 
 /* ====================================================================
@@ -1967,7 +1686,7 @@ if ($action === 'options_header_footer') {
     echo $form->generate_hidden_field('redirect_to', 'index.php?module=mystudio-options_header_footer');
 
     // â”€â”€ Header Options â”€â”€
-    $headerKeys = array('header_style', 'logo_icon', 'logo_text', 'site_logo', 'favicon');
+    $headerKeys = array('logo_icon', 'logo_text', 'site_logo', 'favicon');
     $form_container = new FormContainer("Header");
     foreach ($headerKeys as $hk) {
         if (isset($hfOptions[$hk])) {
@@ -2217,7 +1936,7 @@ if ($action === 'options_header_footer') {
 }
 
 /* ====================================================================
-   Save Mini Plugin Options (POST handler)
+   Save Extension Options (POST handler)
    ==================================================================== */
 
 if ($action === 'api_save_plugin_options') {
@@ -2236,14 +1955,14 @@ if ($action === 'api_save_plugin_options') {
                 $values[$id] = $mybb->get_input('opt_' . $id);
             }
             $ms->saveMiniPluginOptionValues($activeSlug, $pluginId, $values);
-            flash_message('Plugin options saved.', 'success');
+            flash_message('Extension options saved.', 'success');
         }
     }
     admin_redirect("index.php?module=mystudio-plugin_settings&plugin=" . urlencode($pluginId));
 }
 
 /* ====================================================================
-   Toggle Mini Plugin (POST handler)
+   Toggle Extension (POST handler)
    ==================================================================== */
 
 if ($action === 'api_toggle_plugin') {
@@ -2257,13 +1976,13 @@ if ($action === 'api_toggle_plugin') {
         $states = $ms->getMiniPluginStates($activeSlug);
         $states[$pluginId] = (bool) $enable;
         $ms->saveMiniPluginStates($activeSlug, $states);
-        flash_message($enable ? 'Plugin enabled.' : 'Plugin disabled.', 'success');
+        flash_message($enable ? 'Extension enabled.' : 'Extension disabled.', 'success');
     }
     admin_redirect("index.php?module=mystudio-plugins");
 }
 
 /* ====================================================================
-   Plugin Settings Page (individual plugin options via side nav)
+   Extension Settings Page (individual extension options via side nav)
    ==================================================================== */
 
 if ($action === 'plugin_settings') {
@@ -2273,7 +1992,7 @@ if ($action === 'plugin_settings') {
     $selectedPlugin = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('plugin'));
 
     if (!$activeSlug || empty($selectedPlugin)) {
-        flash_message('Invalid plugin.', 'error');
+        flash_message('Invalid extension.', 'error');
         admin_redirect("index.php?module=mystudio-plugins");
     }
 
@@ -2287,14 +2006,14 @@ if ($action === 'plugin_settings') {
     }
 
     if (!$pluginInfo) {
-        flash_message('Plugin not found.', 'error');
+        flash_message('Extension not found.', 'error');
         admin_redirect("index.php?module=mystudio-plugins");
     }
 
     $page->add_breadcrumb_item(htmlspecialchars_uni($pluginInfo['name']));
     $page->output_header("MyStudio - " . htmlspecialchars_uni($pluginInfo['name']));
 
-    // Plugin options
+    // Extension options
     $options = $ms->getMiniPluginOptions($activeSlug, $selectedPlugin);
     if ($options) {
         $values = $ms->getMergedMiniPluginOptions($activeSlug, $selectedPlugin);
@@ -2393,7 +2112,7 @@ if ($action === 'plugin_settings') {
         $form->output_submit_wrapper($buttons);
         echo $form->end();
     } else {
-        echo '<p>This plugin has no configurable options.</p>';
+        echo '<p>This extension has no configurable options.</p>';
     }
 
     // Include admin.php if it exists (custom admin content)
@@ -2406,17 +2125,17 @@ if ($action === 'plugin_settings') {
 }
 
 /* ====================================================================
-   Plugins Page
+   Extensions Page
    ==================================================================== */
 
 if ($action === 'plugins') {
     $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
-    $page->add_breadcrumb_item("Manage Plugins");
+    $page->add_breadcrumb_item("Manage Extensions");
 
     $activeSlug = $ms->getActiveThemeSlug();
 
-    // Main plugins list
-    $page->output_header("MyStudio - Manage Plugins");
+    // Main extensions list
+    $page->output_header("MyStudio - Manage Extensions");
 
     if (!$activeSlug) {
         echo '<p>No active theme found. Activate a theme on the Manage page first.</p>';
@@ -2430,11 +2149,11 @@ if ($action === 'plugins') {
 
     if (empty($allPlugins)) {
         $table = new Table;
-        $table->construct_header("Plugin");
+        $table->construct_header("Extension");
         $table->construct_header("Controls", array('class' => 'align_center', 'width' => 200));
-        $table->construct_cell('No mini plugins found for the active theme.', array('colspan' => 2));
+        $table->construct_cell('No extensions found for the active theme.', array('colspan' => 2));
         $table->construct_row();
-        $table->output("Theme Plugins: " . htmlspecialchars_uni($activeSlug));
+        $table->output("Theme Extensions: " . htmlspecialchars_uni($activeSlug));
         $page->output_footer();
         exit;
     }
@@ -2451,13 +2170,13 @@ if ($action === 'plugins') {
         }
     }
 
-    // Active plugins table
+    // Active extensions table
     $table = new Table;
-    $table->construct_header("Plugin");
+    $table->construct_header("Extension");
     $table->construct_header("Controls", array('colspan' => 2, 'class' => 'align_center', 'width' => 300));
 
     if (empty($activePlugins)) {
-        $table->construct_cell('No active plugins.', array('colspan' => 3));
+        $table->construct_cell('No active extensions.', array('colspan' => 3));
         $table->construct_row();
     } else {
         foreach ($activePlugins as $p) {
@@ -2483,15 +2202,15 @@ if ($action === 'plugins') {
         }
     }
 
-    $table->output("Active Plugins");
+    $table->output("Active Extensions");
 
-    // Inactive plugins table
+    // Inactive extensions table
     $table = new Table;
-    $table->construct_header("Plugin");
+    $table->construct_header("Extension");
     $table->construct_header("Controls", array('colspan' => 2, 'class' => 'align_center', 'width' => 300));
 
     if (empty($inactivePlugins)) {
-        $table->construct_cell('No inactive plugins.', array('colspan' => 3));
+        $table->construct_cell('No inactive extensions.', array('colspan' => 3));
         $table->construct_row();
     } else {
         foreach ($inactivePlugins as $p) {
@@ -2517,14 +2236,14 @@ if ($action === 'plugins') {
         }
     }
 
-    $table->output("Inactive Plugins");
+    $table->output("Inactive Extensions");
 
     $page->output_footer();
     exit;
 }
 
 /* ====================================================================
-   Settings Page â€” Plugin-level settings (moved from Configuration)
+   Settings Page â€” Extension-level settings
    ==================================================================== */
 
 if ($action === 'settings') {
@@ -2535,6 +2254,7 @@ if ($action === 'settings') {
     $newSettings = array(
         'ms_dev_auto_sync'     => array('title' => 'Auto Sync (Dev Mode)', 'description' => 'Automatically sync theme files to the database when changes are detected.', 'optionscode' => 'yesno', 'value' => '0', 'disporder' => 3, 'gid' => 0),
         'ms_dev_sync_interval' => array('title' => 'Auto Sync Interval (seconds)', 'description' => 'How often to check for file changes.', 'optionscode' => 'numeric', 'value' => '2', 'disporder' => 4, 'gid' => 0),
+        'ms_loading_bar'       => array('title' => 'Page Loading Bar', 'description' => 'Show an accent-colored progress bar at the top of the page during navigation.', 'optionscode' => 'yesno', 'value' => '1', 'disporder' => 6, 'gid' => 0),
     );
     foreach ($newSettings as $name => $def) {
         $check = $db->simple_select('settings', 'name', "name='" . $db->escape_string($name) . "'");
@@ -2555,6 +2275,7 @@ if ($action === 'settings') {
             'ms_max_upload_mb'     => max(1, intval($mybb->get_input('ms_max_upload_mb'))),
             'ms_dev_auto_sync'     => intval($mybb->get_input('ms_dev_auto_sync')),
             'ms_dev_sync_interval' => max(1, intval($mybb->get_input('ms_dev_sync_interval'))),
+            'ms_loading_bar'       => intval($mybb->get_input('ms_loading_bar')),
         );
 
         foreach ($settingsToSave as $name => $value) {
@@ -2578,7 +2299,7 @@ if ($action === 'settings') {
 
     $form = new Form("index.php?module=mystudio-settings", "post");
 
-    $form_container = new FormContainer("Plugin Settings");
+    $form_container = new FormContainer("General");
 
     $form_container->output_row(
         "Enable MyStudio",
@@ -2590,6 +2311,16 @@ if ($action === 'settings') {
         "Max Upload Size (MB)",
         "Maximum allowed ZIP file size in megabytes for theme imports.",
         $form->generate_numeric_field('ms_max_upload_mb', isset($currentSettings['ms_max_upload_mb']) ? $currentSettings['ms_max_upload_mb'] : 20, array('min' => 1, 'max' => 500, 'style' => 'width:80px'))
+    );
+
+    $form_container->end();
+
+    $form_container = new FormContainer("Theme Settings");
+
+    $form_container->output_row(
+        "Page Loading Bar",
+        "Show an accent-colored progress bar at the top of the page during navigation.",
+        $form->generate_yes_no_radio('ms_loading_bar', isset($currentSettings['ms_loading_bar']) ? $currentSettings['ms_loading_bar'] : 1)
     );
 
     $form_container->end();

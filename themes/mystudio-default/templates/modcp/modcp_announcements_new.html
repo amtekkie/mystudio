@@ -17,70 +17,55 @@
 					{$preview}
 					<div>
 						
-							<div class="thead">{$lang->add_announcement}</div>
+							<div class="tcat">{$lang->add_announcement}</div>
 						
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->title}</div>  
-<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="title" value="{$title}" /></div>
+<div class="trow1 p-3">
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->title}</label>
+<input type="text" class="form-control form-control-sm" name="title" value="{$title}" />
 </div>
-                      
-                      
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->start_date}</div>  
-<div class="formbit_field" data-width="75%">								<select name="starttime_day">
-								{$startdateday}
-								</select>
-								&nbsp;
-								<select name="starttime_month">
-								{$startdatemonth}
-								</select>
-								&nbsp;
-								<input type="text" name="starttime_year" value="{$startdateyear}" size="4" maxlength="4" class="textbox" />
-								 - {$lang->time} <input type="text" name="starttime_time" value="{$starttime_time}" size="10" class="textbox" />
-							</div>
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->start_date}</label>
+<div><select name="starttime_day" class="form-select form-select-sm d-inline-block" style="width:auto">{$startdateday}</select>
+<select name="starttime_month" class="form-select form-select-sm d-inline-block" style="width:auto">{$startdatemonth}</select>
+<input type="text" name="starttime_year" value="{$startdateyear}" size="4" maxlength="4" class="form-control form-control-sm d-inline-block" style="width:80px" />
+ - {$lang->time} <input type="text" name="starttime_time" value="{$starttime_time}" size="10" class="form-control form-control-sm d-inline-block" style="width:120px" /></div>
 </div>
-                      
-                      
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->end_date}</div>  
-<div class="formbit_field" data-width="75%"><input type="radio" name="endtime_type" value="1"{$end_type_sel['finite']} />
-								<select name="endtime_day">
-								{$enddateday}
-								</select>
-								&nbsp;
-								<select name="endtime_month">
-								{$enddatemonth}
-								</select>
-								&nbsp;
-								<input type="text" name="endtime_year" value="{$enddateyear}" size="4" maxlength="4" class="textbox" />
-								 - {$lang->time} <input type="text" name="endtime_time" value="{$endtime_time}" size="10" class="textbox" /> <input type="radio" name="endtime_type" value="2"{$end_type_sel['infinite']} /> {$lang->never}
-							</div>
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->end_date}</label>
+<div><label><input type="radio" name="endtime_type" value="1"{$end_type_sel['finite']} class="form-check-input" /></label>
+<select name="endtime_day" class="form-select form-select-sm d-inline-block" style="width:auto">{$enddateday}</select>
+<select name="endtime_month" class="form-select form-select-sm d-inline-block" style="width:auto">{$enddatemonth}</select>
+<input type="text" name="endtime_year" value="{$enddateyear}" size="4" maxlength="4" class="form-control form-control-sm d-inline-block" style="width:80px" />
+ - {$lang->time} <input type="text" name="endtime_time" value="{$endtime_time}" size="10" class="form-control form-control-sm d-inline-block" style="width:120px" />
+<label class="ms-2"><input type="radio" name="endtime_type" value="2"{$end_type_sel['infinite']} class="form-check-input" /> {$lang->never}</label></div>
 </div>
-                      
-                      
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->announcement}<br />{$smilieinserter}</div>  
-<div class="formbit_field" data-width="75%"><textarea id="message" name="message">{$message}</textarea>{$codebuttons}</div>
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->announcement} {$smilieinserter}</label>
+<textarea id="message" name="message" class="form-control">{$message}</textarea>
+{$codebuttons}
 </div>
-                      
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->allow_html}</div>  
-<div class="formbit_field" data-width="75%"><label><input type="radio" name="allowhtml" value="1"{$html_sel['yes']} />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowhtml" value="0"{$html_sel['no']} />&nbsp;{$lang->no}</label></div>
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->allow_html}</label>
+<div><label><input type="radio" name="allowhtml" value="1"{$html_sel['yes']} class="form-check-input" />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowhtml" value="0"{$html_sel['no']} class="form-check-input" />&nbsp;{$lang->no}</label></div>
 </div>
-               
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->allow_mycode}</div>  
-<div class="formbit_field" data-width="75%"><label><input type="radio" name="allowmycode" value="1"{$mycode_sel['yes']} />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowmycode" value="0"{$mycode_sel['no']} />&nbsp;{$lang->no}</label></div>
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->allow_mycode}</label>
+<div><label><input type="radio" name="allowmycode" value="1"{$mycode_sel['yes']} class="form-check-input" />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowmycode" value="0"{$mycode_sel['no']} class="form-check-input" />&nbsp;{$lang->no}</label></div>
 </div>
-                      
-                      
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->allow_smilies}</div>  
-<div class="formbit_field" data-width="75%"><label><input type="radio" name="allowsmilies" value="1"{$smilies_sel['yes']} />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowsmilies" value="0"{$smilies_sel['no']} />&nbsp;{$lang->no}</label></div>
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->allow_smilies}</label>
+<div><label><input type="radio" name="allowsmilies" value="1"{$smilies_sel['yes']} class="form-check-input" />&nbsp;{$lang->yes}</label> &nbsp;&nbsp;<label><input type="radio" name="allowsmilies" value="0"{$smilies_sel['no']} class="form-check-input" />&nbsp;{$lang->no}</label></div>
 </div>
-                      
-                      
-					</div>
+
+</div>
 					<br />
 					<div class="align_center">
 						<input type="submit" class="button" value="{$lang->add_announcement}" />&nbsp;&nbsp;

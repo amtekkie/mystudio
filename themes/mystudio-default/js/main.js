@@ -1,39 +1,23 @@
 /**
  * TekBB Theme Engine
- * Color mode controlled by theme settings (admin-only)
+ * Dark mode only — no theme switching
  */
 var TekBB = (function ($) {
   "use strict";
 
-  /* ── Theme logic ── */
+  /* ── Theme init ── */
 
-  function getTheme() {
-    // Get theme setting from data attribute set by admin
-    var themeMode = document.documentElement.getAttribute('data-theme-mode') || 'light';
-    return themeMode;
-  }
-
-  function applyTheme(t) {
-    document.documentElement.setAttribute("data-theme", t);
-    document.documentElement.setAttribute("data-bs-theme", t);
-
-    var nav = document.querySelector(".navbar");
-    if (nav) {
-      nav.classList.remove("navbar-light", "bg-white", "navbar-dark", "bg-dark");
-      if (t === "dark") {
-        nav.classList.add("navbar-dark", "bg-dark");
-      } else {
-        nav.classList.add("navbar-light", "bg-white");
-      }
-    }
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.documentElement.setAttribute("data-bs-theme", "dark");
 
     // SCEditor iframe dark mode
     var iframes = document.querySelectorAll(".sceditor-container iframe");
     for (var j = 0; j < iframes.length; j++) {
       try {
         var doc = iframes[j].contentDocument || iframes[j].contentWindow.document;
-        doc.body.style.backgroundColor = t === "dark" ? "#0f172a" : "#fff";
-        doc.body.style.color = t === "dark" ? "#e2e8f0" : "#1e293b";
+        doc.body.style.backgroundColor = "#0f172a";
+        doc.body.style.color = "#e2e8f0";
       } catch (e) {}
     }
   }
@@ -105,13 +89,21 @@ var TekBB = (function ($) {
 
   /* ── Boot ── */
 
-  applyTheme(getTheme());
+  applyTheme();
+
+  function initClickableRows() {
+    $(document).on('click', '.forumbit-row[data-href]', function (e) {
+      if ($(e.target).closest('a, button, input, select, label, .expcolimage, .star_rating, [data-ms-user-modal]').length) return;
+      window.location.href = $(this).data('href');
+    });
+  }
 
   $(function () {
-    applyTheme(getTheme());
+    applyTheme();
     initScrollTop();
     initExpCol();
+    initClickableRows();
   });
 
-  return { getTheme: getTheme };
+  return {};
 })(jQuery);

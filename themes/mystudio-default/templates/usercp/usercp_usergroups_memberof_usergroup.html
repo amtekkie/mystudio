@@ -1,16 +1,10 @@
-<div class="trow1 rowbit">
-  
-<div class="usergroupsbit_usergroup threadbit_main" data-width="40%">
-{$usergroup['title']}  {$displaycode}
-{$description}
+<div class="forumbit-row d-flex align-items-center gap-3 px-3 py-2">
+<div class="flex-grow-1 min-w-0">
+	<div class="fw-semibold">{$usergroup['title']} {$displaycode}</div>
+	{$description}
+	<div class="d-md-none small text-muted mt-1">{$usergroup['usertitle']} &middot; {$leavelink}</div>
 </div>
-  
- 
-<div class="usergroupsbit_grouptitle align_center threadbit_stats" data-width="30%" data-lang="{$lang->usertitle}">{$usergroup['usertitle']}</div>
-   
-<div class="usergroupsbit_leave threadbit_lastpost" data-width="30%" data-lang="{$lang->usergroup_leave}">{$leavelink}</div>
-     
-  
-</div>  
-  
+<div class="d-none d-md-flex text-center small" style="min-width:120px;flex-shrink:0">{$usergroup['usertitle']}</div>
+<div class="d-none d-md-flex text-end small" style="min-width:100px;flex-shrink:0">{$leavelink}</div>
+</div>
 </div>

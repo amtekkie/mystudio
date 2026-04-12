@@ -40,8 +40,8 @@
 .new_pm{font-weight:bold}
 span.pmstatus_new_pm:before{content:"\f32f";font-family:'bootstrap-icons'}
 span.pmstatus_old_pm:before{content:"\f32e";font-family:'bootstrap-icons'}
-span.pmstatus_re_pm:before{content:"\f4e6";font-family:'bootstrap-icons'}
-span.pmstatus_fw_pm:before{content:"\f4e8";font-family:'bootstrap-icons'}
+span.pmstatus_re_pm:before{content:"\f520";font-family:'bootstrap-icons'}
+span.pmstatus_fw_pm:before{content:"\f3dc";font-family:'bootstrap-icons'}
 
 /* Dark mode */
 :root[data-theme="dark"] .usercp_nav_item{color:var(--bs-body-color)}

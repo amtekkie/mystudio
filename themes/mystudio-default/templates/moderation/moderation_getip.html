@@ -7,21 +7,21 @@
 {$header}
 <div class="tborder">
 
-<div class="thead">{$lang->get_post_ip}</div>
-  
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="20%">{$lang->username}</div>
-<div class="formbit_field" data-width="80%">{$username}</div>
+<div class="tcat">{$lang->get_post_ip}</div>
+
+<div class="trow1 p-3">
+<div class="mb-3">
+<label class="formbit_label">{$lang->username}</label>
+<div>{$username}</div>
 </div>
-  
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="20%">{$lang->ip_address}</div>
-<div class="formbit_field" data-width="80%">{$post['ipaddress']}</div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->ip_address}</label>
+<div>{$post['ipaddress']}</div>
 </div>
-  
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="20%">{$lang->hostname}</div>
-<div class="formbit_field" data-width="80%">{$hostname}<br /><span class="smalltext">{$lang->if_resolvable}</span></div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->hostname}</label>
+<div>{$hostname}<br /><span class="smalltext">{$lang->if_resolvable}</span></div>
+</div>
 </div>
   
 

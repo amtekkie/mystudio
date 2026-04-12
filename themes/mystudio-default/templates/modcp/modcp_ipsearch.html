@@ -13,22 +13,20 @@
 					{$ipsearch_results}
 					<div>
 						
-							<div class="thead">{$lang->ipaddress_search}</div>
+							<div class="tcat">{$lang->ipaddress_search}</div>
 						
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->ip_address}</div>
-<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="ipaddress" value="{$ipaddressvalue}" size="30" /></div>
+<div class="trow1 p-3">
+<div class="mb-3">
+<label class="formbit_label">{$lang->ip_address}</label>
+<input type="text" class="form-control form-control-sm" name="ipaddress" value="{$ipaddressvalue}" />
 </div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->options}</div>
-<div class="formbit_field" data-width="75%">	<label><input type="checkbox" class="checkbox" name="search_users" value="1" {$usersearchselect} />{$lang->search_users}</label><br />
-								<label><input type="checkbox" class="checkbox" name="search_posts" value="1" {$postsearchselect} />{$lang->search_posts}</label></div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->options}</label>
+<div class="form-check"><input type="checkbox" class="form-check-input" name="search_users" id="search_users" value="1" {$usersearchselect} /><label class="form-check-label" for="search_users">{$lang->search_users}</label></div>
+<div class="form-check"><input type="checkbox" class="form-check-input" name="search_posts" id="search_posts" value="1" {$postsearchselect} /><label class="form-check-label" for="search_posts">{$lang->search_posts}</label></div>
 </div>
-
-
-	
-					</div>
+</div>
 					<br />
 					<div class="align_center">
 						<input type="submit" class="button" value="{$lang->find}" />

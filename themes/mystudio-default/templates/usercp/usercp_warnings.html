@@ -8,28 +8,11 @@
 				</div>
 			
 			
-<div class="tcat rowbit">
-
-<span class="warningbit_warning threadbit_main" data-width="25%">
-{$lang->warning}
-</span>
-  
-
-
-<span class="warningbit_issued threadbit_stats" data-width="25%">
-{$lang->date_issued}
-</span>
-  
-<span class="warningbit_expires threadbit_stats" data-width="25%">
-{$lang->expiry_date}
-</span>
-  
-<span class="warningbit_issued_by threadbit_stats" data-width="25%">
-{$lang->issued_by}
-</span>
-  
-
-  
+<div class="tcat d-none d-md-flex align-items-center gap-3 px-3 py-2 border-bottom">
+	<div class="flex-grow-1 min-w-0">{$lang->warning}</div>
+	<div class="text-center" style="min-width:100px;flex-shrink:0">{$lang->date_issued}</div>
+	<div class="text-center" style="min-width:100px;flex-shrink:0">{$lang->expiry_date}</div>
+	<div class="text-end" style="min-width:100px;flex-shrink:0">{$lang->issued_by}</div>
 </div>
 
 {$warnings}

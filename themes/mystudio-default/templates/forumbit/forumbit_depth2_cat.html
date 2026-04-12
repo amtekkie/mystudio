@@ -1,26 +1,22 @@
-<div class="d-flex align-items-center gap-2 {$bgcolor} py-2 px-3 border-bottom">
-
-	<div class="forum_status forum_{$lightbulb['folder']} ajax_mark_read d-none d-md-flex align-items-center justify-content-center ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}" style="font-size:26px;min-width:48px"><i class="bi bi-chat-left-text-fill"></i></div>
-
-	<div class="flex-grow-1">
-		<h6 class="fw-bold mb-0 d-flex align-items-center gap-1">
-			<span class="forum_status forum_{$lightbulb['folder']} ajax_mark_read d-md-none ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}"><i class="bi bi-chat-left-text-fill"></i></span>
-			<a href="{$forum_url}" title="{$forum['description']}">{$forum['name']}</a>
-		</h6>
-		<div class="text-muted small d-none d-md-block">{$forum['description']}</div>
+<div class="forumbit-row d-flex align-items-center gap-3 px-3 py-2">
+	<div class="d-none d-md-flex align-items-center justify-content-center forum_{$lightbulb['folder']} ajax_mark_read ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}" style="font-size:1.15rem;width:28px;flex-shrink:0"><i class="bi bi-chat-left-text-fill"></i></div>
+	<div class="flex-grow-1 min-w-0">
+		<div class="d-flex align-items-center gap-1">
+			<span class="d-md-none forum_{$lightbulb['folder']} ajax_mark_read ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}"><i class="bi bi-chat-left-text-fill"></i></span>
+			<a href="{$forum_url}" class="fw-semibold text-truncate" title="{$forum['description']}">{$forum['name']}</a>
+		</div>
+		<div class="text-muted small text-truncate d-none d-md-block">{$forum['description']}</div>
 		<div class="d-md-none small text-muted mt-1">
-			<span class="me-2"><i class="bi bi-chat-square-text"></i> {$threads}{$unapproved['unapproved_threads']} {$lang->forumbit_threads}</span>
-			<span><i class="bi bi-chat-square-dots"></i> {$posts}{$unapproved['unapproved_posts']} {$lang->forumbit_posts}</span>
+			<span class="me-2">{$threads} threads</span>
+			<span>{$posts} posts</span>
 		</div>
 		<div class="d-md-none small text-muted mt-1">{$lastpost}</div>
 		{$forum_viewers_text}{$subforums}
 	</div>
-
-	<div class="d-none d-md-block small fw-bold text-nowrap" style="width:120px">
-		<div><i class="bi bi-chat-square-text"></i> {$threads}{$unapproved['unapproved_threads']} {$lang->forumbit_threads}</div>
-		<div><i class="bi bi-chat-square-dots"></i> {$posts}{$unapproved['unapproved_posts']} {$lang->forumbit_posts}</div>
+	<div class="d-none d-md-flex align-items-center gap-3 text-muted small flex-shrink-0">
+		<span title="{$lang->forumbit_threads}">{$threads}</span>
+		<span class="opacity-25">|</span>
+		<span title="{$lang->forumbit_posts}">{$posts}</span>
 	</div>
-
-	<div class="d-none d-md-block small text-end" style="width:220px">{$lastpost}</div>
-
+	<div class="d-none d-md-block small text-end flex-shrink-0" style="width:200px">{$lastpost}</div>
 </div>

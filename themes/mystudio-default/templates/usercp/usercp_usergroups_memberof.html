@@ -2,20 +2,11 @@
 
 <div class="thead">{$lang->usergroups_memberof}</div>
 
-<div class="tcat rowbit">
-
-    
-<span class="usergroupsbit_usergroup threadbit_main" data-width="40%">
-{$lang->usergroups_usergroup}
-</span>
-  
-  
-<span class="usergroupsbit_grouptitle threadbit_stats align_center" data-width="30%">{$lang->usertitle}</span>
-   
-<span class="usergroupsbit_leave threadbit_stats align_center" data-width="30%">{$lang->usergroup_leave}</span>
-     
-  
-  </div>
+<div class="tcat d-none d-md-flex align-items-center gap-3 px-3 py-2 border-bottom">
+	<div class="flex-grow-1 min-w-0">{$lang->usergroups_usergroup}</div>
+	<div class="text-center" style="min-width:120px;flex-shrink:0">{$lang->usertitle}</div>
+	<div class="text-end" style="min-width:100px;flex-shrink:0">{$lang->usergroup_leave}</div>
+</div>
 {$memberoflist}
 
 </div>

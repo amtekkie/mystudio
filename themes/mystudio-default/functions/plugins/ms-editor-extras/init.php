@@ -285,6 +285,10 @@ function ms_ee_xmlhttp()
 
     // --- GIF Search ---
     if ($action == 'editorextras_gif_search') {
+        if ($mybb->user['uid'] <= 0) {
+            echo json_encode(array('error' => 'Login required.'));
+            exit;
+        }
         $opts = $GLOBALS['ms_ee_options'];
         $provider = isset($opts['gif_provider']) ? $opts['gif_provider'] : 'tenor';
         $api_key  = isset($opts['gif_api_key']) ? trim($opts['gif_api_key']) : '';
@@ -313,6 +317,10 @@ function ms_ee_xmlhttp()
 
     // --- GIF Trending ---
     if ($action == 'editorextras_gif_trending') {
+        if ($mybb->user['uid'] <= 0) {
+            echo json_encode(array('error' => 'Login required.'));
+            exit;
+        }
         $opts = $GLOBALS['ms_ee_options'];
         $provider = isset($opts['gif_provider']) ? $opts['gif_provider'] : 'tenor';
         $api_key  = isset($opts['gif_api_key']) ? trim($opts['gif_api_key']) : '';

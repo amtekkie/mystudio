@@ -12,7 +12,7 @@
 				<div class="col-md-9">
 					<div>
 						
-							<div class="thead">{$lang->modlogs}</div>
+							<div class="tcat">{$lang->modlogs}</div>
 						
 						
 <div class="tcat rowbit">
@@ -39,45 +39,46 @@
 					<br />
 					<div>
 						
-							<div class="thead">{$lang->filter_modlogs}</div>
+							<div class="tcat">{$lang->filter_modlogs}</div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->forum}:</div>  
-<div class="formbit_field" data-width="75%">{$forum_select}</div>
+<div class="trow1 p-3">
+<div class="mb-3">
+<label class="formbit_label">{$lang->forum}:</label>
+{$forum_select}
 </div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->from_moderator}</div>  
-<div class="formbit_field" data-width="75%"><select name="uid">
-									<option value="">{$lang->all_moderators}</option>
-									<option value="">----------</option>
-									{$user_options}
-								</select></div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->from_moderator}</label>
+<select name="uid" class="form-select form-select-sm">
+	<option value="">{$lang->all_moderators}</option>
+	<option value="">----------</option>
+	{$user_options}
+</select>
 </div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->sort_by}</div>  
-<div class="formbit_field" data-width="75%"><select name="sortby">
-									<option value="dateline" {$sortbysel['dateline']}>{$lang->date}</option>
-									<option value="username" {$sortbysel['username']}>{$lang->username}</option>
-									<option value="forum" {$sortbysel['forum']}>{$lang->forum_name}</option>
-									<option value="thread" {$sortbysel['thread']}>{$lang->thread_subject}</option>
-								</select>
-								{$lang->in}
-								<select name="order">
-									<option value="asc" {$ordersel['asc']}>{$lang->asc}</option>
-									<option value="desc" {$ordersel['desc']}>{$lang->desc}</option>
-								</select>
-								{$lang->order}</div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->sort_by}</label>
+<div class="d-flex gap-2 align-items-center flex-wrap">
+<select name="sortby" class="form-select form-select-sm" style="width:auto">
+	<option value="dateline" {$sortbysel['dateline']}>{$lang->date}</option>
+	<option value="username" {$sortbysel['username']}>{$lang->username}</option>
+	<option value="forum" {$sortbysel['forum']}>{$lang->forum_name}</option>
+	<option value="thread" {$sortbysel['thread']}>{$lang->thread_subject}</option>
+</select>
+{$lang->in}
+<select name="order" class="form-select form-select-sm" style="width:auto">
+	<option value="asc" {$ordersel['asc']}>{$lang->asc}</option>
+	<option value="desc" {$ordersel['desc']}>{$lang->desc}</option>
+</select>
+{$lang->order}
+</div>
 </div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->per_page}</div>  
-<div class="formbit_field" data-width="75%"><input type="text" name="perpage" value="{$perpage}" size="4" class="textbox" /></div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->per_page}</label>
+<input type="text" name="perpage" value="{$perpage}" class="form-control form-control-sm" style="width:80px" />
 </div>
-                      
-                      
-					</div>
+</div>
 					<br />
 					<div class="align_center">
 						<input type="submit" class="button" value="{$lang->filter_logs}" />

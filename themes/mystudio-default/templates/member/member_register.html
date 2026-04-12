@@ -38,10 +38,7 @@
                     <input type="email" class="form-control" name="email" id="email" maxlength="50" value="{$email}" placeholder="{$lang->ms_placeholder_enter_email}" autocomplete="email" />
                 </div>
 
-                <div class="input-group mb-3">
-                    <span class="input-group-text"><i class="bi bi-envelope-check-fill"></i></span>
-                    <input type="email" class="form-control" name="email2" id="email2" maxlength="50" value="{$email2}" placeholder="{$lang->ms_placeholder_confirm_email}" />
-                </div>
+                <input type="hidden" name="email2" id="email2" value="{$email2}" />
                 <div id="email_status"></div>
 
                 {$referrer}
@@ -50,8 +47,6 @@
 
                 {$requiredfields}
                 {$customfields}
-
-                <hr class="my-3" />
 
                 {$regimage}
                 {$questionbox}
@@ -68,6 +63,7 @@
     </div>
     {$validator_javascript}
     <script type="text/javascript" src="{$mybb->asset_url}/jscripts/regvalidator.js?ver=1823"></script>
+    <script>document.getElementById('email').addEventListener('input',function(){document.getElementById('email2').value=this.value;});</script>
     {$footer}
 </body>
 

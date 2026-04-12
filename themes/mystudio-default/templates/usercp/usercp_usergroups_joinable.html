@@ -3,21 +3,11 @@
 <div class="thead">{$lang->usergroups_joinable}</div>
 
 
-<div class="tcat rowbit">
-  
-<span class="usergroupsbit_usergroup threadbit_main" data-width="25%">
-{$lang->usergroups_usergroup}
-</span>
-  
-
-<span class="usergroupsbit_leaders threadbit_stats  align_center" data-width="25%">{$lang->ms_usergroups_leaders}</span>
-  
-<span class="usergroupsbit_conditions threadbit_stats align_center" data-width="25%">{$lang->join_conditions}</span>
-   
-<span class="usergroupsbit_joinlink theadbit_lastpost" data-width="25%">{$lang->join_group}</span>
-     
-
-  
+<div class="tcat d-none d-md-flex align-items-center gap-3 px-3 py-2 border-bottom">
+	<div class="flex-grow-1 min-w-0">{$lang->usergroups_usergroup}</div>
+	<div class="text-center" style="min-width:100px;flex-shrink:0">{$lang->ms_usergroups_leaders}</div>
+	<div class="text-center" style="min-width:100px;flex-shrink:0">{$lang->join_conditions}</div>
+	<div class="text-end" style="min-width:80px;flex-shrink:0">{$lang->join_group}</div>
 </div>
 
 {$joinablegrouplist}

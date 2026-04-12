@@ -1,6 +1,6 @@
 <?php
 /**
- * MyStudio is a Modular Themes & Plugins Manager for MyBB
+ * MyStudio is a Modular Themes & Extensions Manager for MyBB
  *
  * Allows importing and exporting MyBB themes as modular packages
  * (ZIP archives with separate template HTML files, CSS files, and a theme.json manifest).
@@ -56,7 +56,7 @@ function ms_info()
 
     return array(
         'name'          => $name,
-        'description'   => 'MyStudio is a Modular Themes & Plugins Manager for MyBB',
+        'description'   => 'MyStudio is a Modular Themes & Extensions Manager for MyBB',
         'website'       => '',
         'author'        => 'Tektove',
         'authorsite'    => 'https://tektove.com',
@@ -112,6 +112,24 @@ function ms_install()
             'optionscode' => 'numeric',
             'value'       => '2',
             'disporder'   => 4,
+            'gid'         => 0
+        ),
+        array(
+            'name'        => 'ms_show_sidebar',
+            'title'       => 'Enable Sidebar',
+            'description' => 'Show a sidebar column on the forum index with stats, online users, and birthdays.',
+            'optionscode' => 'yesno',
+            'value'       => '0',
+            'disporder'   => 5,
+            'gid'         => 0
+        ),
+        array(
+            'name'        => 'ms_loading_bar',
+            'title'       => 'Page Loading Bar',
+            'description' => 'Show an accent-colored progress bar at the top of the page during navigation.',
+            'optionscode' => 'yesno',
+            'value'       => '1',
+            'disporder'   => 6,
             'gid'         => 0
         ),
     );

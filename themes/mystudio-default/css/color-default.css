@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════════════
+   MyStudio Default — Hardcoded Dark Color Palette
+   All theme color variables defined here (dark mode only).
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* Core */
+  --bs-body-bg: #0f172a;
+  --bs-body-color: #e2e8f0;
+
+  /* Accent */
+  --tekbb-accent: #2dd4bf;
+  --tekbb-accent-hover: #5eead4;
+  --tekbb-accent-subtle: rgba(45,212,191,.1);
+
+  /* Surfaces */
+  --tekbb-heading-bg: #0d9488;
+  --tekbb-surface: #1e293b;
+  --tekbb-border: #122d3b;
+
+  /* Text */
+  --tekbb-muted: #94a3b8;
+  --tekbb-text-inv: #ffffff;
+
+  /* Links */
+  --tekbb-link: #2dd4bf;
+  --tekbb-link-hover: #5eead4;
+
+  /* Buttons */
+  --tekbb-btn-bg: #2dd4bf;
+  --tekbb-btn-hover: #5eead4;
+
+  /* Navigation */
+  --tekbb-nav-bg: #1e293b;
+
+  /* Footer */
+  --tekbb-footer-bg: #1e293b;
+  --tekbb-footer-color: #94a3b8;
+
+  /* Shadows */
+  --tekbb-shadow-sm: 0 1px 2px rgba(0,0,0,.2);
+  --tekbb-shadow: 0 1px 3px rgba(0,0,0,.3), 0 1px 2px rgba(0,0,0,.2);
+
+  /* Liquid Glass */
+  --glass-bg: rgba(30,41,59,.55);
+  --glass-bg-heavy: rgba(30,41,59,.78);
+  --glass-border: rgba(255,255,255,.08);
+  --glass-blur: 16px;
+  --glass-shadow: 0 8px 32px rgba(0,0,0,.25), 0 2px 8px rgba(0,0,0,.15);
+  --glass-glow: 0 0 24px rgba(45,212,191,.18);
+
+  /* Gradients */
+  --gradient-heading: var(--tekbb-heading-bg);
+  --gradient-subtle: transparent;
+
+  color-scheme: dark;
+}

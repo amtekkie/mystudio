@@ -13,7 +13,7 @@
 				<div class="col-md-9">
 					<div>
 						
-							<div class="thead">{$lang->users}</div>
+							<div class="tcat">{$lang->users}</div>
 					
                       
 <div class="tcat rowbit">
@@ -46,31 +46,32 @@
                   
 					<div>
 						
-							<div class="thead">{$lang->find_users}</div>
+							<div class="tcat">{$lang->find_users}</div>
 						
-						
-	<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->username_contains}</div>  
-<div class="formbit_field" data-width="75%"><input type="text" name="username" id="username" value="{$mybb->input['username']}" class="textbox" /></div>
+<div class="trow1 p-3">
+<div class="mb-3">
+<label class="formbit_label">{$lang->username_contains}</label>
+<input type="text" name="username" id="username" value="{$mybb->input['username']}" class="form-control form-control-sm" />
 </div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->sort_by}</div>  
-<div class="formbit_field" data-width="75%"><select name="sortby">
-									<option value="username" {$sortbysel['username']}>{$lang->username}</option>
-									<option value="regdate" {$sortbysel['regdate']}>{$lang->regdate}</option>
-									<option value="lastvisit" {$sortbysel['lastvisit']}>{$lang->lastvisit}</option>
-									<option value="postnum" {$sortbysel['postnum']}>{$lang->postnum}</option>
-								</select>
-								{$lang->in}
-								<select name="order">
-									<option value="asc" {$ordersel['asc']}>{$lang->asc}</option>
-									<option value="desc" {$ordersel['desc']}>{$lang->desc}</option>
-								</select>
-								{$lang->order}</div>
-</div>     
-                      
-					</div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->sort_by}</label>
+<div class="d-flex gap-2 align-items-center flex-wrap">
+<select name="sortby" class="form-select form-select-sm" style="width:auto">
+	<option value="username" {$sortbysel['username']}>{$lang->username}</option>
+	<option value="regdate" {$sortbysel['regdate']}>{$lang->regdate}</option>
+	<option value="lastvisit" {$sortbysel['lastvisit']}>{$lang->lastvisit}</option>
+	<option value="postnum" {$sortbysel['postnum']}>{$lang->postnum}</option>
+</select>
+{$lang->in}
+<select name="order" class="form-select form-select-sm" style="width:auto">
+	<option value="asc" {$ordersel['asc']}>{$lang->asc}</option>
+	<option value="desc" {$ordersel['desc']}>{$lang->desc}</option>
+</select>
+{$lang->order}
+</div>
+</div>
+</div>
 					<br />
 					<div class="align_center">
 						<input type="submit" class="button" value="{$lang->find_users}" />

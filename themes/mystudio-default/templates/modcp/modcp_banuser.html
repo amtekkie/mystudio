@@ -19,30 +19,27 @@
 					<input type="hidden" name="uid" value="{$uid}" />
 						<div>
 							
-								<div class="thead">
+								<div class="tcat">
 									{$lift_link}
 									{$lang->ban_user}
 								</div>
 							
 							{$banuser_username}
 					
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->ban_reason}</div>  
-<div class="formbit_field" data-width="75%"><textarea name="banreason" maxlength="255">{$banreason}</textarea></div>
-</div>  
+<div class="trow1 p-3">
+<div class="mb-3">
+<label class="formbit_label">{$lang->ban_reason}</label>
+<textarea name="banreason" maxlength="255" class="form-control form-control-sm">{$banreason}</textarea>
+</div>
                           
-              
 							
 						{$bangroups}
 					
-                          
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->ban_liftafter}</div>  
-<div class="formbit_field" data-width="75%"><select name="liftafter">{$liftlist}</select></div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->ban_liftafter}</label>
+<select name="liftafter" class="form-select form-select-sm">{$liftlist}</select>
 </div>
-                          
-	
-						</div>
+</div>
 					<br />
 					<div class="align_center">
 						<input type="submit" class="button" name="updateban" value="{$lang->ban}" />

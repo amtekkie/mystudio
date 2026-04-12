@@ -33,6 +33,8 @@
  background: var(--star-empty) repeat-x left center;
  background-size: 16px 16px;
  vertical-align: middle;
+ cursor: default;
+ z-index: 1;
 }
 
 :root[data-theme="dark"] .star_rating {

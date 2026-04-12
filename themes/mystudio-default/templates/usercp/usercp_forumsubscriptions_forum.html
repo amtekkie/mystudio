@@ -1,37 +1,22 @@
-<div class="trow1 rowbit d-md-block d-none d-md-block">
-
-<div class="forumbit_main" data-width="55%">
-
-
-<div class="forum_status forum_{$lightbulb['folder']} ajax_mark_read col-md-1 d-none d-md-block align_center ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}" style="font-size: 24px;"><i class="bi bi-chat-dots-fill"></i></div>
-
-
-<div class="forumbit_title">
-<strong><a href="{$forum_url}">{$forum['name']}</a></strong><br /><span class="smalltext"><a href="usercp.php?action=removesubscription&amp;type=forum&amp;fid={$forum['fid']}&amp;my_post_key={$mybb->post_code}">{$lang->unsubscribe}</a> | <a href="newthread.php?fid={$forum['fid']}">{$lang->new_thread}</a></span>
+<div class="forumbit-row d-flex align-items-center gap-3 px-3 py-2">
+<div class="d-none d-md-flex align-items-center justify-content-center" style="width:28px;flex-shrink:0">
+	<i class="bi bi-chat-dots-fill" style="font-size:1.2rem"></i>
 </div>
+<div class="flex-grow-1 min-w-0">
+	<div class="d-flex align-items-center gap-1 flex-wrap">
+		<i class="bi bi-chat-dots-fill d-md-none" style="font-size:1rem"></i>
+		<a href="{$forum_url}" class="fw-semibold">{$forum['name']}</a>
+	</div>
+	<div class="small text-muted mt-1">
+		<a href="usercp.php?action=removesubscription&amp;type=forum&amp;fid={$forum['fid']}&amp;my_post_key={$mybb->post_code}">{$lang->unsubscribe}</a> | <a href="newthread.php?fid={$forum['fid']}">{$lang->new_thread}</a>
+		<span class="d-none d-md-inline"><span class="mx-1">&middot;</span><i class="bi bi-reply"></i> {$posts} | <i class="bi bi-chat-left-text"></i> {$threads}</span>
+	</div>
+	<div class="d-md-none small text-muted mt-1">
+		<span class="me-2"><i class="bi bi-reply"></i> {$posts}</span>
+		<span class="me-2"><i class="bi bi-chat-left-text"></i> {$threads}</span>
+	</div>
 </div>
-  
-<div class="forumbit_stats forumbit_posts align_center smalltext" data-width="10%" data-lang="{$lang->forumbit_posts}">{$posts}</div>
-	
-<div class="forumbit_stats forumbit_threads align_center smalltext" data-width="10%" data-lang="{$lang->forumbit_threads}">
-
-{$threads}  </div>
-
-<div class="forumbit_lastpost" data-width="25%">{$lastpost}</div>
-
+<div class="d-none d-md-flex small align-items-center text-end" style="width:160px;flex-shrink:0">
+	<span class="min-w-0 flex-grow-1">{$lastpost}</span>
 </div>
-
-<div class="trow1 rowbit d-lg-none d-md-none d-lg-block">
-
-<div class="forumbit_main" data-width="70%">
-
-<div class="forum_status forum_{$lightbulb['folder']} ajax_mark_read col-md-1 col-1 align_center ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}" style="font-size: 24px;"><i class="bi bi-chat-dots-fill"></i></div>
-
-<div class="forumbit_title">
-<strong><a href="{$forum_url}">{$forum['name']}</a></strong><br /><span class="smalltext"><a href="usercp.php?action=removesubscription&amp;type=forum&amp;fid={$forum['fid']}&amp;my_post_key={$mybb->post_code}">{$lang->unsubscribe}</a> | <a href="newthread.php?fid={$forum['fid']}">{$lang->new_thread}</a></span>
-</div>
-</div>
-
-<div class="forumbit_lastpost" data-width="30%">{$lastpost}</div>
-
 </div>

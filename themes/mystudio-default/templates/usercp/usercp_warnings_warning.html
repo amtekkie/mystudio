@@ -1,18 +1,9 @@
-<div class="trow1 rowbit">
-
-<div class="warningbit_warning" data-width="25%">
-{$warning_type} {$points}{$post_link}
+<div class="forumbit-row d-flex align-items-center gap-3 px-3 py-2">
+<div class="flex-grow-1 min-w-0">
+	<div class="fw-semibold">{$warning_type} {$points}{$post_link}</div>
+	<div class="d-md-none small text-muted mt-1">{$date_issued} &middot; {$expires} &middot; {$issuedby}</div>
 </div>
-  
-
-<div class="warningbit_issued" data-width="25%" data-lang="{$lang->date_issued}">{$date_issued}
-</div>
-  
-<div class="warningbit_expires" data-width="25%" data-lang="{$lang->expiry_date}">{$expires}
-</div>
-  
-<div class="warningbit_issued_by" data-width="25%" data-lang="{$lang->issued_by}">{$issuedby}
-</div>
-  
-  
+<div class="d-none d-md-flex text-center small text-muted" style="min-width:100px;flex-shrink:0">{$date_issued}</div>
+<div class="d-none d-md-flex text-center small text-muted" style="min-width:100px;flex-shrink:0">{$expires}</div>
+<div class="d-none d-md-flex text-end small" style="min-width:100px;flex-shrink:0">{$issuedby}</div>
 </div>

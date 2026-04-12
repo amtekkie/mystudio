@@ -254,6 +254,14 @@ function ms_pex_pre_output_page(&$page)
             $page
         );
     }
+
+    // Inject new-thread modal at body level for logged-in users
+    if (!empty($mybb->user['uid'])) {
+        $modal = ms_pex_render_newthread_modal($mybb->settings['bburl']);
+        if ($modal !== '') {
+            $page = str_replace('</body>', $modal . '</body>', $page);
+        }
+    }
 }
 
 function ms_pex_render_page_sidebar($scriptName)
@@ -296,17 +304,41 @@ function ms_pex_render_page_sidebar($scriptName)
         $pmUrl = htmlspecialchars_uni($bburl . '/private.php');
         $logoutUrl = htmlspecialchars_uni($bburl . '/member.php?action=logout&logoutkey=' . $mybb->user['logoutkey']);
 
+        $userTitle = !empty($mybb->user['usertitle']) ? htmlspecialchars_uni($mybb->user['usertitle']) : '';
+        $groupImage = '';
+        if (!empty($mybb->user['groupimage'])) {
+            $groupImage = '<img src="' . htmlspecialchars_uni($mybb->user['groupimage']) . '" alt="" class="ms-sidebar-groupimage" />';
+        }
+
         $html .= '<div class="ms-sidebar-card ms-sidebar-profile">'
             . '<div class="ms-sidebar-profile-top">'
+            . '<a href="' . $profileUrl . '">'
             . '<img src="' . $userAvatar . '" alt="' . $username . '" class="ms-sidebar-avatar" />'
+            . '</a>'
             . '<div class="ms-sidebar-profile-copy">'
             . '<span class="ms-sidebar-name">' . format_name($mybb->user['username'], $mybb->user['usergroup'], $mybb->user['displaygroup']) . '</span>'
-            . '<span class="ms-sidebar-handle">@' . $username . '</span>'
+            . ($userTitle ? '<span class="ms-sidebar-handle">' . $userTitle . '</span>' : '')
+            . $groupImage
             . '</div>'
             . '</div>'
             . '</div>';
 
-        $html .= '<a class="ms-sidebar-link" href="' . $profileUrl . '"><i class="bi bi-person"></i><span>Profile</span></a>';
+        $html .= '<a href="#" class="ms-sidebar-link ms-sidebar-link-primary" role="button" data-bs-toggle="modal" data-bs-target="#ms_newthread_modal"><i class="bi bi-plus-lg"></i><span>Post Thread</span></a>';
+
+        $searchUrl = htmlspecialchars_uni($bburl . '/search.php');
+        $searchActive = ($scriptName === 'search.php');
+        $searchOpen = $searchActive ? ' open' : '';
+        $searchAction = $mybb->get_input('action');
+
+        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link"><i class="bi bi-house-door"></i><span>Home</span></a>'
+            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
+
+        $html .= '<details class="ms-sidebar-details"' . $searchOpen . '>'
+            . '<summary class="ms-sidebar-link"><a href="' . $searchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
+            . '<div class="ms-sidebar-sub">'
+            . '<a class="ms-sidebar-sublink' . ($searchActive && $searchAction === 'getnew' ? ' active' : '') . '" href="' . $searchUrl . '?action=getnew">New Posts</a>'
+            . '<a class="ms-sidebar-sublink' . ($searchActive && $searchAction === 'getdaily' ? ' active' : '') . '" href="' . $searchUrl . '?action=getdaily">Today\'s Posts</a>'
+            . '</div></details>';
 
         // ── User CP submenu ──
         $ucpActive = ($scriptName === 'usercp.php');
@@ -363,6 +395,8 @@ function ms_pex_render_page_sidebar($scriptName)
                 . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'ipsearch' ? ' active' : '') . '" href="' . $modcpUrl . '?action=ipsearch">IP Search</a>'
                 . '</div></details>';
         }
+
+        $html .= '<a class="ms-sidebar-link" href="' . $logoutUrl . '"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>';
     } else {
         $html .= '<div class="ms-sidebar-card ms-sidebar-profile">'
             . '<div class="ms-sidebar-profile-top">'
@@ -376,17 +410,119 @@ function ms_pex_render_page_sidebar($scriptName)
 
         $html .= '<a class="ms-sidebar-link ms-sidebar-link-primary" href="' . htmlspecialchars_uni($bburl . '/member.php?action=login') . '"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>'
             . '<a class="ms-sidebar-link ms-sidebar-link-accent" href="' . htmlspecialchars_uni($bburl . '/member.php?action=register') . '"><i class="bi bi-person-plus"></i><span>Register</span></a>';
-    }
 
-    $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link"><i class="bi bi-house-door"></i><span>Home</span></a>'
-        . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>'
-        . '<a href="' . htmlspecialchars_uni($bburl . '/search.php') . '" class="ms-sidebar-link"><i class="bi bi-search"></i><span>Search</span></a>';
+        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link"><i class="bi bi-house-door"></i><span>Home</span></a>'
+            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
 
-    if ($uid > 0) {
-        $html .= '<a class="ms-sidebar-link" href="' . htmlspecialchars_uni($bburl . '/member.php?action=logout&logoutkey=' . $mybb->user['logoutkey']) . '"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>';
+        $guestSearchUrl = htmlspecialchars_uni($bburl . '/search.php');
+        $guestSearchActive = ($scriptName === 'search.php');
+        $guestSearchOpen = $guestSearchActive ? ' open' : '';
+        $guestSearchAction = $mybb->get_input('action');
+        $html .= '<details class="ms-sidebar-details"' . $guestSearchOpen . '>'
+            . '<summary class="ms-sidebar-link"><a href="' . $guestSearchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
+            . '<div class="ms-sidebar-sub">'
+            . '<a class="ms-sidebar-sublink' . ($guestSearchActive && $guestSearchAction === 'getnew' ? ' active' : '') . '" href="' . $guestSearchUrl . '?action=getnew">New Posts</a>'
+            . '<a class="ms-sidebar-sublink' . ($guestSearchActive && $guestSearchAction === 'getdaily' ? ' active' : '') . '" href="' . $guestSearchUrl . '?action=getdaily">Today\'s Posts</a>'
+            . '</div></details>';
     }
 
     $html .= '</nav>';
+
+    return $html;
+}
+
+/**
+ * Build the "Post Thread" forum picker modal with nested category/forum/subforum tree.
+ */
+function ms_pex_render_newthread_modal($bburl)
+{
+    global $cache;
+
+    $forums = $cache->read('forums');
+    if (empty($forums) || !is_array($forums)) {
+        return '';
+    }
+
+    // Build parent→children map
+    $children = array();
+    foreach ($forums as $f) {
+        $pid = (int)$f['pid'];
+        if (!isset($children[$pid])) {
+            $children[$pid] = array();
+        }
+        $children[$pid][] = $f;
+    }
+    // Sort each group by disporder
+    foreach ($children as &$group) {
+        usort($group, function ($a, $b) { return (int)$a['disporder'] - (int)$b['disporder']; });
+    }
+    unset($group);
+
+    $listHtml = ms_pex_render_forum_tree($children, 0, $bburl, 0);
+
+    $m = '<div class="modal fade" id="ms_newthread_modal" tabindex="-1" aria-labelledby="ms_newthread_label" aria-hidden="true">'
+        . '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:480px">'
+        . '<div class="modal-content">'
+        . '<div class="modal-header">'
+        . '<h6 class="modal-title" id="ms_newthread_label"><i class="bi bi-plus-circle me-1"></i> Post New Thread</h6>'
+        . '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>'
+        . '</div>'
+        . '<div class="modal-body p-0">'
+        . '<div class="list-group list-group-flush ms-forum-picker">'
+        . $listHtml
+        . '</div>'
+        . '</div>'
+        . '</div></div></div>';
+
+    return $m;
+}
+
+/**
+ * Recursively render nested forum tree for the picker.
+ */
+function ms_pex_render_forum_tree($children, $pid, $bburl, $depth)
+{
+    if (empty($children[$pid])) {
+        return '';
+    }
+
+    $html = '';
+    foreach ($children[$pid] as $f) {
+        $fid = (int)$f['fid'];
+        $type = isset($f['type']) ? $f['type'] : 'f';
+        $name = htmlspecialchars_uni($f['name']);
+        $active = (int)(isset($f['active']) ? $f['active'] : 1);
+        if (!$active) continue;
+
+        // Check permissions
+        $perms = forum_permissions($fid);
+        if (isset($perms['canview']) && $perms['canview'] == 0) continue;
+
+        $indent = $depth * 20;
+        $style = $indent > 0 ? ' style="padding-left:' . (16 + $indent) . 'px"' : '';
+
+        if ($type === 'c') {
+            // Category header (not clickable)
+            $html .= '<div class="list-group-item fw-semibold text-uppercase small text-muted border-0 py-1 px-3"' . $style . '>' . $name . '</div>';
+            $html .= ms_pex_render_forum_tree($children, $fid, $bburl, $depth);
+        } else {
+            // Forum — check if user can post threads
+            $canPost = !isset($perms['canpostthreads']) || $perms['canpostthreads'] != 0;
+            $newthreadUrl = htmlspecialchars_uni($bburl . '/newthread.php?fid=' . $fid);
+
+            if ($canPost) {
+                $html .= '<a href="' . $newthreadUrl . '" class="list-group-item list-group-item-action py-2 px-3 border-0"' . $style . '>'
+                    . '<i class="bi bi-chat-left-text me-2 text-muted"></i>' . $name
+                    . '</a>';
+            } else {
+                $html .= '<div class="list-group-item py-2 px-3 border-0 text-muted"' . $style . '>'
+                    . '<i class="bi bi-lock me-2"></i>' . $name
+                    . '</div>';
+            }
+            // Render subforums
+            $html .= ms_pex_render_forum_tree($children, $fid, $bburl, $depth + 1);
+        }
+    }
 
     return $html;
 }

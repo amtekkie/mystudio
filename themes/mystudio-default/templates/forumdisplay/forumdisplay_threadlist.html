@@ -3,33 +3,18 @@
 	<div>{$newthread}</div>
 </div>
 
-<div class="card mb-3">
-<div class="card-header text-white py-2">
-	<div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-		<span class="fw-bold">{$foruminfo['name']}</span>
-		<div class="d-flex gap-2 small">
-			<a href="syndication.php?fid={$fid}" class="text-white-50" title="{$lang->theme_bootbb_forumdisplay_rss}"><i class="bi bi-rss-fill"></i> <span class="d-none d-md-inline">{$lang->theme_bootbb_forumdisplay_rss}</span></a>
-			<a href="misc.php?action=markread&amp;fid={$fid}{$post_code_string}" class="text-white-50" title="{$lang->markforum_read}"><i class="bi bi-check2-all"></i> <span class="d-none d-md-inline">{$lang->markforum_read}</span></a>
-			{$addremovesubscription}{$clearstoredpass}
-		</div>
+<div class="forumbit-cat mb-3">
+<div class="forumbit-cat-header d-flex justify-content-between align-items-center flex-wrap gap-2 px-3 py-2">
+	<span class="fw-bold">{$foruminfo['name']}</span>
+	<div class="d-flex gap-2 small">
+		<a href="syndication.php?fid={$fid}" class="text-muted" title="{$lang->theme_bootbb_forumdisplay_rss}"><i class="bi bi-rss-fill"></i> <span class="d-none d-md-inline">{$lang->theme_bootbb_forumdisplay_rss}</span></a>
+		<a href="misc.php?action=markread&amp;fid={$fid}{$post_code_string}" class="text-muted" title="{$lang->markforum_read}"><i class="bi bi-check2-all"></i> <span class="d-none d-md-inline">{$lang->markforum_read}</span></a>
+		{$addremovesubscription}{$clearstoredpass}
 	</div>
-</div>
-
-<div class="tcat d-none d-md-flex align-items-center gap-3 px-3 py-2 border-bottom">
-	<div style="width:32px;flex-shrink:0"></div>
-	<div class="flex-grow-1 min-w-0">
-		<a href="{$sorturl}&amp;sortby=subject&amp;order={$oppsortnext}">{$lang->thread}</a> {$orderarrow['subject']} / <a href="{$sorturl}&amp;sortby=starter&amp;order={$oppsortnext}">{$lang->author}</a>
-	</div>
-	<div class="d-flex gap-3 align-items-center" style="flex-shrink:0">
-		<div class="text-center" style="min-width:60px"><a href="{$sorturl}&amp;sortby=replies&amp;order={$oppsortnext}">{$lang->replies}</a></div>
-		<div class="text-center" style="min-width:60px"><a href="{$sorturl}&amp;sortby=views&amp;order={$oppsortnext}">{$lang->views}</a></div>
-		{$ratingcol}
-	</div>
-	<div class="text-end" style="width:180px;flex-shrink:0"><span data-moderation="{$ismod}"><a href="{$sorturl}&amp;sortby=lastpost&amp;order={$oppsortnext}">{$lang->lastpost}</a></span></div>
-	<div class="d-none d-md-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0">{$inlinemodcol}</div>
 </div>
 
 {$selectall}
+{$ratingcol}
 {$announcementlist}
 {$threads}
 {$forumsort}
@@ -40,8 +25,7 @@
 	<div>{$newthread}</div>
 </div>
 
-<div class="card mt-3">
-<div class="card-body py-3 px-3">
+<div class="mt-3 px-1">
 	<div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
 		<div class="d-flex gap-4">
 			<ul class="thread_legend smalltext list-unstyled mb-0">
@@ -61,7 +45,6 @@
 			{$forumjump}
 		</div>
 	</div>
-</div>
 </div>
 
 {$usersbrowsing}

@@ -26,7 +26,6 @@ function mystudio_meta()
     $sub_menu = array();
     $sub_menu['10'] = array("id" => "manage",        "title" => "<i class=\"bi bi-palette2\"></i> Manage Themes",   "link" => "index.php?module=mystudio-manage");
     $sub_menu['20'] = array("id" => "import_export", "title" => "<i class=\"bi bi-arrow-left-right\"></i> Import / Export", "link" => "index.php?module=mystudio-import_export");
-    $sub_menu['40'] = array("id" => "options",       "title" => "<i class=\"bi bi-sliders\"></i> Global MyStudio Options",   "link" => "index.php?module=mystudio-options");
     $sub_menu['42'] = array("id" => "options_header_footer", "title" => "<i class=\"bi bi-layout-text-window\"></i> Header & Footer", "link" => "index.php?module=mystudio-options_header_footer");
 
     // Page Manager — only show if ms-pagebuilder mini plugin is enabled
@@ -39,7 +38,7 @@ function mystudio_meta()
             $sub_menu['45'] = array("id" => "pages", "title" => "<i class=\"bi bi-file-earmark-richtext\"></i> Page Manager", "link" => "index.php?module=mystudio-pages");
         }
 
-        // Dynamic side nav items for enabled plugins with options
+        // Dynamic side nav items for enabled extensions with options
         $allPlugins = $msCore->listMiniPlugins($pbSlug);
         $dispOrder = 51;
         foreach ($allPlugins as $p) {
@@ -55,7 +54,7 @@ function mystudio_meta()
         }
     }
 
-    $sub_menu['70'] = array("id" => "plugins",       "title" => "<i class=\"bi bi-plug\"></i> Manage Plugins",  "link" => "index.php?module=mystudio-plugins");
+    $sub_menu['70'] = array("id" => "plugins",       "title" => "<i class=\"bi bi-plug\"></i> Manage Extensions",  "link" => "index.php?module=mystudio-plugins");
     $sub_menu['80'] = array("id" => "settings",      "title" => "<i class=\"bi bi-gear\"></i> Studio Settings", "link" => "index.php?module=mystudio-settings");
 
     $sub_menu = $plugins->run_hooks("admin_mystudio_menu", $sub_menu);
@@ -76,7 +75,6 @@ function mystudio_action_handler($action)
         'import_export' => array('active' => 'import_export', 'file' => 'mystudio.php'),
         'import'        => array('active' => 'import_export', 'file' => 'mystudio.php'),
         'export'        => array('active' => 'import_export', 'file' => 'mystudio.php'),
-        'options'       => array('active' => 'options',       'file' => 'mystudio.php'),
         'options_header_footer' => array('active' => 'options_header_footer', 'file' => 'mystudio.php'),
         'plugins'       => array('active' => 'plugins',       'file' => 'mystudio.php'),
         'plugin_settings' => array('active' => 'plugin_settings', 'file' => 'mystudio.php'),
@@ -113,8 +111,8 @@ function mystudio_admin_permissions()
         "manage"        => "Can manage themes",
         "import_export" => "Can import and export themes",
         "options"       => "Can manage theme options",
-        "plugins"       => "Can manage theme plugins",
-        "settings"      => "Can manage plugin settings",
+        "plugins"       => "Can manage theme extensions",
+        "settings"      => "Can manage extension settings",
         "pages"         => "Can manage custom pages",
     );
 

@@ -1,22 +1,22 @@
 <fieldset><legend>{$lang->away_information}</legend>
   
   
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->away_status}</div>
-<div class="formbit_field" data-width="75%"><input type="radio" class="radio" name="away" value="1" {$awaycheck['1']} /> {$lang->im_away} <input type="radio" class="radio" name="away" value="0" {$awaycheck['0']} /> {$lang->im_here}</div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->away_status}</label>
+<div class="formbit_field"><input type="radio" class="form-check-input" name="away" value="1" {$awaycheck['1']} /> {$lang->im_away} <input type="radio" class="form-check-input" name="away" value="0" {$awaycheck['0']} /> {$lang->im_here}</div>
 </div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->away_reason}</div>
-<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="awayreason" value="{$user['awayreason']}" size="25" /></div>
+<div class="mb-3">
+<label class="formbit_label">{$lang->away_reason}</label>
+<div class="formbit_field"><input type="text" class="form-control form-control-sm" name="awayreason" value="{$user['awayreason']}" /></div>
 </div>
 
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->return_date}</div>
-<div class="formbit_field" data-width="75%"><select name="awayday">
+<div class="mb-3">
+<label class="formbit_label">{$lang->return_date}</label>
+<div class="formbit_field"><select name="awayday" class="form-select form-select-sm d-inline-block" style="width:auto">
 <option value="">&nbsp;</option>
 {$returndatesel}
-</select>  <select name="awaymonth">
+</select>  <select name="awaymonth" class="form-select form-select-sm d-inline-block" style="width:auto">
 <option value="">&nbsp;</option>
 <option value="1" {$returndatemonthsel['1']} >{$lang->month_1}</option>
 <option value="2" {$returndatemonthsel['2']} >{$lang->month_2}</option>
@@ -30,6 +30,6 @@
 <option value="10" {$returndatemonthsel['10']} >{$lang->month_10}</option>
 <option value="11" {$returndatemonthsel['11']} >{$lang->month_11}</option>
 <option value="12" {$returndatemonthsel['12']} >{$lang->month_12}</option>
-</select> <input type="text" class="textbox" size="4" maxlength="4" name="awayyear" value="{$returndate['2']}" /></div>
+</select> <input type="text" class="form-control form-control-sm d-inline-block" style="width:80px" maxlength="4" name="awayyear" value="{$returndate['2']}" /></div>
 </div>
 </fieldset>

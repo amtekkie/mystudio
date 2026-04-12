@@ -14,17 +14,18 @@
 {$errors}
 <div>
 
-<div class="thead">{$lang->change_username}</div>
+<div class="tcat">{$lang->change_username}</div>
 
-  
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->current_password}</div>
-<div class="formbit_field" data-width="75%"><input type="password" class="textbox" name="password" size="25" /></div>
+<div class="trow1 p-3">
+<div class="mb-3">
+<label class="formbit_label">{$lang->current_password}</label>
+<input type="password" class="form-control form-control-sm" name="password" />
 </div>
-  
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="25%">{$lang->new_username}</div>
-<div class="formbit_field" data-width="75%"><input type="text" class="textbox" name="username" size="25" maxlength="{$mybb->settings['maxnamelength']}" value="{$username}" /></div>
+
+<div class="mb-3">
+<label class="formbit_label">{$lang->new_username}</label>
+<input type="text" class="form-control form-control-sm" name="username" maxlength="{$mybb->settings['maxnamelength']}" value="{$username}" />
+</div>
 </div>
 
 

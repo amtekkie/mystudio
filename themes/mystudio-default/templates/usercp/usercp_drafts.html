@@ -16,32 +16,13 @@
 <div class="thead">{$lang->drafts_count}</div>
 
 
-<div class="tcat rowbit">
-  
-  
-<span class="threadit_main draftbit_main" data-width="25%">{$lang->draft_title}</span>
-
-  
- 
-<span class="threadbit_stats draftbit_details align_center" data-width="25%">
-{$lang->ms_drafts_details}
-</span>
-  
-<span class="threadbit_stats draftbit_saved align_center" data-width="25%">
-{$lang->draft_saved}
-</span>  
-
-
-<span class="threadbit_stats draftbit_details threadbit_lastpost" data-width="25%">
-
-  <span data-moderation="1">
-{$lang->draft_options}
-</span>
-</span>
-<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ps-2"><input name="allbox" title="{$lang->ms_select_all}" type="checkbox" class="form-check-input checkall" value="1" /></span>
-  
- 
-  </div>
+<div class="tcat d-none d-md-flex align-items-center gap-3 px-3 py-2 border-bottom">
+	<div class="flex-grow-1 min-w-0">{$lang->draft_title}</div>
+	<div class="text-center" style="min-width:80px;flex-shrink:0">{$lang->ms_drafts_details}</div>
+	<div class="text-center" style="min-width:100px;flex-shrink:0">{$lang->draft_saved}</div>
+	<div class="text-end" style="min-width:80px;flex-shrink:0"><span data-moderation="1">{$lang->draft_options}</span></div>
+	<div class="d-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0"><input name="allbox" title="{$lang->ms_select_all}" type="checkbox" class="form-check-input checkall" value="1" /></div>
+</div>
 
 {$drafts}
 </div>

@@ -1,8 +1,7 @@
-<div class="mb-3">
-	<label class="form-label small text-muted" for="referrer"><i class="bi bi-person-hearts me-1"></i>{$lang->referrer}</label>
-	<br />
-	<input type="text" name="referrername" id="referrer" value="{$referrername}" placeholder="{$lang->referrer}" style="width:100%" />
-	
+<div class="input-group mb-3">
+	<span class="input-group-text"><i class="bi bi-person-hearts"></i></span>
+	<input type="text" class="form-control" name="referrername" id="referrer" value="{$referrername}" placeholder="{$lang->referrer}" />
+</div>
 <link rel="stylesheet" href="{$mybb->asset_url}/jscripts/select2/select2.css?ver=1806">
 	<script src="{$mybb->asset_url}/jscripts/select2/select2.min.js"></script>
 <script>
@@ -42,4 +41,3 @@ if(use_xmlhttprequest == "1")
 }
 // -->
 </script>
-</div>

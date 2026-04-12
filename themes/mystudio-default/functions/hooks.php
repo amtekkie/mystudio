@@ -153,7 +153,7 @@ function msdefault_load_language()
         $icon = !empty($opts['logo_icon']) ? $opts['logo_icon'] : '';
         // Validate icon class format
         if ($icon !== '' && !preg_match('/^bi-[a-z0-9-]+$/', $icon)) {
-            $icon = 'bi-chat-square';
+            $icon = 'bi-brush';
         }
         $text = !empty($opts['logo_text']) ? htmlspecialchars_uni($opts['logo_text']) : '';
         if ($icon) {
@@ -169,20 +169,13 @@ function msdefault_load_language()
     }
     $GLOBALS['ms_logo_html'] = $logoHtml;
 
-    // Header style class
-    $headerStyle = !empty($opts['header_style']) ? $opts['header_style'] : 'default';
-    $GLOBALS['ms_header_class'] = 'ms-header-' . preg_replace('/[^a-z0-9\-]/', '', $headerStyle);
-
     // Footer custom text (appears below copyright bar)
     $GLOBALS['ms_footer_text_row'] = '';
     if (!empty($opts['footer_text'])) {
         $GLOBALS['ms_footer_text_row'] = '<div class="pb-3 small opacity-75 text-center">' . $opts['footer_text'] . '</div>';
     }
 
-    // Show sidebar flag
-    $GLOBALS['ms_show_sidebar'] = !empty($opts['show_sidebar']) && $opts['show_sidebar'] !== '0';
-
-    // Defaults for index sidebar layout (overridden in msdefault_index_sidebar)
+    // Defaults for index sidebar layout
     $GLOBALS['ms_index_col_class'] = 'col-12';
     $GLOBALS['ms_sidebar'] = '';
 }
@@ -216,128 +209,8 @@ function msdefault_inject_custom_code(&$contents)
 
     // Logo — handled via template variable now, no JS injection needed
 
-    // ── Color Palette CSS variables ──
-    // Build overrides for any palette colors that differ from defaults
-    $paletteDefaults = array(
-        'light' => array(
-            'body_bg'      => '#f5f6fa',
-            'body_color'   => '#1e293b',
-            'accent'       => '#0d9488',
-            'accent_hover' => '#0f766e',
-            'heading_bg'   => '#0d9488',
-            'surface'      => '#ffffff',
-            'border'       => '#dbefed',
-            'muted'        => '#64748b',
-            'text_inv'     => '#ffffff',
-            'link'         => '#0d9488',
-            'link_hover'   => '#0f766e',
-            'btn_bg'       => '#0d9488',
-            'btn_hover'    => '#0f766e',
-            'nav_bg'       => '#ffffff',
-            'footer_bg'    => '#f1f5f9',
-            'footer_color' => '#475569',
-        ),
-        'dark' => array(
-            'body_bg'      => '#0f172a',
-            'body_color'   => '#e2e8f0',
-            'accent'       => '#2dd4bf',
-            'accent_hover' => '#5eead4',
-            'heading_bg'   => '#0d9488',
-            'surface'      => '#1e293b',
-            'border'       => '#122d3b',
-            'muted'        => '#94a3b8',
-            'text_inv'     => '#ffffff',
-            'link'         => '#2dd4bf',
-            'link_hover'   => '#5eead4',
-            'btn_bg'       => '#2dd4bf',
-            'btn_hover'    => '#5eead4',
-            'nav_bg'       => '#1e293b',
-            'footer_bg'    => '#1e293b',
-            'footer_color' => '#94a3b8',
-        ),
-    );
-
-    $cssVarMap = array(
-        'body_bg'      => '--bs-body-bg',
-        'body_color'   => '--bs-body-color',
-        'accent'       => '--tekbb-accent',
-        'accent_hover' => '--tekbb-accent-hover',
-        'heading_bg'   => '--tekbb-heading-bg',
-        'surface'      => '--tekbb-surface',
-        'border'       => '--tekbb-border',
-        'muted'        => '--tekbb-muted',
-        'text_inv'     => '--tekbb-text-inv',
-        'link'         => '--tekbb-link',
-        'link_hover'   => '--tekbb-link-hover',
-        'btn_bg'       => '--tekbb-btn-bg',
-        'btn_hover'    => '--tekbb-btn-hover',
-        'nav_bg'       => '--tekbb-nav-bg',
-        'footer_bg'    => '--tekbb-footer-bg',
-        'footer_color' => '--tekbb-footer-color',
-    );
-
-    $lightOverrides = '';
-    $darkOverrides  = '';
-
-    foreach ($cssVarMap as $shortKey => $cssVar) {
-        // Light mode
-        $optKey = 'light_' . $shortKey;
-        $val = !empty($opts[$optKey]) ? $opts[$optKey] : '';
-        $def = $paletteDefaults['light'][$shortKey];
-        if ($val !== '' && strtolower($val) !== strtolower($def)) {
-            $lightOverrides .= $cssVar . ':' . htmlspecialchars($val) . ';';
-        }
-        // Also generate accent-subtle from accent
-        if ($shortKey === 'accent' && $val !== '' && strtolower($val) !== strtolower($def)) {
-            $hex = ltrim($val, '#');
-            if (strlen($hex) === 3) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
-            $r = hexdec(substr($hex, 0, 2)); $g = hexdec(substr($hex, 2, 2)); $b = hexdec(substr($hex, 4, 2));
-            $lightOverrides .= '--tekbb-accent-subtle:rgba(' . $r . ',' . $g . ',' . $b . ',.08);';
-        }
-
-        // Dark mode
-        $optKey = 'dark_' . $shortKey;
-        $val = !empty($opts[$optKey]) ? $opts[$optKey] : '';
-        $def = $paletteDefaults['dark'][$shortKey];
-        if ($val !== '' && strtolower($val) !== strtolower($def)) {
-            $darkOverrides .= $cssVar . ':' . htmlspecialchars($val) . ';';
-        }
-        if ($shortKey === 'accent' && $val !== '' && strtolower($val) !== strtolower($def)) {
-            $hex = ltrim($val, '#');
-            if (strlen($hex) === 3) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
-            $r = hexdec(substr($hex, 0, 2)); $g = hexdec(substr($hex, 2, 2)); $b = hexdec(substr($hex, 4, 2));
-            $darkOverrides .= '--tekbb-accent-subtle:rgba(' . $r . ',' . $g . ',' . $b . ',.1);';
-        }
-    }
-
-    if ($lightOverrides || $darkOverrides) {
-        $css = '<style>';
-        if ($lightOverrides) {
-            $css .= ':root,:root[data-theme="light"]{' . $lightOverrides . '}';
-        }
-        if ($darkOverrides) {
-            $css .= ':root[data-theme="dark"]{' . $darkOverrides . '}';
-        }
-        $css .= '</style>' . "\n";
-        $headInject .= $css;
-    }
-
-    // @deprecated Legacy accent_color support — kept for backward compatibility with pre-v2.0 saved options
-    if (!empty($opts['accent_color']) && $opts['accent_color'] !== '#0d9488' && empty($opts['light_accent'])) {
-        $color = htmlspecialchars($opts['accent_color']);
-        $hex = ltrim($opts['accent_color'], '#');
-        if (strlen($hex) === 3) $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
-        $r = hexdec(substr($hex, 0, 2)); $g = hexdec(substr($hex, 2, 2)); $b = hexdec(substr($hex, 4, 2));
-        $hoverColor = sprintf('#%02x%02x%02x', max(0,(int)($r*0.85)), max(0,(int)($g*0.85)), max(0,(int)($b*0.85)));
-        $subtle = "rgba({$r},{$g},{$b},.08)";
-        $headInject .= '<style>:root,:root[data-theme="light"]{--tekbb-accent:'.$color.';--tekbb-accent-hover:'.$hoverColor.';--tekbb-accent-subtle:'.$subtle.';--tekbb-heading-bg:'.$color.';--tekbb-link:'.$color.';--tekbb-link-hover:'.$hoverColor.';--tekbb-btn-bg:'.$color.';--tekbb-btn-hover:'.$hoverColor.';--tekbb-border:rgba('.$r.','.$g.','.$b.',.15);}</style>' . "\n";
-    }
-
-
-
-
     // ── Page-transition loading bar (XenForo-style) ──
-    if (!isset($opts['loading_bar']) || $opts['loading_bar'] !== '0') {
+    if (!isset($mybb->settings['ms_loading_bar']) || $mybb->settings['ms_loading_bar'] !== '0') {
     $headInject .= '<style>'
         . '#ms-loader{position:fixed;top:0;left:0;width:0;height:3px;background:var(--tekbb-accent,#0d9488);z-index:99999;pointer-events:none;transition:none;box-shadow:0 0 8px var(--tekbb-accent,#0d9488);}'
         . '#ms-loader.ms-loading{transition:width .6s cubic-bezier(.1,.7,.3,1);width:85%;}'
@@ -385,67 +258,18 @@ function msdefault_inject_custom_code(&$contents)
 }
 
 /**
- * Index page: build a stats sidebar and adjust column layout.
+ * Index page: prepare birthdays card.
  * Hooked on index_end (runs just before the index template is eval'd).
  */
 function msdefault_index_sidebar()
 {
-    global $mybb, $lang, $stats, $boardstats, $whosonline, $birthdays, $recordcount;
+    global $birthdays, $birthdays_card;
 
-    // Defaults
-    $GLOBALS['ms_index_col_class'] = 'col-12';
-    $GLOBALS['ms_sidebar'] = '';
-
-    if (empty($GLOBALS['ms_show_sidebar'])) {
-        return;
-    }
-
-    // Don't build sidebar if stats aren't loaded
-    if (empty($stats) || !is_array($stats)) {
-        return;
-    }
-
-    // Clear the full-width boardstats section
-    $boardstats = '';
-
-    $sb = '<div class="col-md-3">' . "\n";
-
-    // ── Board Stats Card ──
-    $sb .= '<div class="card border shadow-sm mb-3">' . "\n";
-    $sb .= '<div class="card-header text-white py-2 d-flex justify-content-between align-items-center" style="background:var(--tekbb-heading-bg)">' . "\n";
-    $sb .= '<span class="fw-bold"><i class="bi bi-bar-chart-fill me-2"></i>' . $lang->boardstats . '</span>' . "\n";
-    $sb .= '<a href="stats.php" class="text-white-50 small">' . $lang->forumstats . ' <i class="bi bi-arrow-right"></i></a>' . "\n";
-    $sb .= '</div>' . "\n";
-    $sb .= '<ul class="list-group list-group-flush">' . "\n";
-    $sb .= '<li class="list-group-item d-flex justify-content-between align-items-center py-2"><span class="small"><i class="bi bi-chat-square-dots-fill text-primary me-2"></i>' . $lang->ms_stats_posts . '</span><span class="fw-bold small">' . $stats['numposts'] . '</span></li>' . "\n";
-    $sb .= '<li class="list-group-item d-flex justify-content-between align-items-center py-2"><span class="small"><i class="bi bi-file-text-fill text-info me-2"></i>' . $lang->ms_stats_threads . '</span><span class="fw-bold small">' . $stats['numthreads'] . '</span></li>' . "\n";
-    $sb .= '<li class="list-group-item d-flex justify-content-between align-items-center py-2"><span class="small"><i class="bi bi-people-fill text-success me-2"></i>' . $lang->ms_stats_members . '</span><span class="fw-bold small">' . $stats['numusers'] . '</span></li>' . "\n";
-    $sb .= '<li class="list-group-item d-flex justify-content-between align-items-center py-2"><span class="small"><i class="bi bi-graph-up-arrow text-warning me-2"></i>' . $lang->ms_stats_most_online . '</span><span class="fw-bold small">' . $recordcount . '</span></li>' . "\n";
-    $sb .= '</ul>' . "\n";
-    $sb .= '<div class="card-body border-top py-2 small text-muted text-center">' . $lang->stats_newestuser . '</div>' . "\n";
-    $sb .= '</div>' . "\n";
-
-    // ── Who's Online Card ──
-    if ($mybb->settings['showwol'] != 0) {
-        $sb .= '<div class="card border shadow-sm mb-3">' . "\n";
-        $sb .= '<div class="card-header text-white py-2 d-flex justify-content-between align-items-center" style="background:var(--tekbb-heading-bg)">' . "\n";
-        $sb .= '<span class="fw-bold"><i class="bi bi-people-fill me-2"></i>Online</span>' . "\n";
-        $sb .= '<a href="online.php" class="text-white-50 small">' . $lang->complete_list . ' <i class="bi bi-arrow-right"></i></a>' . "\n";
-        $sb .= '</div>' . "\n";
-        $sb .= '<div class="card-body small text-muted">' . $lang->whos_online . '<br />' . $whosonline . '</div>' . "\n";
-        $sb .= '</div>' . "\n";
-    }
-
-    // ── Birthdays Card ──
+    // Wrap birthdays in a card only if content exists
+    $birthdays_card = '';
     if (!empty($birthdays)) {
-        $cleanBdays = str_replace(' border-top', '', $birthdays);
-        $sb .= '<div class="card border shadow-sm mb-3"><div class="card-body py-2">' . $cleanBdays . '</div></div>' . "\n";
+        $birthdays_card = '<hr class="my-2" style="border-color: var(--glass-border)"><div class="small text-muted py-1">' . $birthdays . '</div>';
     }
-
-    $sb .= '</div>' . "\n";
-
-    $GLOBALS['ms_index_col_class'] = 'col-md-9';
-    $GLOBALS['ms_sidebar'] = $sb;
 }
 
 /**

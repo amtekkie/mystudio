@@ -24,21 +24,18 @@
 <div class="thead">{$foldername}</div>
 
 
-<div class="tcat rowbit">
-
-  
-<span class="pmbit_main threadbit_main" data-width="50%">
-<a href="private.php?fid={$fid}&amp;sortby=subject&amp;order=asc">{$lang->message_title}</a> {$orderarrow['subject']}</span>
-
- 
-<span class="pmbit_author threadbit_stats align_center" data-width="25%"><a href="private.php?fid={$fid}&amp;sortby=username&amp;order=asc">{$sender}</a> {$orderarrow['username']}</span>
-
-<span class="threadbit_lastpost pmbit_date" data-width="25%">
-
- <span data-moderation="1">
-<a href="private.php?fid={$fid}&amp;sortby=dateline&amp;order=desc">{$lang->date_sent}</a> {$orderarrow['dateline']}</span>
-  </span>
-<span class="d-none d-md-inline-flex align-items-center threadbit_modbit ps-2"><input name="allbox" title="{$lang->check_all}" type="checkbox" class="form-check-input checkall" value="{$lang->check_all}" /></span>
+<div class="tcat d-none d-md-flex align-items-center gap-3 px-3 py-2 border-bottom">
+	<div style="width:28px;flex-shrink:0"></div>
+	<div class="flex-grow-1 min-w-0">
+		<a href="private.php?fid={$fid}&amp;sortby=subject&amp;order=asc">{$lang->message_title}</a> {$orderarrow['subject']}
+		/ <a href="private.php?fid={$fid}&amp;sortby=username&amp;order=asc">{$sender}</a> {$orderarrow['username']}
+	</div>
+	<div class="text-end" style="width:160px;flex-shrink:0">
+		<a href="private.php?fid={$fid}&amp;sortby=dateline&amp;order=desc">{$lang->date_sent}</a> {$orderarrow['dateline']}
+	</div>
+	<div class="d-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0">
+		<input name="allbox" title="{$lang->check_all}" type="checkbox" class="form-check-input checkall" value="{$lang->check_all}" />
+	</div>
 </div>
 
 {$messagelist}

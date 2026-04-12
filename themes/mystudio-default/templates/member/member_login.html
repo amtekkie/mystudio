@@ -8,48 +8,34 @@
 <br />
 {$inline_errors}
 {$member_loggedin_notice}
+<div class="container" style="max-width:420px">
 <form action="member.php" method="post">
 <input name="my_post_key" type="hidden" value="{$mybb->post_code}" />
 <div class="tborder">
 
-<div class="thead">{$lang->login}</div>
+<div class="thead text-center"><strong>{$lang->login}</strong></div>
 
-
-
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="20%"></div>
-<div class="formbit_field" data-width="80%"></div>
+<div class="trow1 py-3 px-3">
+	<div class="mb-3">
+		<label class="small text-muted mb-1">{$lang->username}</label>
+		<input type="text" class="textbox w-100" name="username" value="{$username}" />
+	</div>
+	<div class="mb-3">
+		<label class="small text-muted mb-1">{$lang->password}</label>
+		<input type="password" class="textbox w-100" name="password" value="{$password}" />
+		<div class="small mt-1"><a href="member.php?action=lostpw">{$lang->lostpw_note}</a></div>
+	</div>
+	<div class="mb-2">
+		<label><input type="checkbox" class="checkbox" name="remember" checked="checked" value="yes" /> {$lang->remember_me}</label>
+	</div>
+	{$captcha}
 </div>
-  
-  
-
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="20%">{$lang->username}</div>
-<div class="formbit_field" data-width="80%"><input type="text" class="textbox" name="username" size="25" value="{$username}" /></div>
+<div class="tfoot text-center"><input type="submit" class="button" name="submit" value="{$lang->login}" /></div>
 </div>
-  
-  
-
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="20%">{$lang->password}</div>
-<div class="formbit_field" data-width="80%"><input type="password" class="textbox" name="password" size="25" value="{$password}" /> (<a href="member.php?action=lostpw">{$lang->lostpw_note}</a>)</div>
-</div>
-  
-
-<div class="trow1 rowbit">
-<div class="formbit_label align_right" data-width="20%">{$lang->remember_me}</div>
-<div class="formbit_field" data-width="80%"><label><input type="checkbox" class="checkbox" name="remember" checked="checked" value="yes" /> {$lang->remember_me_desc}</label></div>
-</div>
-  
-  
-  
-{$captcha}
-</div>
-<br />
-<div class="align_center"><input type="submit" class="button" name="submit" value="{$lang->login}" /></div>
 <input type="hidden" name="action" value="do_login" />
 <input type="hidden" name="url" value="{$redirect_url}" />
 </form>
+</div>
 {$footer}
 </body>
 </html>
