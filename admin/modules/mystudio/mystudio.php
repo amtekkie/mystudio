@@ -2,7 +2,7 @@
 /**
  * MyStudio -- Admin Module
  *
- * Handles all MyStudio pages: Manage, Import, Export, Global MyStudio Options, Header & Footer, Editor.
+ * Handles all MyStudio pages: Manage, Import, Export, Settings, Editor.
  * Registered as a top-level admin module via module_meta.php.
  *
  * @version 2.1.0
@@ -283,26 +283,6 @@ function ms_help_box($title, $body) {
 }
 
 /**
- * Render a single nav-link repeater row (used in the admin UI).
- */
-function ms_nav_link_row($index, $link = array())
-{
-    $text = isset($link['text']) ? htmlspecialchars_uni($link['text']) : '';
-    $url  = isset($link['url'])  ? htmlspecialchars_uni($link['url'])  : '';
-    $icon = isset($link['icon']) ? htmlspecialchars_uni($link['icon']) : '';
-    return '<tr class="ms-nav-row">'
-        . '<td><input type="text" class="ms-nav-text" value="' . $text . '" placeholder="Link text" style="width:100%;padding:4px 6px;font-size:12px;border:1px solid #ddd;border-radius:3px" /></td>'
-        . '<td><input type="text" class="ms-nav-url" value="' . $url . '" placeholder="https://..." style="width:100%;padding:4px 6px;font-size:12px;border:1px solid #ddd;border-radius:3px" /></td>'
-        . '<td>'
-        . '<input type="hidden" class="ms-nav-icon" value="' . $icon . '" />'
-        . '<button type="button" class="ms-icon-pick-btn" data-target-type="nav" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fafafa;cursor:pointer">'
-        . '<i class="bi ' . ($icon ?: 'bi-grid-3x3-gap') . ' ms-nav-icon-preview"></i> <span class="ms-icon-label">' . ($icon ?: 'Choose icon') . '</span></button>'
-        . '</td>'
-        . '<td style="text-align:center"><button type="button" class="ms-nav-del" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px" title="Remove"><i class="bi bi-trash"></i></button></td>'
-        . '</tr>';
-}
-
-/**
  * Return the master icon list as an associative array.
  * Keys are Bootstrap Icon class names, values are human-readable labels.
  * Grouped by category for the modal grid.
@@ -420,7 +400,7 @@ function ms_get_icon_list()
 
 /**
  * Render a single theme option row into a FormContainer.
- * Handles all option types: text, textarea, yesno, select, color, numeric, image, nav_links.
+ * Handles all option types: text, textarea, yesno, select, color, numeric, image.
  */
 function ms_render_option_row($form, $form_container, $key, $def, $values, $mybb)
 {
@@ -1585,36 +1565,7 @@ if ($action === 'api_saveoptions') {
                     $values[$key . '_height'] = $mybb->get_input('opt_' . $key . '_height');
                 }
             } else {
-                $rawVal = $mybb->get_input('opt_' . $key);
-                // Validate JSON for nav_links type
-                if ($type === 'nav_links') {
-                    if (!empty($rawVal)) {
-                        $decoded = @json_decode($rawVal, true);
-                        if (!is_array($decoded)) {
-                            $rawVal = ''; // Invalid JSON, reset
-                        } else {
-                            // Sanitize each entry
-                            $clean = array();
-                            foreach ($decoded as $entry) {
-                                if (!is_array($entry)) continue;
-                                $text = isset($entry['text']) ? trim($entry['text']) : '';
-                                $url  = isset($entry['url'])  ? trim($entry['url'])  : '';
-                                if ($text === '' && $url === '') continue;
-                                // Validate URL protocol — only allow http(s), relative, or anchor links
-                                if ($url !== '' && !preg_match('~^(https?://|/|#)~i', $url)) {
-                                    $url = '';
-                                }
-                                $clean[] = array(
-                                    'text' => $text,
-                                    'url'  => $url,
-                                    'icon' => isset($entry['icon']) ? preg_replace('/[^a-z0-9\-]/', '', $entry['icon']) : '',
-                                );
-                            }
-                            $rawVal = !empty($clean) ? json_encode($clean) : '';
-                        }
-                    }
-                }
-                $values[$key] = $rawVal;
+                $values[$key] = $mybb->get_input('opt_' . $key);
             }
         }
 
@@ -1623,316 +1574,8 @@ if ($action === 'api_saveoptions') {
     } else {
         flash_message('No options found for this theme.', 'error');
     }
-    $redirect = $redirectTo ? $redirectTo : "index.php?module=mystudio-options_header_footer";
+    $redirect = $redirectTo ? $redirectTo : "index.php?module=mystudio-settings";
     admin_redirect($redirect);
-}
-
-/* ====================================================================
-   Header & Footer Options Page
-   ==================================================================== */
-
-if ($action === 'options_header_footer') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
-    $page->add_breadcrumb_item("Header & Footer");
-
-    $page->output_header("MyStudio - Header & Footer");
-
-    $activeSlug = $ms->getActiveThemeSlug();
-
-    if (!$activeSlug) {
-        echo '<p>No active theme found.</p>';
-        $page->output_footer();
-        exit;
-    }
-
-    $allOptions = $ms->getThemeOptions($activeSlug);
-    if (!$allOptions) {
-        echo '<div class="alert"><p>The active theme does not provide any configurable options.</p></div>';
-        $page->output_footer();
-        exit;
-    }
-
-    $values = $ms->getMergedThemeOptions($activeSlug);
-
-    // Filter options for header_footer page
-    $hfOptions = array();
-    foreach ($allOptions as $key => $def) {
-        $optPage = isset($def['page']) ? $def['page'] : '';
-        if ($optPage === 'header_footer') {
-            $hfOptions[$key] = $def;
-        }
-    }
-
-    if (empty($hfOptions)) {
-        echo '<div class="alert"><p>No header/footer options available for this theme.</p></div>';
-        $page->output_footer();
-        exit;
-    }
-
-    echo '<style>
-#ms-nav-links-table{table-layout:fixed}
-#ms-nav-links-table th{font-size:11px;padding:5px 8px}
-#ms-nav-links-table td{padding:4px 6px}
-#ms-nav-links-table input[type=text]{width:100%;box-sizing:border-box;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px}
-#ms-nav-links-table .ms-icon-pick-btn{width:100%;justify-content:center}
-.ms-pal-table{width:100%;border-collapse:collapse;font-size:13px}
-.ms-pal-table th{text-align:left;padding:6px 8px;background:#f5f5f5;border-bottom:2px solid #ddd;font-size:12px;text-transform:uppercase;color:#666}
-.ms-pal-table td{padding:5px 8px;border-bottom:1px solid #eee;vertical-align:middle}
-</style>';
-
-    $form = new Form("index.php?module=mystudio-manage&action=api_saveoptions", "post", "", 1);
-    echo $form->generate_hidden_field('slug', $activeSlug);
-    echo $form->generate_hidden_field('page_filter', 'header_footer');
-    echo $form->generate_hidden_field('redirect_to', 'index.php?module=mystudio-options_header_footer');
-
-    // â”€â”€ Header Options â”€â”€
-    $headerKeys = array('logo_icon', 'logo_text', 'site_logo', 'favicon');
-    $form_container = new FormContainer("Header");
-    foreach ($headerKeys as $hk) {
-        if (isset($hfOptions[$hk])) {
-            ms_render_option_row($form, $form_container, $hk, $hfOptions[$hk], $values, $mybb);
-        }
-    }
-    $form_container->end();
-
-    // â”€â”€ Navigation â”€â”€
-    if (isset($hfOptions['custom_nav_links'])) {
-        $form_container = new FormContainer("Navigation");
-        $navDef = $hfOptions['custom_nav_links'];
-        $navVal = isset($values['custom_nav_links']) ? $values['custom_nav_links'] : '';
-        $navLinks = !empty($navVal) ? @json_decode($navVal, true) : array();
-        if (!is_array($navLinks)) $navLinks = array();
-
-        $navHtml = '<div id="ms-nav-links-wrap">';
-        $navHtml .= '<table class="ms-pal-table" id="ms-nav-links-table">'
-                  . '<thead><tr><th style="width:25%">Link Text</th><th style="width:35%">URL</th><th style="width:25%">Icon</th><th style="width:15%"></th></tr></thead>'
-                  . '<tbody>';
-        foreach ($navLinks as $i => $link) {
-            $navHtml .= ms_nav_link_row($i, $link);
-        }
-        $navHtml .= '</tbody></table>';
-        $navHtml .= '<button type="button" id="ms-nav-add-btn" style="margin-top:8px;padding:4px 12px;font-size:12px;cursor:pointer;border:1px solid #0d9488;background:#f0fdfa;color:#0d9488;border-radius:4px">'
-                  . '<i class="bi bi-plus-circle"></i> Add Link</button>';
-        $navHtml .= '<input type="hidden" name="opt_custom_nav_links" id="ms-nav-links-json" value="' . htmlspecialchars_uni($navVal) . '" />';
-        $navHtml .= '</div>';
-
-        $form_container->output_row(
-            '',
-            '',
-            $navHtml
-        );
-        $form_container->end();
-    }
-
-    // â”€â”€ Footer Options â”€â”€
-    $footerKeys = array('footer_text', 'footer_about_text');
-    $hasFooter = false;
-    foreach ($footerKeys as $fk) {
-        if (isset($hfOptions[$fk])) { $hasFooter = true; break; }
-    }
-    if ($hasFooter) {
-        $form_container = new FormContainer("Footer");
-        foreach ($footerKeys as $fk) {
-            if (isset($hfOptions[$fk])) {
-                ms_render_option_row($form, $form_container, $fk, $hfOptions[$fk], $values, $mybb);
-            }
-        }
-        $form_container->end();
-    }
-
-    $buttons = array($form->generate_submit_button("Save Options"));
-    $form->output_submit_wrapper($buttons);
-    echo $form->end();
-
-    echo '<script>
-(function(){
-  // â”€â”€ Nav Links Repeater â”€â”€
-  function initNavLinks(){
-    var wrap=document.getElementById("ms-nav-links-wrap");
-    if(!wrap) return;
-    var tbody=document.querySelector("#ms-nav-links-table tbody");
-    var jsonInput=document.getElementById("ms-nav-links-json");
-    var addBtn=document.getElementById("ms-nav-add-btn");
-
-    function syncJson(){
-      var rows=tbody.querySelectorAll(".ms-nav-row");
-      var links=[];
-      rows.forEach(function(r){
-        var t=r.querySelector(".ms-nav-text").value.trim();
-        var u=r.querySelector(".ms-nav-url").value.trim();
-        var ic=r.querySelector(".ms-nav-icon").value;
-        if(t||u) links.push({text:t,url:u,icon:ic});
-      });
-      jsonInput.value=links.length?JSON.stringify(links):"";
-    }
-
-    function bindRow(tr){
-      tr.querySelector(".ms-nav-text").addEventListener("input",syncJson);
-      tr.querySelector(".ms-nav-url").addEventListener("input",syncJson);
-      var pickBtn=tr.querySelector(".ms-icon-pick-btn");
-      if(pickBtn) pickBtn.addEventListener("click",function(){
-        var hiddenInput=tr.querySelector(".ms-nav-icon");
-        var preview=tr.querySelector(".ms-nav-icon-preview");
-        var label=tr.querySelector(".ms-icon-label");
-        FmzIconModal.open(hiddenInput.value,function(icon){
-          hiddenInput.value=icon;
-          preview.className="bi "+(icon||"bi-grid-3x3-gap")+" ms-nav-icon-preview";
-          if(label) label.textContent=icon||"Choose icon";
-          syncJson();
-        });
-      });
-      tr.querySelector(".ms-nav-del").addEventListener("click",function(){
-        tr.remove(); syncJson();
-      });
-    }
-
-    tbody.querySelectorAll(".ms-nav-row").forEach(bindRow);
-
-    addBtn.addEventListener("click",function(){
-      var tr=document.createElement("tr");
-      tr.className="ms-nav-row";
-      tr.innerHTML=\'<td><input type="text" class="ms-nav-text" value="" placeholder="Link text" style="width:100%;padding:4px 6px;font-size:12px;border:1px solid #ddd;border-radius:3px" /></td>\'
-        +\'<td><input type="text" class="ms-nav-url" value="" placeholder="https://..." style="width:100%;padding:4px 6px;font-size:12px;border:1px solid #ddd;border-radius:3px" /></td>\'
-        +\'<td><input type="hidden" class="ms-nav-icon" value="" />\'
-        +\'<button type="button" class="ms-icon-pick-btn" data-target-type="nav" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fafafa;cursor:pointer">\'
-        +\'<i class="bi bi-grid-3x3-gap ms-nav-icon-preview"></i> <span class="ms-icon-label">Choose icon</span></button></td>\'
-        +\'<td style="text-align:center"><button type="button" class="ms-nav-del" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:14px" title="Remove"><i class="bi bi-trash"></i></button></td>\';
-      tbody.appendChild(tr);
-      bindRow(tr);
-      tr.querySelector(".ms-nav-text").focus();
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded",function(){initNavLinks();initIconPickers();});
-})();
-</script>';
-
-    // â”€â”€ Icon Picker Modal â”€â”€
-    $iconListJson = json_encode(ms_get_icon_list());
-    echo '<div id="ms-icon-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)">
-<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:640px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
-  <div style="display:flex;align-items:center;justify-content:between;padding:14px 20px;border-bottom:1px solid #eee;gap:10px;flex-shrink:0">
-    <i class="bi bi-grid-3x3-gap" style="font-size:18px;color:#0d9488"></i>
-    <strong style="font-size:14px;flex:1">Choose Icon</strong>
-    <input type="text" id="ms-icon-search" placeholder="Search icons..." style="padding:6px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:220px" />
-    <button type="button" id="ms-icon-modal-close" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:0 4px">&times;</button>
-  </div>
-  <div id="ms-icon-grid" style="padding:12px 16px;overflow-y:auto;flex:1"></div>
-  <div style="padding:10px 20px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
-    <span id="ms-icon-count" style="font-size:12px;color:#888"></span>
-    <button type="button" id="ms-icon-clear-selected" style="font-size:12px;padding:4px 12px;border:1px solid #ddd;border-radius:4px;background:#fafafa;cursor:pointer;color:#888">&#x2715; No icon</button>
-  </div>
-</div>
-</div>';
-
-    echo '<style>
-.ms-ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
-.ms-ig-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:2px solid transparent;border-radius:8px;cursor:pointer;transition:all .15s;background:#fafafa}
-.ms-ig-item:hover{background:#e0f2fe;border-color:#7dd3fc}
-.ms-ig-item.selected{background:#ccfbf1;border-color:#0d9488}
-.ms-ig-item i{font-size:22px;color:#333}
-.ms-ig-item span{font-size:9px;color:#888;text-align:center;line-height:1.1;word-break:break-word;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-</style>';
-
-    echo '<script>
-(function(){
-  var icons=' . $iconListJson . ';
-  var modal=document.getElementById("ms-icon-modal");
-  var grid=document.getElementById("ms-icon-grid");
-  var searchInput=document.getElementById("ms-icon-search");
-  var countEl=document.getElementById("ms-icon-count");
-  var closeBtn=document.getElementById("ms-icon-modal-close");
-  var clearBtn=document.getElementById("ms-icon-clear-selected");
-  var onSelect=null;
-  var currentValue="";
-
-  function renderGrid(filter){
-    filter=(filter||"").toLowerCase();
-    var html="";
-    var count=0;
-    for(var cls in icons){
-      var label=icons[cls];
-      if(filter && cls.indexOf(filter)===-1 && label.toLowerCase().indexOf(filter)===-1) continue;
-      var sel=(cls===currentValue)?" selected":"";
-      html+=\'<div class="ms-ig-item\'+sel+\'" data-icon="\'+cls+\'"><i class="bi \'+cls+\'"></i><span>\'+label+\'</span></div>\';
-      count++;
-    }
-    if(!count) html=\'<div style="text-align:center;padding:30px;color:#aaa;font-size:13px">No icons match your search</div>\';
-    grid.innerHTML=\'<div class="ms-ig">\'+html+\'</div>\';
-    countEl.textContent=count+" icon"+(count!==1?"s":"");
-    grid.querySelectorAll(".ms-ig-item").forEach(function(item){
-      item.addEventListener("click",function(){
-        var icon=this.getAttribute("data-icon");
-        if(onSelect) onSelect(icon);
-        close();
-      });
-    });
-  }
-
-  function open(val,callback){
-    currentValue=val||"";
-    onSelect=callback;
-    renderGrid("");
-    searchInput.value="";
-    modal.style.display="block";
-    setTimeout(function(){searchInput.focus();},100);
-  }
-
-  function close(){
-    modal.style.display="none";
-    onSelect=null;
-  }
-
-  closeBtn.addEventListener("click",close);
-  modal.addEventListener("click",function(e){if(e.target===modal) close();});
-  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&modal.style.display==="block") close();});
-  searchInput.addEventListener("input",function(){renderGrid(this.value);});
-  clearBtn.addEventListener("click",function(){if(onSelect) onSelect("");close();});
-
-  window.FmzIconModal={open:open,close:close};
-
-  window.initIconPickers=function(){
-    document.querySelectorAll(".ms-icon-pick-btn:not([data-target-type=nav])").forEach(function(btn){
-      if(btn.dataset.bound) return;
-      btn.dataset.bound="1";
-      btn.addEventListener("click",function(){
-        var inputId=btn.getAttribute("data-target-input");
-        var previewId=btn.getAttribute("data-target-preview");
-        var labelId=btn.getAttribute("data-target-label");
-        var input=inputId?document.getElementById(inputId):null;
-        FmzIconModal.open(input?input.value:"",function(icon){
-          if(input) input.value=icon;
-          var prev=previewId?document.getElementById(previewId):null;
-          if(prev) prev.className="bi "+(icon||"bi-grid-3x3-gap");
-          var lbl=labelId?document.getElementById(labelId):null;
-          if(lbl) lbl.textContent=icon||"Choose icon\u2026";
-        });
-      });
-    });
-    document.querySelectorAll(".ms-icon-clear-btn").forEach(function(btn){
-      if(btn.dataset.bound) return;
-      btn.dataset.bound="1";
-      btn.addEventListener("click",function(){
-        var inputId=btn.getAttribute("data-target-input");
-        var previewId=btn.getAttribute("data-target-preview");
-        var labelId=btn.getAttribute("data-target-label");
-        var input=inputId?document.getElementById(inputId):null;
-        if(input) input.value="";
-        var prev=previewId?document.getElementById(previewId):null;
-        if(prev) prev.className="bi bi-grid-3x3-gap";
-        var lbl=labelId?document.getElementById(labelId):null;
-        if(lbl) lbl.textContent="Choose icon\u2026";
-        btn.style.display="none";
-      });
-    });
-  };
-})();
-</script>';
-
-
-
-    $page->output_footer();
-    exit;
 }
 
 /* ====================================================================
@@ -2345,6 +1988,164 @@ if ($action === 'settings') {
     $form->output_submit_wrapper($buttons);
 
     $form->end();
+
+    // ── Branding (theme options: logo, favicon) ──
+    $activeSlug = $ms->getActiveThemeSlug();
+    if ($activeSlug) {
+        $allOptions = $ms->getThemeOptions($activeSlug);
+        $themeValues = $ms->getMergedThemeOptions($activeSlug);
+
+        $brandingKeys = array('logo_icon', 'logo_text', 'site_logo', 'favicon');
+        $hasBranding = false;
+        if ($allOptions) {
+            foreach ($brandingKeys as $bk) {
+                if (isset($allOptions[$bk])) { $hasBranding = true; break; }
+            }
+        }
+
+        if ($hasBranding) {
+            $brandForm = new Form("index.php?module=mystudio-manage&action=api_saveoptions", "post", "", 1);
+            echo $brandForm->generate_hidden_field('slug', $activeSlug);
+            echo $brandForm->generate_hidden_field('page_filter', 'studio_settings');
+            echo $brandForm->generate_hidden_field('redirect_to', 'index.php?module=mystudio-settings');
+
+            $form_container = new FormContainer("Branding");
+            foreach ($brandingKeys as $bk) {
+                if (isset($allOptions[$bk])) {
+                    ms_render_option_row($brandForm, $form_container, $bk, $allOptions[$bk], $themeValues, $mybb);
+                }
+            }
+            $form_container->end();
+
+            $buttons = array($brandForm->generate_submit_button("Save Branding"));
+            $brandForm->output_submit_wrapper($buttons);
+            echo $brandForm->end();
+
+            // Icon picker modal + JS (needed for logo_icon chooser)
+            $iconListJson = json_encode(ms_get_icon_list());
+            echo '<div id="ms-icon-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)">
+<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:640px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:between;padding:14px 20px;border-bottom:1px solid #eee;gap:10px;flex-shrink:0">
+    <i class="bi bi-grid-3x3-gap" style="font-size:18px;color:#0d9488"></i>
+    <strong style="font-size:14px;flex:1">Choose Icon</strong>
+    <input type="text" id="ms-icon-search" placeholder="Search icons..." style="padding:6px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;width:220px" />
+    <button type="button" id="ms-icon-modal-close" style="background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:0 4px">&times;</button>
+  </div>
+  <div id="ms-icon-grid" style="padding:12px 16px;overflow-y:auto;flex:1"></div>
+  <div style="padding:10px 20px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+    <span id="ms-icon-count" style="font-size:12px;color:#888"></span>
+    <button type="button" id="ms-icon-clear-selected" style="font-size:12px;padding:4px 12px;border:1px solid #ddd;border-radius:4px;background:#fafafa;cursor:pointer;color:#888">&#x2715; No icon</button>
+  </div>
+</div>
+</div>';
+
+            echo '<style>
+.ms-ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+.ms-ig-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:2px solid transparent;border-radius:8px;cursor:pointer;transition:all .15s;background:#fafafa}
+.ms-ig-item:hover{background:#e0f2fe;border-color:#7dd3fc}
+.ms-ig-item.selected{background:#ccfbf1;border-color:#0d9488}
+.ms-ig-item i{font-size:22px;color:#333}
+.ms-ig-item span{font-size:9px;color:#888;text-align:center;line-height:1.1;word-break:break-word;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>';
+
+            echo '<script>
+(function(){
+  var icons=' . $iconListJson . ';
+  var modal=document.getElementById("ms-icon-modal");
+  var grid=document.getElementById("ms-icon-grid");
+  var searchInput=document.getElementById("ms-icon-search");
+  var countEl=document.getElementById("ms-icon-count");
+  var closeBtn=document.getElementById("ms-icon-modal-close");
+  var clearBtn=document.getElementById("ms-icon-clear-selected");
+  var onSelect=null;
+  var currentValue="";
+
+  function renderGrid(filter){
+    filter=(filter||"").toLowerCase();
+    var html="";
+    var count=0;
+    for(var cls in icons){
+      var label=icons[cls];
+      if(filter && cls.indexOf(filter)===-1 && label.toLowerCase().indexOf(filter)===-1) continue;
+      var sel=(cls===currentValue)?" selected":"";
+      html+=\'<div class="ms-ig-item\'+sel+\'" data-icon="\'+cls+\'"><i class="bi \'+cls+\'"></i><span>\'+label+\'</span></div>\';
+      count++;
+    }
+    if(!count) html=\'<div style="text-align:center;padding:30px;color:#aaa;font-size:13px">No icons match your search</div>\';
+    grid.innerHTML=\'<div class="ms-ig">\'+html+\'</div>\';
+    countEl.textContent=count+" icon"+(count!==1?"s":"");
+    grid.querySelectorAll(".ms-ig-item").forEach(function(item){
+      item.addEventListener("click",function(){
+        var icon=this.getAttribute("data-icon");
+        if(onSelect) onSelect(icon);
+        close();
+      });
+    });
+  }
+
+  function open(val,callback){
+    currentValue=val||"";
+    onSelect=callback;
+    renderGrid("");
+    searchInput.value="";
+    modal.style.display="block";
+    setTimeout(function(){searchInput.focus();},100);
+  }
+
+  function close(){
+    modal.style.display="none";
+    onSelect=null;
+  }
+
+  closeBtn.addEventListener("click",close);
+  modal.addEventListener("click",function(e){if(e.target===modal) close();});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&modal.style.display==="block") close();});
+  searchInput.addEventListener("input",function(){renderGrid(this.value);});
+  clearBtn.addEventListener("click",function(){if(onSelect) onSelect("");close();});
+
+  window.FmzIconModal={open:open,close:close};
+
+  window.initIconPickers=function(){
+    document.querySelectorAll(".ms-icon-pick-btn:not([data-target-type=nav])").forEach(function(btn){
+      if(btn.dataset.bound) return;
+      btn.dataset.bound="1";
+      btn.addEventListener("click",function(){
+        var inputId=btn.getAttribute("data-target-input");
+        var previewId=btn.getAttribute("data-target-preview");
+        var labelId=btn.getAttribute("data-target-label");
+        var input=inputId?document.getElementById(inputId):null;
+        FmzIconModal.open(input?input.value:"",function(icon){
+          if(input) input.value=icon;
+          var prev=previewId?document.getElementById(previewId):null;
+          if(prev) prev.className="bi "+(icon||"bi-grid-3x3-gap");
+          var lbl=labelId?document.getElementById(labelId):null;
+          if(lbl) lbl.textContent=icon||"Choose icon\u2026";
+        });
+      });
+    });
+    document.querySelectorAll(".ms-icon-clear-btn").forEach(function(btn){
+      if(btn.dataset.bound) return;
+      btn.dataset.bound="1";
+      btn.addEventListener("click",function(){
+        var inputId=btn.getAttribute("data-target-input");
+        var previewId=btn.getAttribute("data-target-preview");
+        var labelId=btn.getAttribute("data-target-label");
+        var input=inputId?document.getElementById(inputId):null;
+        if(input) input.value="";
+        var prev=previewId?document.getElementById(previewId):null;
+        if(prev) prev.className="bi bi-grid-3x3-gap";
+        var lbl=labelId?document.getElementById(labelId):null;
+        if(lbl) lbl.textContent="Choose icon\u2026";
+        btn.style.display="none";
+      });
+    });
+  };
+
+  document.addEventListener("DOMContentLoaded",function(){initIconPickers();});
+})();
+</script>';
+        }
+    }
 
     $page->output_footer();
     exit;

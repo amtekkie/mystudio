@@ -17,25 +17,16 @@ if (!defined('IN_MYBB')) {
 }
 
 global $plugins, $db, $mybb;
-
-// ── Auto-install: create table if missing ──
 ms_forum_icons_install();
 
 if (defined('IN_ADMINCP')) {
-    // ── Admin Hooks ──
     $plugins->add_hook('admin_forum_management_add',         'ms_fi_admin_form');
     $plugins->add_hook('admin_forum_management_edit',        'ms_fi_admin_form');
     $plugins->add_hook('admin_forum_management_add_commit',  'ms_fi_admin_save_add');
     $plugins->add_hook('admin_forum_management_edit_commit', 'ms_fi_admin_save_edit');
 } else {
-    // ── Frontend Hooks ──
     $plugins->add_hook('pre_output_page', 'ms_fi_inject_icon_css');
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   AUTO-INSTALL
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_forum_icons_install()
 {
     global $db;
@@ -58,11 +49,6 @@ function ms_forum_icons_install()
         @file_put_contents($uploadDir . '/index.html', '');
     }
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   ADMIN — FORM INJECTION
-   ═══════════════════════════════════════════════════════════════ */
-
 /**
  * Inject icon picker fields into the forum add/edit form.
  */
@@ -71,6 +57,15 @@ function ms_fi_admin_form()
     global $mybb, $db, $page;
 
     $fid = $mybb->get_input('fid', MyBB::INPUT_INT);
+
+    // Don't show icon picker for categories — only forums and subforums
+    if ($fid > 0) {
+        $fquery = $db->simple_select('forums', 'type', "fid='{$fid}'", array('limit' => 1));
+        $frow = $db->fetch_array($fquery);
+        if ($frow && $frow['type'] === 'c') {
+            return;
+        }
+    }
 
     // Load existing icon data
     $currentType  = 'none';
@@ -208,6 +203,20 @@ document.addEventListener("DOMContentLoaded",function(){
     var newRow=temp.querySelector("tr");
     if(newRow)tbody.appendChild(newRow);
 
+    // Hide icon row for categories (type='c')
+    var fiRow=document.getElementById("ms_fi_row");
+    if(fiRow){
+        var typeRadios=document.querySelectorAll("input[name='type']");
+        function toggleFiRow(){
+            var sel=document.querySelector("input[name='type']:checked");
+            fiRow.style.display=(sel && sel.value==="c")?"none":"";
+        }
+        if(typeRadios.length){
+            typeRadios.forEach(function(r){r.addEventListener("change",toggleFiRow);});
+            toggleFiRow();
+        }
+    }
+
     // Build modal HTML
     var modalHtml='<div id="ms_fi_modal">'
         +'<div id="ms_fi_modal_inner">'
@@ -312,11 +321,6 @@ document.addEventListener("DOMContentLoaded",function(){
 </script>
 JSEOF;
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   ADMIN — SAVE HANDLERS
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_fi_admin_save_add()
 {
     global $fid;
@@ -338,6 +342,13 @@ function ms_fi_save_icon_data($fid)
 
     if ($fid <= 0) return;
 
+    // Don't save icons for categories — only forums and subforums
+    $fquery = $db->simple_select('forums', 'type', "fid='{$fid}'", array('limit' => 1));
+    $frow = $db->fetch_array($fquery);
+    if ($frow && $frow['type'] === 'c') {
+        return;
+    }
+
     $iconType  = $mybb->get_input('ms_icon_type');
     $iconValue = '';
 
@@ -350,22 +361,45 @@ function ms_fi_save_icon_data($fid)
         // Check for new file upload
         if (!empty($_FILES['ms_icon_upload']['name']) && $_FILES['ms_icon_upload']['error'] === UPLOAD_ERR_OK) {
             $file = $_FILES['ms_icon_upload'];
-            $allowed = array('png', 'jpg', 'jpeg', 'gif', 'svg', 'webp');
+            $allowed = array('png', 'jpg', 'jpeg', 'gif', 'webp');
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
             if (in_array($ext, $allowed) && $file['size'] <= 256 * 1024) {
-                $uploadDir = MYBB_ROOT . 'uploads/forum_icons';
-                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
-
-                $filename = 'forum_' . $fid . '.' . $ext;
-                // Remove old images for this forum
-                foreach (glob($uploadDir . '/forum_' . $fid . '.*') as $old) {
-                    @unlink($old);
+                // Validate MIME type matches extension
+                $allowedMimes = array('image/png', 'image/jpeg', 'image/gif', 'image/webp');
+                $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                $mimeValid = true;
+                if ($finfo !== false) {
+                    $detectedMime = finfo_file($finfo, $file['tmp_name']);
+                    finfo_close($finfo);
+                    if ($detectedMime === false || !in_array($detectedMime, $allowedMimes)) {
+                        $mimeValid = false;
+                    }
                 }
-                if (move_uploaded_file($file['tmp_name'], $uploadDir . '/' . $filename)) {
-                    $iconValue = 'uploads/forum_icons/' . $filename;
-                } else {
+
+                if (!$mimeValid) {
                     $iconType = 'none';
+                } else {
+                    $uploadDir = MYBB_ROOT . 'uploads/forum_icons';
+                    if (!is_dir($uploadDir)) {
+                        @mkdir($uploadDir, 0755, true);
+                        // Prevent script execution in upload directory
+                        $htaccess = $uploadDir . '/.htaccess';
+                        if (!file_exists($htaccess)) {
+                            @file_put_contents($htaccess, "<FilesMatch \"\\.(php|phtml|phar|php[3-8]|shtml)$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
+                        }
+                    }
+
+                    $filename = 'forum_' . $fid . '.' . $ext;
+                    // Remove old images for this forum
+                    foreach (glob($uploadDir . '/forum_' . $fid . '.*') as $old) {
+                        @unlink($old);
+                    }
+                    if (move_uploaded_file($file['tmp_name'], $uploadDir . '/' . $filename)) {
+                        $iconValue = 'uploads/forum_icons/' . $filename;
+                    } else {
+                        $iconType = 'none';
+                    }
                 }
             } else {
                 $iconType = 'none';
@@ -399,11 +433,6 @@ function ms_fi_save_icon_data($fid)
         }
     }
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   FRONTEND — ICON CSS INJECTION
-   ═══════════════════════════════════════════════════════════════ */
-
 /**
  * Inject per-forum icon overrides into the page output.
  * Hooks on pre_output_page.

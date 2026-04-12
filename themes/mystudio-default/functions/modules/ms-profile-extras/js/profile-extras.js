@@ -297,9 +297,6 @@ function applyBannerToPage(css, textColor, linkColor) {
 }
 
 
-/* ═══════════════════════════════════════════════
-   HELPERS
-   ═══════════════════════════════════════════════ */
 function ajaxPost(params, callback) {
     var body = Object.keys(params).map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
     var xhr = new XMLHttpRequest();
@@ -319,6 +316,54 @@ function closeModal(id) {
         var inst = bootstrap.Modal.getInstance(modalEl);
         if (inst) inst.hide();
     }
+}
+
+
+var avatarFileInput = document.getElementById('ms_profile_avatar_file');
+if (avatarFileInput) {
+    avatarFileInput.addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var preview = document.getElementById('ms_profile_avatar_preview');
+                if (preview) preview.src = e.target.result;
+            };
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+}
+
+
+var rateForm = document.getElementById('msRateForm');
+if (rateForm) {
+    rateForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var form = this;
+        var resultDiv = document.getElementById('msRateResult');
+        var fd = new FormData(form);
+
+        fetch(rootUrl + '/reputation.php', {
+            method: 'POST',
+            body: new URLSearchParams(fd)
+        })
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+            if (resultDiv) {
+                resultDiv.innerHTML = '<span class="text-success small"><i class="bi bi-check-circle me-1"></i>Done!</span>';
+            }
+            // Update the vote button label on the profile
+            var voteBtn = document.querySelector('[data-action="rate-user"]');
+            if (voteBtn) {
+                voteBtn.innerHTML = '<i class="bi bi-pencil-square me-1"></i>' + (form.dataset.voteBtn || 'Update');
+            }
+            setTimeout(function () { closeModal('msRateUserModal'); }, 800);
+        })
+        .catch(function () {
+            if (resultDiv) {
+                resultDiv.innerHTML = '<span class="text-danger small">Error – please try again.</span>';
+            }
+        });
+    });
 }
 
 })();

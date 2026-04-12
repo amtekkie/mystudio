@@ -20,16 +20,10 @@ global $plugins, $db, $mybb;
 $GLOBALS['ms_fde_options'] = isset($ms_plugin_options) ? $ms_plugin_options : array();
 
 if (!defined('IN_ADMINCP')) {
-    // ── Frontend Hooks ──
     $plugins->add_hook('build_forumbits_forum', 'ms_fde_enrich_forum');
     $plugins->add_hook('forumdisplay_thread',   'ms_fde_enrich_thread');
     $plugins->add_hook('pre_output_page',       'ms_fde_inject_output');
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   FRONTEND — ENRICH FORUM DATA
-   ═══════════════════════════════════════════════════════════════ */
-
 /**
  * Hook: build_forumbits_forum
  * Enrich the $forum array with last poster avatar data.
@@ -39,8 +33,6 @@ function ms_fde_enrich_forum($forum)
 {
     global $db, $mybb, $templates;
     $opts = $GLOBALS['ms_fde_options'];
-
-    // ── Card layout: swap template cache (once) ──
     static $template_swapped = false;
     if (!$template_swapped) {
         $template_swapped = true;
@@ -53,8 +45,6 @@ function ms_fde_enrich_forum($forum)
             }
         }
     }
-
-    // ── Feature 1: Last poster avatar ──
     if ((!isset($opts['enable_lastposter_avatar']) || $opts['enable_lastposter_avatar'])
         && !empty($forum['lastposteruid'])
     ) {
@@ -146,11 +136,6 @@ function ms_fde_get_forum_cache()
     global $fcache;
     return is_array($fcache) ? $fcache : array();
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   FRONTEND — OUTPUT INJECTION
-   ═══════════════════════════════════════════════════════════════ */
-
 /**
  * Hook: forumdisplay_thread
  * Set last poster avatar for each thread row in forumdisplay.
@@ -218,8 +203,6 @@ function ms_fde_inject_output(&$contents)
 
     $css = '';
     $js  = '';
-
-    // ── Feature 1: Last poster avatar + modal ──
     if (!isset($opts['enable_lastposter_avatar']) || $opts['enable_lastposter_avatar']) {
         $enableModal = !isset($opts['enable_user_modal']) || $opts['enable_user_modal'];
 
@@ -325,8 +308,6 @@ CSS;
 JSEOF;
         }
     }
-
-    // ── Feature 2: Subforum column layout (vertical list) ──
     $subCols = isset($opts['subforum_columns']) ? (int)$opts['subforum_columns'] : 0;
     if ($subCols == 1) {
         $css .= <<<CSS
@@ -374,8 +355,6 @@ CSS;
             $offset = $pos + strlen($replacement);
         }
     }
-
-    // ── Feature 3: Card layout ──
     $layout = isset($opts['forum_layout']) ? $opts['forum_layout'] : 'rows';
     $cardsPerRow = isset($opts['cards_per_row']) ? (int)$opts['cards_per_row'] : 3;
     if ($layout === 'cards') {
@@ -400,8 +379,6 @@ CSS;
             $contents
         );
     }
-
-    // ── Inject CSS + JS into page ──
     if (!empty($css)) {
         $styleTag = "<style>/* MyStudio Forum Display Extras */\n{$css}</style>\n";
         $contents = str_replace('</head>', $styleTag . '</head>', $contents);
@@ -413,11 +390,6 @@ CSS;
 
     return $contents;
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   XMLHTTP — USER CARD AJAX ENDPOINT
-   ═══════════════════════════════════════════════════════════════ */
-
 /**
  * Register the XMLHTTP action for user card data.
  */

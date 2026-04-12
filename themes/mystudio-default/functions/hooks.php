@@ -11,6 +11,7 @@
  */
 
 global $plugins;
+include_once __DIR__ . '/posting-extras.php';
 
 // Inject custom CSS/JS from theme options into the page
 $plugins->add_hook('pre_output_page', 'msdefault_inject_custom_code');
@@ -48,7 +49,7 @@ function msdefault_welcomeblock_badges()
     // Unread PMs badge (top-right offset)
     $unread = (int) $mybb->user['pms_unread'];
     if ($unread > 0 && $mybb->settings['enablepms'] != 0 && $mybb->usergroup['canusepms'] == 1) {
-        $GLOBALS['ms_pm_badge'] = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:9px;z-index:1">' 
+        $GLOBALS['ms_pm_badge'] = '<span class="ms-pm-badge badge rounded-pill bg-danger ms-1" style="font-size:9px">' 
             . my_number_format($unread) . '</span>';
     }
 
@@ -101,40 +102,8 @@ function msdefault_load_language()
         $lang->load("usercp");
     }
 
-    // Build custom navigation links HTML from JSON option
+    // Load theme options
     $opts = isset($mybb->ms_theme_options) ? $mybb->ms_theme_options : array();
-
-    // Footer about text: override language string when theme option is set
-    if (!empty($opts['footer_about_text'])) {
-        $lang->ms_footer_about_text = str_replace('{boardname}', $mybb->settings['bbname'], $opts['footer_about_text']);
-    }
-
-    $ms_custom_nav = '';
-    if (!empty($opts['custom_nav_links'])) {
-        $links = @json_decode($opts['custom_nav_links'], true);
-        if (is_array($links)) {
-            foreach ($links as $link) {
-                if (empty($link['text']) || empty($link['url'])) continue;
-                $text = htmlspecialchars_uni($link['text']);
-                $rawUrl = $link['url'];
-                // Block javascript: and data: URI schemes
-                if (preg_match('/^\s*(javascript|data|vbscript)\s*:/i', $rawUrl)) continue;
-                // Prepend bburl for relative URLs
-                if (strpos($rawUrl, 'http') !== 0 && strpos($rawUrl, '//') !== 0 && strpos($rawUrl, '/') !== 0) {
-                    $rawUrl = $mybb->settings['bburl'] . '/' . $rawUrl;
-                }
-                $url  = htmlspecialchars_uni($rawUrl);
-                $icon = !empty($link['icon']) ? $link['icon'] : '';
-                if ($icon !== '' && !preg_match('/^bi-[a-z0-9-]+$/', $icon)) {
-                    $icon = '';
-                }
-                $icon = $icon ? '<i class="bi ' . htmlspecialchars_uni($icon) . ' me-1"></i>' : '';
-                $target = (strpos($link['url'], 'http') === 0) ? ' target="_blank" rel="noopener"' : '';
-                $ms_custom_nav .= '<li class="nav-item"><a class="nav-link" href="' . $url . '"' . $target . '>' . $icon . $text . '</a></li>' . "\n";
-            }
-        }
-    }
-    $GLOBALS['ms_custom_nav'] = $ms_custom_nav;
 
     // Build logo HTML from options
     $logoHtml = '';
@@ -169,12 +138,6 @@ function msdefault_load_language()
     }
     $GLOBALS['ms_logo_html'] = $logoHtml;
 
-    // Footer custom text (appears below copyright bar)
-    $GLOBALS['ms_footer_text_row'] = '';
-    if (!empty($opts['footer_text'])) {
-        $GLOBALS['ms_footer_text_row'] = '<div class="pb-3 small opacity-75 text-center">' . $opts['footer_text'] . '</div>';
-    }
-
     // Defaults for index sidebar layout
     $GLOBALS['ms_index_col_class'] = 'col-12';
     $GLOBALS['ms_sidebar'] = '';
@@ -208,8 +171,6 @@ function msdefault_inject_custom_code(&$contents)
     }
 
     // Logo — handled via template variable now, no JS injection needed
-
-    // ── Page-transition loading bar (XenForo-style) ──
     if (!isset($mybb->settings['ms_loading_bar']) || $mybb->settings['ms_loading_bar'] !== '0') {
     $headInject .= '<style>'
         . '#ms-loader{position:fixed;top:0;left:0;width:0;height:3px;background:var(--tekbb-accent,#0d9488);z-index:99999;pointer-events:none;transition:none;box-shadow:0 0 8px var(--tekbb-accent,#0d9488);}'
@@ -246,6 +207,10 @@ function msdefault_inject_custom_code(&$contents)
         . '})();'
         . '</script>' . "\n";
     }
+    $themeBase = $bburl . '/themes/mystudio-default';
+    $headInject .= '<link rel="stylesheet" href="' . $themeBase . '/css/posting-extras.css" type="text/css" />' . "\n";
+    $headInject .= '<script type="text/javascript" src="' . $themeBase . '/js/posting-extras.js"></script>' . "\n";
+    $headInject .= '<script type="text/javascript" src="' . $themeBase . '/js/quicksearch.js"></script>' . "\n";
 
     if ($headInject) {
         $contents = str_replace('</head>', $headInject . '</head>', $contents);
@@ -278,7 +243,7 @@ function msdefault_index_sidebar()
  */
 function msdefault_profile_avatar_modal()
 {
-    global $mybb, $lang, $memprofile, $uid;
+    global $mybb, $lang, $memprofile, $uid, $templates;
 
     // Only show on own profile, and only if logged in
     if ($mybb->user['uid'] <= 0 || $mybb->user['uid'] != $uid) {
@@ -302,47 +267,17 @@ function msdefault_profile_avatar_modal()
     $urlTipLang       = isset($lang->avatar_url_gravatar) ? $lang->avatar_url_gravatar : 'You can also use a Gravatar URL.';
     $removeLang       = isset($lang->remove_avatar) ? $lang->remove_avatar : 'Remove Avatar';
 
-    $GLOBALS['profile_avatar_modal'] = <<<HTML
-<div class="modal fade" id="ms_profile_avatar_modal" tabindex="-1" aria-labelledby="ms_profile_avatar_label" aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered" style="max-width:440px">
-<div class="modal-content">
-    <form enctype="multipart/form-data" action="{$bburl}/usercp.php" method="post" id="ms_profile_avatar_form">
-        <input type="hidden" name="my_post_key" value="{$postKey}" />
-        <input type="hidden" name="action" value="do_avatar" />
-        <div class="modal-header">
-            <h6 class="modal-title" id="ms_profile_avatar_label"><i class="bi bi-person-bounding-box me-1"></i> {$changeAvatarLang}</h6>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-            <div class="text-center mb-3">
-                <img src="{$curAvatar}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" id="ms_profile_avatar_preview" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;border:3px solid var(--tekbb-accent)" alt="Current Avatar" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label small fw-semibold"><i class="bi bi-upload me-1"></i> {$uploadLang}</label>
-                <input type="file" name="avatarupload" class="form-control form-control-sm" accept="image/*" id="ms_profile_avatar_file" />
-            </div>
-            <div class="mb-2">
-                <label class="form-label small fw-semibold"><i class="bi bi-link-45deg me-1"></i> {$urlLang}</label>
-                <input type="text" name="avatarurl" class="form-control form-control-sm" placeholder="https://example.com/avatar.png" value="" />
-                <div class="form-text" style="font-size:11px">{$urlTipLang}</div>
-            </div>
-        </div>
-        <div class="modal-footer d-flex justify-content-between">
-            <a href="{$removeUrl}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> {$removeLang}</a>
-            <input type="submit" name="submit" class="btn btn-sm btn-primary" value="{$changeAvatarLang}" />
-        </div>
-    </form>
-</div>
-</div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded',function(){
-    var fi=document.getElementById('ms_profile_avatar_file');
-    var pv=document.getElementById('ms_profile_avatar_preview');
-    if(fi&&pv){fi.addEventListener('change',function(){if(this.files&&this.files[0]){var r=new FileReader();r.onload=function(e){pv.src=e.target.result;};r.readAsDataURL(this.files[0]);}});}
-});
-</script>
-HTML;
+    // Set template variables
+    $ms_avatar_post_key     = $postKey;
+    $ms_avatar_cur          = $curAvatar;
+    $ms_avatar_remove_url   = $removeUrl;
+    $ms_avatar_change_lang  = $changeAvatarLang;
+    $ms_avatar_upload_lang  = $uploadLang;
+    $ms_avatar_url_lang     = $urlLang;
+    $ms_avatar_url_tip_lang = $urlTipLang;
+    $ms_avatar_remove_lang  = $removeLang;
+
+    eval("\$GLOBALS['profile_avatar_modal'] = \"" . $templates->get("member_profile_avatar_modal") . "\";");
 }
 
 /**
@@ -351,9 +286,7 @@ HTML;
  */
 function msdefault_profile_stat_modals()
 {
-    global $mybb, $lang, $memprofile, $uid, $memperms;
-
-    // ── Reputation Modal ──
+    global $mybb, $lang, $memprofile, $uid, $memperms, $templates;
     $GLOBALS['stat_reputation_modal'] = '';
     $GLOBALS['stat_rate_modal'] = '';
     if (isset($memperms) && $memperms['usereputationsystem'] == 1 && $mybb->settings['enablereputation'] == 1)
@@ -378,8 +311,6 @@ function msdefault_profile_stat_modals()
             $modalBody .= '<div class="mt-3 mb-3">'
                 . '<a href="javascript:void(0)" onclick="bootstrap.Modal.getInstance(document.getElementById(\'statReputationModal\')).hide();var rm=new bootstrap.Modal(document.getElementById(\'msRateUserModal\'));rm.show();return false;" class="btn btn-sm btn-outline-primary"><i class="bi bi-star me-1"></i>' . $rateLbl . '</a>'
                 . '</div>';
-
-            // ── Build Rate Form Modal ──
             global $db;
             $existing_rep = null;
             $rid = 0;
@@ -427,69 +358,16 @@ function msdefault_profile_stat_modals()
             $voteBtnLbl  = $existing_rep ? 'Update Vote' : 'Add Vote';
             $postCode    = $mybb->post_code;
 
-            $GLOBALS['stat_rate_modal'] = <<<HTML
-<div class="modal fade" id="msRateUserModal" tabindex="-1" aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered modal-sm">
-<div class="modal-content">
-  <div class="modal-header">
-    <h6 class="modal-title"><i class="bi bi-star me-1"></i> {$voteTitle}</h6>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-  </div>
-  <div class="modal-body">
-    <form id="msRateForm">
-      <input type="hidden" name="my_post_key" value="{$postCode}" />
-      <input type="hidden" name="action" value="do_add" />
-      <input type="hidden" name="uid" value="{$repUid}" />
-      <input type="hidden" name="pid" value="0" />
-      <input type="hidden" name="rid" value="{$rid}" />
-      <input type="hidden" name="nomodal" value="1" />
-      <div class="mb-3">
-        <label class="form-label small text-muted">Power</label>
-        <select name="reputation" class="form-select form-select-sm">{$options}</select>
-      </div>
-      <div class="mb-3">
-        <label class="form-label small text-muted">Comments</label>
-        <input type="text" class="form-control form-control-sm" name="comments" maxlength="250" value="{$existingComments}" />
-      </div>
-      <div id="msRateResult" class="mb-2"></div>
-      <button type="submit" class="btn btn-sm btn-primary w-100"><i class="bi bi-check-lg me-1"></i>{$voteBtnLbl}</button>
-    </form>
-  </div>
-</div>
-</div>
-</div>
-<script>
-document.getElementById('msRateForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var form = this;
-    var result = document.getElementById('msRateResult');
-    var btn = form.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting...';
-    fetch('reputation.php', { method: 'POST', body: new FormData(form) })
-    .then(function(r) { return r.text(); })
-    .then(function(html) {
-        var tmp = document.createElement('div');
-        tmp.innerHTML = html;
-        var msg = tmp.querySelector('.trow1');
-        var hdr = tmp.querySelector('.thead');
-        if (hdr && hdr.textContent.indexOf('Board Message') !== -1) {
-            result.innerHTML = '<div class="alert alert-danger small py-1 px-2 mb-0"><i class="bi bi-exclamation-circle me-1"></i>' + (msg ? msg.textContent.trim() : 'An error occurred.') + '</div>';
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>{$voteBtnLbl}';
-        } else {
-            result.innerHTML = '<div class="alert alert-success small py-1 px-2 mb-0"><i class="bi bi-check-circle me-1"></i>' + (msg ? msg.textContent.trim() : 'Reputation updated!') + '</div>';
-            setTimeout(function() { location.reload(); }, 1200);
-        }
-    })
-    .catch(function() {
-        result.innerHTML = '<div class="alert alert-danger small py-1 px-2 mb-0">Network error.</div>';
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>{$voteBtnLbl}';
-    });
-});
-</script>
-HTML;
+            // Set template variables
+            $ms_rate_title      = $voteTitle;
+            $ms_rate_btn_lbl    = $voteBtnLbl;
+            $ms_rate_post_code  = $postCode;
+            $ms_rate_uid        = $repUid;
+            $ms_rate_rid        = $rid;
+            $ms_rate_options    = $options;
+            $ms_rate_existing_comments = $existingComments;
+
+            eval("\$GLOBALS['stat_rate_modal'] = \"" . $templates->get("member_profile_rate_modal") . "\";");
         } else {
             // Guest or no permission
             $modalBody .= '<div class="mt-3"></div>';
@@ -498,44 +376,18 @@ HTML;
         // Always show Details link to reputation report page
         $modalBody .= '<a href="reputation.php?uid=' . $repUid . '" class="btn btn-sm btn-outline-secondary"><i class="bi bi-bar-chart me-1"></i>' . $detailsLbl . '</a>';
 
-        $GLOBALS['stat_reputation_modal'] = <<<HTML
-<div class="modal fade" id="statReputationModal" tabindex="-1" aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered modal-sm">
-<div class="modal-content">
-  <div class="modal-header">
-    <h6 class="modal-title"><i class="bi bi-award me-1"></i> {$repLabel}</h6>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-  </div>
-  <div class="modal-body text-center">
-    {$modalBody}
-  </div>
-</div>
-</div>
-</div>
-HTML;
+        $ms_rep_label      = $repLabel;
+        $ms_rep_modal_body = $modalBody;
+        eval("\$GLOBALS['stat_reputation_modal'] = \"" . $templates->get("member_profile_stat_reputation_modal") . "\";");
     }
-
-    // ── Referrals Modal ──
     $GLOBALS['stat_referrals_modal'] = '';
     if ($mybb->settings['usereferrals'] == 1)
     {
         $refCount = my_number_format((int) $memprofile['referrals']);
         $refLabel = isset($lang->members_referred) ? $lang->members_referred : 'Members Referred';
 
-        $GLOBALS['stat_referrals_modal'] = <<<HTML
-<div class="modal fade" id="statReferralsModal" tabindex="-1" aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered modal-sm">
-<div class="modal-content">
-  <div class="modal-header">
-    <h6 class="modal-title"><i class="bi bi-people me-1"></i> {$refLabel}</h6>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-  </div>
-  <div class="modal-body text-center">
-    <div class="stat-modal-value">{$refCount}</div>
-  </div>
-</div>
-</div>
-</div>
-HTML;
+        $ms_ref_label = $refLabel;
+        $ms_ref_count = $refCount;
+        eval("\$GLOBALS['stat_referrals_modal'] = \"" . $templates->get("member_profile_stat_referrals_modal") . "\";");
     }
 }

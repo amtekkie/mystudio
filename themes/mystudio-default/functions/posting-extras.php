@@ -1,18 +1,4 @@
 <?php
-/**
- * MyStudio Posting Extras — Mini Plugin Init
- *
- * Transforms portal.php into a social feed where:
- *  - Status posts are real MyBB forum threads
- *  - Comments are real MyBB post replies
- *  - Uses PostDataHandler for thread/post creation
- *  - Admin configures a default forum for quick posting
- *  - Users can select which forum to post in
- *  - "Create a Topic" sidebar button with forum picker modal
- *
- * @version 1.0.0
- */
-
 if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
@@ -21,9 +7,6 @@ if (defined('IN_ADMINCP')) return;
 
 global $plugins, $mybb;
 
-$GLOBALS['ms_pex_options'] = isset($ms_plugin_options) ? $ms_plugin_options : array();
-
-// Only hook when on portal.php
 if (defined('IN_PORTAL')) {
     $plugins->add_hook('portal_start', 'ms_posting_extras_start');
 }
@@ -31,11 +14,8 @@ if (defined('IN_PORTAL')) {
 if (defined('IN_MYBB')) {
     $plugins->add_hook('postbit', 'ms_pex_postbit');
     $plugins->add_hook('pre_output_page', 'ms_pex_pre_output_page');
+    $plugins->add_hook('xmlhttp', 'ms_pex_xmlhttp_quicksearch');
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   PORTAL START — Intercept portal.php
-   ═══════════════════════════════════════════════════════════════ */
 
 function ms_posting_extras_start()
 {
@@ -43,20 +23,14 @@ function ms_posting_extras_start()
 
     ms_pex_ensure_like_table();
 
-    // Handle AJAX actions first
     $msAction = $mybb->get_input('ms_action');
     if (!empty($msAction)) {
         ms_pex_ajax();
         return;
     }
 
-    // Prepare feed data as globals for the portal.html template
     ms_pex_prepare_feed();
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   FEED PAGE — Prepare template variables for portal.html
-   ═══════════════════════════════════════════════════════════════ */
 
 function ms_pex_prepare_feed()
 {
@@ -64,9 +38,7 @@ function ms_pex_prepare_feed()
 
     $bburl   = $mybb->settings['bburl'];
     $uid     = (int)$mybb->user['uid'];
-    $opts    = $GLOBALS['ms_pex_options'];
-    $perPage = isset($opts['posts_per_page']) ? (int)$opts['posts_per_page'] : 20;
-    if ($perPage < 1) $perPage = 20;
+    $perPage = 20;
 
     $announcementFidsWhere = '';
     if (!empty($mybb->settings['portal_announcementsfid']) && $mybb->settings['portal_announcementsfid'] != -1) {
@@ -83,12 +55,8 @@ function ms_pex_prepare_feed()
             }
         }
     }
-
-    // ── Pagination ──
     $page = max(1, $mybb->get_input('page', MyBB::INPUT_INT));
     $start = ($page - 1) * $perPage;
-
-    // ── Forum visibility ──
     $unviewable = get_unviewable_forums(true);
     $inactive   = get_inactive_forums();
     $fidWhere   = '';
@@ -98,8 +66,6 @@ function ms_pex_prepare_feed()
     if ($inactive) {
         $fidWhere .= " AND t.fid NOT IN ({$inactive})";
     }
-
-    // ── Total thread count ──
     $countQuery = $db->query("
         SELECT COUNT(*) AS cnt
         FROM " . TABLE_PREFIX . "threads t
@@ -107,8 +73,6 @@ function ms_pex_prepare_feed()
     ");
     $total      = (int)$db->fetch_field($countQuery, 'cnt');
     $totalPages = max(1, ceil($total / $perPage));
-
-    // ── Fetch threads with first post ──
     $forum_cache = $cache->read('forums');
     require_once MYBB_ROOT . 'inc/class_parser.php';
     $query = $db->query("
@@ -127,6 +91,14 @@ function ms_pex_prepare_feed()
     $feedItems = '';
     $postcounter = 0;
     $altbg = 'trow1';
+
+    // Suppress quote/multiquote buttons on portal (no quick editor)
+    global $templates;
+    $savedQuote = $templates->cache['postbit_quote'] ?? '';
+    $savedMultiquote = $templates->cache['postbit_multiquote'] ?? '';
+    $templates->cache['postbit_quote'] = '';
+    $templates->cache['postbit_multiquote'] = '';
+
     while ($thread = $db->fetch_array($query)) {
         // Check forum-level view permissions
         $fperms = forum_permissions($thread['fid']);
@@ -137,11 +109,13 @@ function ms_pex_prepare_feed()
         $feedItems .= ms_pex_render_thread_postbit($thread, $forum_cache);
     }
 
+    // Restore quote/multiquote templates
+    $templates->cache['postbit_quote'] = $savedQuote;
+    $templates->cache['postbit_multiquote'] = $savedMultiquote;
+
     if (empty($feedItems)) {
         $feedItems = '<div class="pex-empty-state"><i class="bi bi-chat-square-text"></i><p>No posts yet.</p><span>Be the first to share something!</span></div>';
     }
-
-    // ── Pagination HTML ──
     $pex_pagination = '';
     if ($totalPages > 1) {
         $pex_pagination = '<nav class="pex-pagination"><ul class="pagination pagination-sm justify-content-center">';
@@ -151,8 +125,6 @@ function ms_pex_prepare_feed()
         }
         $pex_pagination .= '</ul></nav>';
     }
-
-    // ── Set globals for portal.html template ──
     $GLOBALS['pex_feed_items'] = $feedItems;
     $GLOBALS['pex_pagination'] = $pex_pagination;
     $GLOBALS['pex_sidebar']    = ms_pex_render_page_sidebar('portal.php');
@@ -174,7 +146,7 @@ function ms_pex_prepare_feed()
 
 function ms_pex_render_thread_postbit($threadRow, $forumCache = null)
 {
-    global $forum, $thread, $fid, $forumpermissions, $postcounter, $altbg, $ismod;
+    global $forum, $thread, $tid, $fid, $forumpermissions, $postcounter, $altbg, $ismod;
 
     $thread = array(
         'tid' => (int)$threadRow['tid'],
@@ -185,10 +157,11 @@ function ms_pex_render_thread_postbit($threadRow, $forumCache = null)
         'subject' => isset($threadRow['thread_subject']) ? $threadRow['thread_subject'] : (isset($threadRow['subject']) ? $threadRow['subject'] : ''),
     );
 
+    $tid = $thread['tid'];
     $forum = get_forum($thread['fid']);
     $fid = $thread['fid'];
     $forumpermissions = forum_permissions($fid);
-    $ismod = is_moderator($fid);
+    $ismod = false;
 
     if (!isset($postcounter)) {
         $postcounter = 0;
@@ -271,27 +244,6 @@ function ms_pex_render_page_sidebar($scriptName)
     $bburl = $mybb->settings['bburl'];
     $uid = (int)$mybb->user['uid'];
 
-    $pageTitle = $lang->mybb_home;
-    if ($scriptName === 'forumdisplay.php' && !empty($foruminfo['name'])) {
-        $pageTitle = htmlspecialchars_uni($foruminfo['name']);
-    } elseif ($scriptName === 'showthread.php' && !empty($thread['subject'])) {
-        $pageTitle = htmlspecialchars_uni($thread['subject']);
-    } elseif ($scriptName === 'memberlist.php') {
-        $pageTitle = $lang->member_list;
-    } elseif ($scriptName === 'search.php') {
-        $pageTitle = $lang->search;
-    } elseif ($scriptName === 'calendar.php') {
-        $pageTitle = $lang->calendar;
-    } elseif ($scriptName === 'member.php' && !empty($memprofile['username'])) {
-        $pageTitle = htmlspecialchars_uni($memprofile['username']);
-    } elseif ($scriptName === 'usercp.php') {
-        $pageTitle = ms_pex_sidebar_label(isset($lang->user_cp) ? $lang->user_cp : '', 'User CP');
-    } elseif ($scriptName === 'private.php') {
-        $pageTitle = ms_pex_sidebar_label(isset($lang->private_messages) ? $lang->private_messages : '', 'Private Messages');
-    } elseif ($scriptName === 'modcp.php') {
-        $pageTitle = ms_pex_sidebar_label(isset($lang->mod_cp) ? $lang->mod_cp : '', 'Mod CP');
-    }
-
     $html = '';
 
     $html .= '<nav class="ms-sidebar-nav">';
@@ -325,27 +277,28 @@ function ms_pex_render_page_sidebar($scriptName)
 
         $html .= '<a href="#" class="ms-sidebar-link ms-sidebar-link-primary" role="button" data-bs-toggle="modal" data-bs-target="#ms_newthread_modal"><i class="bi bi-plus-lg"></i><span>Post Thread</span></a>';
 
+        $portalActive = ($scriptName === 'portal.php');
+        $forumsActive = in_array($scriptName, array('index.php', 'forumdisplay.php', 'showthread.php'));
+
         $searchUrl = htmlspecialchars_uni($bburl . '/search.php');
         $searchActive = ($scriptName === 'search.php');
         $searchOpen = $searchActive ? ' open' : '';
         $searchAction = $mybb->get_input('action');
 
-        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link"><i class="bi bi-house-door"></i><span>Home</span></a>'
-            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
+        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link' . ($portalActive ? ' active' : '') . '"><i class="bi bi-house-door"></i><span>Home</span></a>'
+            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link' . ($forumsActive ? ' active' : '') . '"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
 
         $html .= '<details class="ms-sidebar-details"' . $searchOpen . '>'
-            . '<summary class="ms-sidebar-link"><a href="' . $searchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
+            . '<summary class="ms-sidebar-link' . ($searchActive ? ' active' : '') . '"><a href="' . $searchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
             . '<div class="ms-sidebar-sub">'
             . '<a class="ms-sidebar-sublink' . ($searchActive && $searchAction === 'getnew' ? ' active' : '') . '" href="' . $searchUrl . '?action=getnew">New Posts</a>'
             . '<a class="ms-sidebar-sublink' . ($searchActive && $searchAction === 'getdaily' ? ' active' : '') . '" href="' . $searchUrl . '?action=getdaily">Today\'s Posts</a>'
             . '</div></details>';
-
-        // ── User CP submenu ──
         $ucpActive = ($scriptName === 'usercp.php');
         $ucpOpen = $ucpActive ? ' open' : '';
         $ucpAction = $mybb->get_input('action');
         $html .= '<details class="ms-sidebar-details"' . $ucpOpen . '>'
-            . '<summary class="ms-sidebar-link"><a href="' . $usercpUrl . '"><i class="bi bi-gear"></i><span>User CP</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
+            . '<summary class="ms-sidebar-link' . ($ucpActive ? ' active' : '') . '"><a href="' . $usercpUrl . '"><i class="bi bi-gear"></i><span>User CP</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
             . '<div class="ms-sidebar-sub">'
             . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === '' ? ' active' : '') . '" href="' . $usercpUrl . '">Home</a>'
             . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'profile' ? ' active' : '') . '" href="' . $usercpUrl . '?action=profile">Edit Profile</a>'
@@ -356,14 +309,12 @@ function ms_pex_render_page_sidebar($scriptName)
             . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'editsig' ? ' active' : '') . '" href="' . $usercpUrl . '?action=editsig">Signature</a>'
             . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'options' ? ' active' : '') . '" href="' . $usercpUrl . '?action=options">Edit Options</a>'
             . '</div></details>';
-
-        // ── Private Messages submenu ──
         $pmActive = ($scriptName === 'private.php');
         $pmOpen = $pmActive ? ' open' : '';
         $pmAction = $mybb->get_input('action');
         $pmFid = $mybb->get_input('fid', MyBB::INPUT_INT);
         $html .= '<details class="ms-sidebar-details"' . $pmOpen . '>'
-            . '<summary class="ms-sidebar-link"><a href="' . $pmUrl . '"><i class="bi bi-chat-dots"></i><span>Private Messages</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
+            . '<summary class="ms-sidebar-link' . ($pmActive ? ' active' : '') . '"><a href="' . $pmUrl . '"><i class="bi bi-chat-dots"></i><span>Private Messages</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
             . '<div class="ms-sidebar-sub">'
             . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === 'send' ? ' active' : '') . '" href="' . $pmUrl . '?action=send">Compose</a>'
             . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction !== 'send' && $pmAction !== 'tracking' && $pmAction !== 'folders' && ($pmFid === 0 || $pmFid === 1) ? ' active' : '') . '" href="' . $pmUrl . '">Inbox</a>'
@@ -374,15 +325,13 @@ function ms_pex_render_page_sidebar($scriptName)
             . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === 'tracking' ? ' active' : '') . '" href="' . $pmUrl . '?action=tracking">Tracking</a>'
             . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === 'folders' ? ' active' : '') . '" href="' . $pmUrl . '?action=folders">Edit Folders</a>'
             . '</div></details>';
-
-        // ── Mod CP submenu (moderators only) ──
         if ($mybb->usergroup['canmodcp'] == 1) {
             $modcpUrl = htmlspecialchars_uni($bburl . '/modcp.php');
             $mcpActive = ($scriptName === 'modcp.php');
             $mcpOpen = $mcpActive ? ' open' : '';
             $mcpAction = $mybb->get_input('action');
             $html .= '<details class="ms-sidebar-details"' . $mcpOpen . '>'
-                . '<summary class="ms-sidebar-link"><a href="' . $modcpUrl . '"><i class="bi bi-shield-check"></i><span>Mod CP</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
+                . '<summary class="ms-sidebar-link' . ($mcpActive ? ' active' : '') . '"><a href="' . $modcpUrl . '"><i class="bi bi-shield-check"></i><span>Mod CP</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
                 . '<div class="ms-sidebar-sub">'
                 . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === '' ? ' active' : '') . '" href="' . $modcpUrl . '">Home</a>'
                 . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'modqueue' ? ' active' : '') . '" href="' . $modcpUrl . '?action=modqueue">Mod Queue</a>'
@@ -411,15 +360,17 @@ function ms_pex_render_page_sidebar($scriptName)
         $html .= '<a class="ms-sidebar-link ms-sidebar-link-primary" href="' . htmlspecialchars_uni($bburl . '/member.php?action=login') . '"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>'
             . '<a class="ms-sidebar-link ms-sidebar-link-accent" href="' . htmlspecialchars_uni($bburl . '/member.php?action=register') . '"><i class="bi bi-person-plus"></i><span>Register</span></a>';
 
-        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link"><i class="bi bi-house-door"></i><span>Home</span></a>'
-            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
+        $guestPortalActive = ($scriptName === 'portal.php');
+        $guestForumsActive = in_array($scriptName, array('index.php', 'forumdisplay.php', 'showthread.php'));
+        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link' . ($guestPortalActive ? ' active' : '') . '"><i class="bi bi-house-door"></i><span>Home</span></a>'
+            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link' . ($guestForumsActive ? ' active' : '') . '"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
 
         $guestSearchUrl = htmlspecialchars_uni($bburl . '/search.php');
         $guestSearchActive = ($scriptName === 'search.php');
         $guestSearchOpen = $guestSearchActive ? ' open' : '';
         $guestSearchAction = $mybb->get_input('action');
         $html .= '<details class="ms-sidebar-details"' . $guestSearchOpen . '>'
-            . '<summary class="ms-sidebar-link"><a href="' . $guestSearchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
+            . '<summary class="ms-sidebar-link' . ($guestSearchActive ? ' active' : '') . '"><a href="' . $guestSearchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
             . '<div class="ms-sidebar-sub">'
             . '<a class="ms-sidebar-sublink' . ($guestSearchActive && $guestSearchAction === 'getnew' ? ' active' : '') . '" href="' . $guestSearchUrl . '?action=getnew">New Posts</a>'
             . '<a class="ms-sidebar-sublink' . ($guestSearchActive && $guestSearchAction === 'getdaily' ? ' active' : '') . '" href="' . $guestSearchUrl . '?action=getdaily">Today\'s Posts</a>'
@@ -431,12 +382,9 @@ function ms_pex_render_page_sidebar($scriptName)
     return $html;
 }
 
-/**
- * Build the "Post Thread" forum picker modal with nested category/forum/subforum tree.
- */
 function ms_pex_render_newthread_modal($bburl)
 {
-    global $cache;
+    global $cache, $templates;
 
     $forums = $cache->read('forums');
     if (empty($forums) || !is_array($forums)) {
@@ -458,28 +406,12 @@ function ms_pex_render_newthread_modal($bburl)
     }
     unset($group);
 
-    $listHtml = ms_pex_render_forum_tree($children, 0, $bburl, 0);
+    $ms_pex_forum_list = ms_pex_render_forum_tree($children, 0, $bburl, 0);
 
-    $m = '<div class="modal fade" id="ms_newthread_modal" tabindex="-1" aria-labelledby="ms_newthread_label" aria-hidden="true">'
-        . '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:480px">'
-        . '<div class="modal-content">'
-        . '<div class="modal-header">'
-        . '<h6 class="modal-title" id="ms_newthread_label"><i class="bi bi-plus-circle me-1"></i> Post New Thread</h6>'
-        . '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>'
-        . '</div>'
-        . '<div class="modal-body p-0">'
-        . '<div class="list-group list-group-flush ms-forum-picker">'
-        . $listHtml
-        . '</div>'
-        . '</div>'
-        . '</div></div></div>';
-
+    eval("\$m = \"" . $templates->get("pex_newthread_modal") . "\";");
     return $m;
 }
 
-/**
- * Recursively render nested forum tree for the picker.
- */
 function ms_pex_render_forum_tree($children, $pid, $bburl, $depth)
 {
     if (empty($children[$pid])) {
@@ -526,21 +458,60 @@ function ms_pex_render_forum_tree($children, $pid, $bburl, $depth)
 
     return $html;
 }
-
-function ms_pex_sidebar_label($value, $fallback)
+function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
 {
-    $value = trim((string)$value);
-    if ($value === '') {
-        $value = $fallback;
+    global $mybb;
+
+    if (empty($_FILES[$fileKey]['name'])) {
+        return null;
     }
 
-    return htmlspecialchars_uni($value);
+    $uploadDir = MYBB_ROOT . 'uploads/posting_extras/';
+    if (!is_dir($uploadDir)) {
+        @mkdir($uploadDir, 0755, true);
+        $htaccess = $uploadDir . '.htaccess';
+        if (!file_exists($htaccess)) {
+            @file_put_contents($htaccess, "<FilesMatch \"\\.php$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
+        }
+    }
+
+    $allowed = array('jpg', 'jpeg', 'png', 'gif', 'webp');
+    $ext = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowed)) {
+        return array('error' => 'Invalid image type.');
+    }
+
+    $allowedMimes = array('image/jpeg', 'image/png', 'image/gif', 'image/webp');
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if ($finfo !== false) {
+        $detectedMime = finfo_file($finfo, $_FILES[$fileKey]['tmp_name']);
+        finfo_close($finfo);
+        if ($detectedMime === false || !in_array($detectedMime, $allowedMimes)) {
+            return array('error' => 'File content does not match an allowed image type.');
+        }
+    }
+
+    if ($_FILES[$fileKey]['size'] > 5 * 1024 * 1024) {
+        return array('error' => 'Image too large. Max 5MB.');
+    }
+
+    $filename = $prefix . '_' . $uid . '_' . TIME_NOW . '.' . $ext;
+    $dest = $uploadDir . $filename;
+
+    $realUploadDir = realpath($uploadDir);
+    $realBase = realpath(MYBB_ROOT . 'uploads');
+    if ($realUploadDir === false || $realBase === false || strpos($realUploadDir, $realBase) !== 0) {
+        return array('error' => 'Invalid upload directory.');
+    }
+
+    if (!move_uploaded_file($_FILES[$fileKey]['tmp_name'], $dest)) {
+        return array('error' => 'Image upload failed.');
+    }
+
+    $imgUrl = $mybb->settings['bburl'] . '/uploads/posting_extras/' . $filename;
+    $message .= "\n[img]" . $imgUrl . "[/img]";
+    return null;
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   HELPERS — Parse message, render reply
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_postbit($post)
 {
     global $mybb;
@@ -549,8 +520,8 @@ function ms_pex_postbit($post)
         return $post;
     }
 
-    list($likeCount, $likedByUser) = ms_pex_get_like_state('thread', (int)$post['tid'], (int)$mybb->user['uid']);
-    $post['button_like'] = ms_pex_render_like_controls('thread', (int)$post['tid'], $likeCount, $likedByUser, $mybb->settings['bburl'], $mybb->post_code);
+    list($likeCount, $likedByUser) = ms_pex_get_like_state('post', (int)$post['pid'], (int)$mybb->user['uid']);
+    $post['button_like'] = ms_pex_render_like_controls('post', (int)$post['pid'], $likeCount, $likedByUser, $mybb->settings['bburl'], $mybb->post_code);
 
     return $post;
 }
@@ -572,39 +543,25 @@ function ms_pex_parse_message($message, $smilieoff = 0)
 
 function ms_pex_render_reply($post)
 {
-    global $mybb;
+    global $mybb, $templates;
     $bburl   = $mybb->settings['bburl'];
     $uid     = (int)$mybb->user['uid'];
-    $pAvatar = !empty($post['avatar']) ? htmlspecialchars_uni($post['avatar']) : 'images/default_avatar.png';
-    $pUser   = htmlspecialchars_uni($post['username'] ?: 'Guest');
-    $pUrl    = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . (int)$post['uid']);
-    $pFormat = format_name(htmlspecialchars_uni($post['username'] ?: 'Guest'), $post['usergroup'], $post['displaygroup']);
-    $pMsg    = ms_pex_parse_message($post['message'], isset($post['smilieoff']) ? $post['smilieoff'] : 0);
-    $pTime   = my_date('relative', $post['dateline']);
-    $pid     = (int)$post['pid'];
+    $ms_pex_reply_avatar = !empty($post['avatar']) ? htmlspecialchars_uni($post['avatar']) : 'images/default_avatar.png';
+    $ms_pex_reply_username = htmlspecialchars_uni($post['username'] ?: 'Guest');
+    $ms_pex_reply_profile_url = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . (int)$post['uid']);
+    $ms_pex_reply_formatted = format_name(htmlspecialchars_uni($post['username'] ?: 'Guest'), $post['usergroup'], $post['displaygroup']);
+    $ms_pex_reply_message = ms_pex_parse_message($post['message'], isset($post['smilieoff']) ? $post['smilieoff'] : 0);
+    $ms_pex_reply_time = my_date('relative', $post['dateline']);
+    $ms_pex_pid = (int)$post['pid'];
 
-    $deleteBtn = '';
+    $ms_pex_reply_delete_btn = '';
     if ($uid > 0 && ($uid == (int)$post['uid'] || $mybb->usergroup['canmodcp'])) {
-        $deleteBtn = '<a href="javascript:void(0)" class="pex-delete-reply text-danger" data-pid="' . $pid . '" title="Delete reply"><i class="bi bi-trash"></i></a>';
+        $ms_pex_reply_delete_btn = '<a href="javascript:void(0)" class="pex-delete-reply text-danger" data-pid="' . $ms_pex_pid . '" title="Delete reply"><i class="bi bi-trash"></i></a>';
     }
 
-    return '<div class="pex-reply" data-pid="' . $pid . '">'
-        . '<div class="pex-reply-author">'
-        . '<a href="' . $pUrl . '"><img src="' . $pAvatar . '" onerror="if(this.src!=\'images/default_avatar.png\')this.src=\'images/default_avatar.png\';" alt="' . $pUser . '" class="pex-reply-avatar-img" /></a>'
-        . '<div class="pex-reply-author-info">'
-        . '<a href="' . $pUrl . '" class="pex-reply-username">' . $pFormat . '</a>'
-        . '<span class="pex-reply-time">' . $pTime . '</span>'
-        . '</div>'
-        . '<span class="ms-auto d-flex gap-2">' . $deleteBtn . '</span>'
-        . '</div>'
-        . '<div class="pex-reply-message">' . $pMsg . '</div>'
-        . '</div>';
+    eval("\$html = \"" . $templates->get("pex_reply") . "\";");
+    return $html;
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   AJAX DISPATCHER
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_ajax()
 {
     global $mybb;
@@ -651,11 +608,6 @@ function ms_pex_ajax()
             break;
     }
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   CREATE THREAD — Quick compose status post
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_create_thread()
 {
     global $mybb, $db, $cache;
@@ -682,56 +634,10 @@ function ms_pex_create_thread()
     }
 
     // Handle optional image upload
-    if (!empty($_FILES['post_image']['name'])) {
-        $uploadDir = MYBB_ROOT . 'uploads/posting_extras/';
-        if (!is_dir($uploadDir)) {
-            @mkdir($uploadDir, 0755, true);
-            $htaccess = $uploadDir . '.htaccess';
-            if (!file_exists($htaccess)) {
-                @file_put_contents($htaccess, "<FilesMatch \"\\.php$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
-            }
-        }
-
-        $allowed = array('jpg', 'jpeg', 'png', 'gif', 'webp');
-        $ext = strtolower(pathinfo($_FILES['post_image']['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowed)) {
-            ms_pex_json(array('error' => 'Invalid image type.'));
-            return;
-        }
-
-        $allowedMimes = array('image/jpeg', 'image/png', 'image/gif', 'image/webp');
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        if ($finfo !== false) {
-            $detectedMime = finfo_file($finfo, $_FILES['post_image']['tmp_name']);
-            finfo_close($finfo);
-            if ($detectedMime === false || !in_array($detectedMime, $allowedMimes)) {
-                ms_pex_json(array('error' => 'File content does not match an allowed image type.'));
-                return;
-            }
-        }
-
-        if ($_FILES['post_image']['size'] > 5 * 1024 * 1024) {
-            ms_pex_json(array('error' => 'Image too large. Max 5MB.'));
-            return;
-        }
-
-        $filename = 'post_' . $uid . '_' . TIME_NOW . '.' . $ext;
-        $dest = $uploadDir . $filename;
-
-        $realUploadDir = realpath($uploadDir);
-        $realBase = realpath(MYBB_ROOT . 'uploads');
-        if ($realUploadDir === false || $realBase === false || strpos($realUploadDir, $realBase) !== 0) {
-            ms_pex_json(array('error' => 'Invalid upload directory.'));
-            return;
-        }
-
-        if (!move_uploaded_file($_FILES['post_image']['tmp_name'], $dest)) {
-            ms_pex_json(array('error' => 'Image upload failed.'));
-            return;
-        }
-
-        $imgUrl = $mybb->settings['bburl'] . '/uploads/posting_extras/' . $filename;
-        $message .= "\n[img]" . $imgUrl . "[/img]";
+    $uploadErr = ms_pex_handle_image_upload('post_image', 'post', $uid, $message);
+    if ($uploadErr !== null) {
+        ms_pex_json($uploadErr);
+        return;
     }
 
     // Auto-generate subject from message
@@ -795,11 +701,6 @@ function ms_pex_create_thread()
 
     ms_pex_json(array('success' => true, 'html' => $html, 'tid' => $tid));
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   CREATE REPLY — Post reply to a thread
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_create_reply()
 {
     global $mybb, $db;
@@ -834,56 +735,10 @@ function ms_pex_create_reply()
     }
 
     // Handle optional image upload
-    if (!empty($_FILES['reply_image']['name'])) {
-        $uploadDir = MYBB_ROOT . 'uploads/posting_extras/';
-        if (!is_dir($uploadDir)) {
-            @mkdir($uploadDir, 0755, true);
-            $htaccess = $uploadDir . '.htaccess';
-            if (!file_exists($htaccess)) {
-                @file_put_contents($htaccess, "<FilesMatch \"\\.php$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
-            }
-        }
-
-        $allowed = array('jpg', 'jpeg', 'png', 'gif', 'webp');
-        $ext = strtolower(pathinfo($_FILES['reply_image']['name'], PATHINFO_EXTENSION));
-        if (!in_array($ext, $allowed)) {
-            ms_pex_json(array('error' => 'Invalid image type.'));
-            return;
-        }
-
-        $allowedMimes = array('image/jpeg', 'image/png', 'image/gif', 'image/webp');
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        if ($finfo !== false) {
-            $detectedMime = finfo_file($finfo, $_FILES['reply_image']['tmp_name']);
-            finfo_close($finfo);
-            if ($detectedMime === false || !in_array($detectedMime, $allowedMimes)) {
-                ms_pex_json(array('error' => 'File content does not match an allowed image type.'));
-                return;
-            }
-        }
-
-        if ($_FILES['reply_image']['size'] > 5 * 1024 * 1024) {
-            ms_pex_json(array('error' => 'Image too large. Max 5MB.'));
-            return;
-        }
-
-        $filename = 'reply_' . $uid . '_' . TIME_NOW . '.' . $ext;
-        $dest = $uploadDir . $filename;
-
-        $realUploadDir = realpath($uploadDir);
-        $realBase = realpath(MYBB_ROOT . 'uploads');
-        if ($realUploadDir === false || $realBase === false || strpos($realUploadDir, $realBase) !== 0) {
-            ms_pex_json(array('error' => 'Invalid upload directory.'));
-            return;
-        }
-
-        if (!move_uploaded_file($_FILES['reply_image']['tmp_name'], $dest)) {
-            ms_pex_json(array('error' => 'Image upload failed.'));
-            return;
-        }
-
-        $imgUrl = $mybb->settings['bburl'] . '/uploads/posting_extras/' . $filename;
-        $message .= "\n[img]" . $imgUrl . "[/img]";
+    $uploadErr = ms_pex_handle_image_upload('reply_image', 'reply', $uid, $message);
+    if ($uploadErr !== null) {
+        ms_pex_json($uploadErr);
+        return;
     }
 
     // Use PostDataHandler to create reply
@@ -932,14 +787,9 @@ function ms_pex_create_reply()
     $html = ms_pex_render_reply($reply);
     ms_pex_json(array('success' => true, 'html' => $html, 'pid' => $pid));
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   LOAD REPLIES — Fetch replies for a thread
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_load_replies()
 {
-    global $mybb, $db;
+    global $mybb, $db, $templates;
 
     $tid = $mybb->get_input('tid', MyBB::INPUT_INT);
     if ($tid <= 0) {
@@ -978,35 +828,13 @@ function ms_pex_load_replies()
     // Reply compose form (logged in only)
     $composeHtml = '';
     if ($mybb->user['uid'] > 0) {
-        $cAvatar = htmlspecialchars_uni(!empty($mybb->user['avatar']) ? $mybb->user['avatar'] : 'images/default_avatar.png');
-        $composeHtml = '<div class="pex-reply-compose" data-tid="' . $tid . '">'
-            . '<img src="' . $cAvatar . '" onerror="if(this.src!=\'images/default_avatar.png\')this.src=\'images/default_avatar.png\';" alt="You" class="pex-reply-compose-avatar" />'
-            . '<div class="pex-reply-compose-body">'
-            . '<div class="pex-reply-editor" data-tid="' . $tid . '">'
-            . '<div class="pex-reply-toolbar">'
-            . '<button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="b" title="Bold"><i class="bi bi-type-bold"></i></button>'
-            . '<button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="i" title="Italic"><i class="bi bi-type-italic"></i></button>'
-            . '<button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="u" title="Underline"><i class="bi bi-type-underline"></i></button>'
-            . '<button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="url" title="Link"><i class="bi bi-link-45deg"></i></button>'
-            . '<button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="quote" title="Quote"><i class="bi bi-chat-quote"></i></button>'
-            . '</div>'
-            . '<textarea class="pex-reply-input" placeholder="Write a reply..." rows="1" data-tid="' . $tid . '"></textarea>'
-            . '</div>'
-            . '<div class="pex-reply-actions">'
-            . '<label class="pex-tool-btn" title="Upload image"><i class="bi bi-image"></i><input type="file" class="pex-reply-image-input" accept="image/*" style="display:none" /></label>'
-            . '<button type="button" class="pex-reply-submit-btn" data-tid="' . $tid . '" disabled>Reply</button>'
-            . '</div>'
-            . '</div>'
-            . '</div>';
+        $ms_pex_compose_avatar = htmlspecialchars_uni(!empty($mybb->user['avatar']) ? $mybb->user['avatar'] : 'images/default_avatar.png');
+        $ms_pex_compose_tid = $tid;
+        eval("\$composeHtml = \"" . $templates->get("pex_reply_compose") . "\";");
     }
 
     ms_pex_json(array('success' => true, 'html' => $html . $composeHtml, 'count' => $count));
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   DELETE THREAD
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_delete_thread()
 {
     global $mybb, $db;
@@ -1036,15 +864,10 @@ function ms_pex_delete_thread()
         $moderation->delete_thread($tid);
     }
 
-    $db->delete_query('ms_pex_likes', "target_type='thread' AND target_id={$tid}");
+    $db->delete_query('ms_pex_likes', "target_type='post' AND target_id IN (SELECT pid FROM " . TABLE_PREFIX . "posts WHERE tid={$tid})");
 
     ms_pex_json(array('success' => true));
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   DELETE REPLY
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_delete_reply()
 {
     global $mybb, $db;
@@ -1072,11 +895,6 @@ function ms_pex_delete_reply()
 
     ms_pex_json(array('success' => true));
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   LIKES — Heart + count + liker list
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_ensure_like_table()
 {
     global $db;
@@ -1154,7 +972,7 @@ function ms_pex_toggle_like()
 
     $targetType = trim($mybb->get_input('target_type'));
     $targetId = $mybb->get_input('target_id', MyBB::INPUT_INT);
-    if ($targetType !== 'thread' || $targetId <= 0) {
+    if ($targetType !== 'post' || $targetId <= 0) {
         ms_pex_json(array('error' => 'Invalid target.'));
         return;
     }
@@ -1176,7 +994,7 @@ function ms_pex_toggle_like()
         $liked = true;
     }
 
-    list($likeCount) = ms_pex_get_like_state('thread', $targetId, $uid);
+    list($likeCount) = ms_pex_get_like_state('post', $targetId, $uid);
     ms_pex_json(array(
         'success' => true,
         'liked' => $liked,
@@ -1192,7 +1010,7 @@ function ms_pex_load_likes()
 
     $targetType = trim($mybb->get_input('target_type'));
     $targetId = $mybb->get_input('target_id', MyBB::INPUT_INT);
-    if ($targetType !== 'thread' || $targetId <= 0) {
+    if ($targetType !== 'post' || $targetId <= 0) {
         ms_pex_json(array('error' => 'Invalid target.'));
         return;
     }
@@ -1215,11 +1033,6 @@ function ms_pex_load_likes()
 
     ms_pex_json(array('success' => true, 'html' => $html));
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   JSON RESPONSE HELPER
-   ═══════════════════════════════════════════════════════════════ */
-
 function ms_pex_json($data, $code = 200)
 {
     if ($code === 403) {
@@ -1227,5 +1040,136 @@ function ms_pex_json($data, $code = 200)
     }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($data);
+    exit;
+}
+function ms_pex_xmlhttp_quicksearch()
+{
+    global $mybb, $db, $charset;
+
+    if ($mybb->get_input('action') !== 'ms_quicksearch') {
+        return;
+    }
+
+    header('Content-Type: application/json; charset=' . $charset);
+
+    $q = trim($mybb->get_input('q'));
+    if (mb_strlen($q) < 3) {
+        echo json_encode(array('threads' => array(), 'posts' => array(), 'users' => array(), 'announcements' => array()));
+        exit;
+    }
+
+    $bburl = $mybb->settings['bburl'];
+    $escaped = $db->escape_string_like($q);
+    $safe_q  = $db->escape_string($q);
+
+    // Build list of forums user can search
+    require_once MYBB_ROOT . 'inc/functions_search.php';
+    $visible_fids = array();
+    $forums = $db->simple_select('forums', 'fid', "active=1 AND type='f'");
+    while ($f = $db->fetch_array($forums)) {
+        $perms = forum_permissions((int)$f['fid']);
+        if (!empty($perms['canview']) && !empty($perms['cansearch'])) {
+            $visible_fids[] = (int)$f['fid'];
+        }
+    }
+
+    $result = array();
+    if (!empty($visible_fids)) {
+        $fid_list = implode(',', $visible_fids);
+        $query = $db->query("
+            SELECT t.tid, t.subject, t.replies, t.views, t.dateline, u.username
+            FROM " . TABLE_PREFIX . "threads t
+            LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = t.uid
+            WHERE t.visible = 1
+              AND t.fid IN ({$fid_list})
+              AND t.subject LIKE '%{$escaped}%'
+            ORDER BY t.dateline DESC
+            LIMIT 5
+        ");
+        $threads = array();
+        while ($row = $db->fetch_array($query)) {
+            $threads[] = array(
+                'title' => htmlspecialchars_uni($row['subject']),
+                'url'   => $bburl . '/' . get_thread_link($row['tid']),
+                'sub'   => htmlspecialchars_uni($row['username']) . ' &middot; ' . my_number_format($row['replies']) . ' replies',
+            );
+        }
+        $result['threads'] = $threads;
+        $query = $db->query("
+            SELECT p.pid, p.tid, p.message, p.dateline, t.subject, u.username
+            FROM " . TABLE_PREFIX . "posts p
+            INNER JOIN " . TABLE_PREFIX . "threads t ON t.tid = p.tid
+            LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = p.uid
+            WHERE p.visible = 1
+              AND t.visible = 1
+              AND p.fid IN ({$fid_list})
+              AND p.message LIKE '%{$escaped}%'
+            ORDER BY p.dateline DESC
+            LIMIT 5
+        ");
+        $posts = array();
+        while ($row = $db->fetch_array($query)) {
+            // Extract snippet around the match
+            $plain = strip_tags(str_replace(array('[', ']'), array('<', '>'), $row['message']));
+            $plain = preg_replace('/\s+/', ' ', $plain);
+            $pos = mb_stripos($plain, $q);
+            $start = max(0, $pos - 40);
+            $snippet = mb_substr($plain, $start, 100);
+            if ($start > 0) $snippet = '...' . $snippet;
+            if (mb_strlen($plain) > $start + 100) $snippet .= '...';
+
+            $posts[] = array(
+                'title' => htmlspecialchars_uni($snippet),
+                'url'   => $bburl . '/' . get_post_link($row['pid'], $row['tid']) . '#pid' . $row['pid'],
+                'sub'   => 'in ' . htmlspecialchars_uni($row['subject']),
+            );
+        }
+        $result['posts'] = $posts;
+    } else {
+        $result['threads'] = array();
+        $result['posts'] = array();
+    }
+    if ($mybb->usergroup['canviewprofiles'] != 0) {
+        $query = $db->query("
+            SELECT uid, username, avatar, postnum
+            FROM " . TABLE_PREFIX . "users
+            WHERE username LIKE '%{$escaped}%'
+            ORDER BY postnum DESC
+            LIMIT 5
+        ");
+        $users = array();
+        while ($row = $db->fetch_array($query)) {
+            $av = !empty($row['avatar']) ? htmlspecialchars_uni($row['avatar']) : $bburl . '/images/default_avatar.png';
+            $users[] = array(
+                'title'  => htmlspecialchars_uni($row['username']),
+                'url'    => $bburl . '/' . get_profile_link($row['uid']),
+                'avatar' => $av,
+                'sub'    => my_number_format($row['postnum']) . ' posts',
+            );
+        }
+        $result['users'] = $users;
+    } else {
+        $result['users'] = array();
+    }
+    $query = $db->query("
+        SELECT aid, subject, startdate
+        FROM " . TABLE_PREFIX . "announcements
+        WHERE startdate <= " . TIME_NOW . "
+          AND (enddate = 0 OR enddate >= " . TIME_NOW . ")
+          AND subject LIKE '%{$escaped}%'
+        ORDER BY startdate DESC
+        LIMIT 3
+    ");
+    $announcements = array();
+    while ($row = $db->fetch_array($query)) {
+        $announcements[] = array(
+            'title' => htmlspecialchars_uni($row['subject']),
+            'url'   => $bburl . '/announcements.php?aid=' . (int)$row['aid'],
+            'sub'   => my_date('M j, Y', $row['startdate']),
+        );
+    }
+    $result['announcements'] = $announcements;
+
+    echo json_encode($result);
     exit;
 }

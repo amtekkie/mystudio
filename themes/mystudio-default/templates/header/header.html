@@ -8,10 +8,21 @@
 })();
 </script>
 
-<header class="ms-header">
+<header class="ms-header" id="msHeader">
 	<div class="container">
 		<button class="btn btn-sm btn-outline-secondary d-lg-none ms-sidebar-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#msSidebarOffcanvas" aria-controls="msSidebarOffcanvas"><i class="bi bi-list"></i></button>
 		<a href="{$mybb->settings['bburl']}/index.php" class="ms-header-logo">{$ms_logo_html}</a>
+		<div class="ms-header-search" id="msHeaderSearch">
+			<i class="bi bi-search ms-header-search-icon"></i>
+			<form action="{$mybb->settings['bburl']}/search.php" method="get" class="ms-header-search-form" id="msSearchForm">
+				<input type="hidden" name="action" value="do_search" />
+				<input type="hidden" name="postthread" value="1" />
+				<input type="text" name="keywords" class="ms-header-search-input" id="msSearchInput" placeholder="Search threads, posts, members..." autocomplete="off" />
+			</form>
+			<button type="button" class="ms-header-search-close" id="msSearchClose" aria-label="Close search"><i class="bi bi-x-lg"></i></button>
+			<div class="ms-ac" id="msAcDropdown"></div>
+		</div>
+		<button type="button" class="ms-header-search-btn" id="msSearchBtn" title="Search" data-bburl="{$mybb->settings['bburl']}"><i class="bi bi-search"></i></button>
 	</div>
 </header>
 
@@ -23,3 +34,4 @@
 {$modnotice}
 {$pending_joinrequests}
 {$awaitingusers}
+<script src="{$mybb->settings['bburl']}/themes/mystudio-default/js/ms-pm-poller.js"></script>

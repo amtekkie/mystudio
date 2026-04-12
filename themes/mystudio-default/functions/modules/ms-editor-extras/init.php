@@ -24,11 +24,6 @@ if (!defined('IN_ADMINCP')) {
     $plugins->add_hook('global_end', 'ms_ee_inject_config');
     $plugins->add_hook('xmlhttp',    'ms_ee_xmlhttp');
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   FRONTEND — CONFIG + CDN INJECTION
-   ═══════════════════════════════════════════════════════════════ */
-
 /**
  * Hook: global_end
  * Inject EditorExtras JS config and highlight.js CDN into <head>.
@@ -79,11 +74,6 @@ function ms_ee_inject_config()
         $headerinclude .= "\n" . '<script>document.documentElement.classList.add(' . implode(',', array_map(function($c){ return "'" . $c . "'"; }, $classes)) . ');</script>';
     }
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   AJAX HANDLERS
-   ═══════════════════════════════════════════════════════════════ */
-
 /**
  * Hook: xmlhttp
  * Handle image upload and GIF search/trending AJAX requests.

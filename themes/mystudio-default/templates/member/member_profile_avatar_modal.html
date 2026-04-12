@@ -1,0 +1,32 @@
+<div class="modal fade" id="ms_profile_avatar_modal" tabindex="-1" aria-labelledby="ms_profile_avatar_label" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered" style="max-width:440px">
+<div class="modal-content">
+    <form enctype="multipart/form-data" action="{$bburl}/usercp.php" method="post" id="ms_profile_avatar_form">
+        <input type="hidden" name="my_post_key" value="{$ms_avatar_post_key}" />
+        <input type="hidden" name="action" value="do_avatar" />
+        <div class="modal-header">
+            <h6 class="modal-title" id="ms_profile_avatar_label"><i class="bi bi-person-bounding-box me-1"></i> {$ms_avatar_change_lang}</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="text-center mb-3">
+                <img src="{$ms_avatar_cur}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" id="ms_profile_avatar_preview" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;border:3px solid var(--tekbb-accent)" alt="Current Avatar" />
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-semibold"><i class="bi bi-upload me-1"></i> {$ms_avatar_upload_lang}</label>
+                <input type="file" name="avatarupload" class="form-control form-control-sm" accept="image/*" id="ms_profile_avatar_file" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label small fw-semibold"><i class="bi bi-link-45deg me-1"></i> {$ms_avatar_url_lang}</label>
+                <input type="text" name="avatarurl" class="form-control form-control-sm" placeholder="https://example.com/avatar.png" value="" />
+                <div class="form-text" style="font-size:11px">{$ms_avatar_url_tip_lang}</div>
+            </div>
+        </div>
+        <div class="modal-footer d-flex justify-content-between">
+            <a href="{$ms_avatar_remove_url}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> {$ms_avatar_remove_lang}</a>
+            <input type="submit" name="submit" class="btn btn-sm btn-primary" value="{$ms_avatar_change_lang}" />
+        </div>
+    </form>
+</div>
+</div>
+</div>

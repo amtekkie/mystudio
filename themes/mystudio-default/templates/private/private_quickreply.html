@@ -23,7 +23,14 @@
 					<label><input type="checkbox" class="checkbox" name="options[savecopy]" value="1" {$optionschecked['savecopy']} />&nbsp;<strong>{$lang->quickreply_save_copy}</strong></label>{$private_send_tracking}</div>
 			</div>
 			<div data-width="75%">
-				<textarea style="padding: 4px; margin: 0;" name="message" id="message" tabindex="1"></textarea>
+				<textarea style="padding: 4px; margin: 0;" name="message" id="message" tabindex="1"></textarea>{$codebuttons}
+				<script type="text/javascript">
+				$(function() {
+					$('form[name="input"]').on('reset', function() {
+						if(typeof MyBBEditor !== 'undefined') MyBBEditor.val('');
+					});
+				});
+				</script>
 					<div class="align_center col-md-12">
 						<input type="submit" class="button" value="{$lang->send_message}" tabindex="2" accesskey="s" />
 						<input type="submit" class="button" name="preview" value="{$lang->preview}" tabindex="3" />

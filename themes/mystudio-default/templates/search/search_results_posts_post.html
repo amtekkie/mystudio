@@ -1,10 +1,9 @@
 <div class="inline_row d-flex align-items-start gap-3 px-3 py-2 border-bottom {$bgcolor}">
 <div class="flex-grow-1 min-w-0">
 	<div class="d-flex align-items-center gap-1 flex-wrap">
-		{$icon}
 		<a href="{$post_url}{$highlight}#pid{$post['pid']}" class="fw-semibold">{$post['subject']}</a>
 	</div>
-	<div class="small text-muted mt-1 fst-italic text-truncate" style="max-width:600px">{$prev}</div>
+	<div class="small text-muted mt-1 fst-italic" style="display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;max-height:1.5em;line-height:1.5em">{$prev}</div>
 	<!-- Mobile: show author, forum, stats + date inline -->
 	<div class="d-md-none small text-muted mt-1">
 		<span class="me-2"><i class="bi bi-person"></i> {$post['profilelink']}</span>

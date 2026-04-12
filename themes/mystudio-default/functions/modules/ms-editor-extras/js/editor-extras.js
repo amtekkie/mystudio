@@ -196,9 +196,14 @@ function syncEditorTheme(editor) {
 		doc.head.appendChild(styleEl);
 	}
 	if (isDark) {
-		styleEl.textContent = 'code { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }';
+		styleEl.textContent = 'code { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }'
+			+ ' blockquote { background: rgba(45,212,191,0.08) !important; border-left: 4px solid rgba(45,212,191,0.5) !important; }'
+			+ ' blockquote blockquote { background: rgba(45,212,191,0.05) !important; border-left-color: rgba(45,212,191,0.3) !important; }'
+			+ ' blockquote cite { color: #2dd4bf !important; border-bottom-color: #30363d !important; }';
 	} else {
-		styleEl.textContent = 'code { background: #f6f8fa !important; color: #1f2328 !important; border-color: #d1d9e0 !important; }';
+		styleEl.textContent = 'code { background: #f6f8fa !important; color: #1f2328 !important; border-color: #d1d9e0 !important; }'
+			+ ' blockquote { background: rgba(13,148,136,0.06) !important; border-left: 4px solid rgba(13,148,136,0.5) !important; }'
+			+ ' blockquote cite { color: rgba(13,148,136,1) !important; }';
 	}
 }
 

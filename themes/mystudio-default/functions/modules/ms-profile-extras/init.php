@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * MyStudio User Profile Extras â€” Mini Plugin Init
  *
@@ -18,13 +18,13 @@ if (defined('IN_ADMINCP')) return;
 
 global $plugins, $db, $mybb;
 
-// â”€â”€ Store options in globals for use in functions â”€â”€
+// — Store options in globals for use in functions —
 $GLOBALS['ms_pe_options'] = isset($ms_plugin_options) ? $ms_plugin_options : array();
 
-// â”€â”€ Auto-install: create tables if missing â”€â”€
+// — Auto-install: create tables if missing —
 ms_profile_extras_install();
 
-// â”€â”€ Hooks â”€â”€
+// — Hooks: Banner —
 $plugins->add_hook('member_profile_end',  'ms_profile_extras_banner');
 $plugins->add_hook('usercp_start',        'ms_profile_extras_usercp');
 
@@ -69,17 +69,12 @@ function ms_profile_extras_usercp()
 {
     global $mybb;
 
-    // â”€â”€ AJAX: handle ms_action requests (banner operations) â”€â”€
     $msAction = $mybb->get_input('ms_action');
     if (!empty($msAction)) {
         ms_profile_extras_ajax();
         return;
     }
 }
-
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   BANNER â€” Inject style + change modal on member profile
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 function ms_profile_extras_banner()
 {
@@ -187,113 +182,7 @@ function ms_profile_extras_banner()
     $previewTextStyle = $curTextColor ? 'color:' . $curTextColor . ';' : '';
     $previewLinkStyle = $curLinkColor ? 'color:' . $curLinkColor . ';' : '';
 
-    $GLOBALS['banner_change_modal'] = <<<HTML
-<div class="modal fade" id="ms_banner_modal" tabindex="-1" aria-labelledby="ms_banner_label" aria-hidden="true">
-<div class="modal-dialog modal-dialog-centered modal-lg">
-<div class="modal-content">
-    <div class="modal-header">
-        <h6 class="modal-title" id="ms_banner_label"><i class="bi bi-image me-1"></i> Change Profile Banner</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
-    <div class="modal-body">
-        <!-- Banner Preview -->
-        <div id="ms_banner_preview" class="banner-preview mb-3" style="{$banner_style}">
-            <div class="banner-preview-text">
-                <span id="ms_preview_text" style="{$previewTextStyle}">Username</span>
-                <a href="#" id="ms_preview_link" onclick="return false" style="{$previewLinkStyle}">View Profile</a>
-            </div>
-            <span class="banner-preview-label">Preview</span>
-        </div>
-
-        <!-- Tabs -->
-        <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
-            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#bannerUpload" role="tab"><i class="bi bi-upload me-1"></i> Upload</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bannerGallery" role="tab"><i class="bi bi-collection me-1"></i> Previous</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bannerSolid" role="tab"><i class="bi bi-palette me-1"></i> Solid</a></li>
-            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bannerGradient" role="tab"><i class="bi bi-rainbow me-1"></i> Gradient</a></li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- Upload Tab -->
-            <div class="tab-pane fade show active" id="bannerUpload" role="tabpanel">
-                <div class="mb-2">
-                    <label class="form-label small fw-semibold"><i class="bi bi-cloud-upload me-1"></i> Upload Banner Image</label>
-                    <input type="file" class="form-control form-control-sm" accept="image/*" id="ms_banner_file" />
-                    <div class="form-text">Recommended size: 1200 x 200 pixels. Max 2MB. JPG, PNG, GIF, WebP.</div>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label small fw-semibold"><i class="bi bi-link-45deg me-1"></i> Or Image URL</label>
-                    <input type="text" class="form-control form-control-sm" id="ms_banner_url" placeholder="https://example.com/banner.jpg" />
-                </div>
-            </div>
-
-            <!-- Previous Banners Gallery -->
-            <div class="tab-pane fade" id="bannerGallery" role="tabpanel">
-                <div class="banner-gallery">{$galleryItems}</div>
-            </div>
-
-            <!-- Solid Color Tab -->
-            <div class="tab-pane fade" id="bannerSolid" role="tabpanel">
-                <div class="solid-presets mb-3">{$solidSwatches}</div>
-                <div class="d-flex align-items-center gap-2">
-                    <label class="form-label small fw-semibold mb-0">Custom:</label>
-                    <input type="color" class="form-control form-control-color" id="ms_banner_color" value="#0d9488" style="width:40px;height:32px" />
-                    <input type="text" class="form-control form-control-sm" id="ms_banner_color_hex" value="#0d9488" style="width:100px" />
-                </div>
-            </div>
-
-            <!-- Gradient Tab -->
-            <div class="tab-pane fade" id="bannerGradient" role="tabpanel">
-                <div class="gradient-presets mb-3">{$gradientSwatches}</div>
-                <div class="mb-2">
-                    <label class="form-label small fw-semibold">Custom Gradient</label>
-                    <div class="d-flex gap-2 align-items-center flex-wrap">
-                        <select class="form-select form-select-sm" id="ms_grad_type" style="width:auto">
-                            <option value="linear">Linear</option>
-                            <option value="radial">Radial</option>
-                        </select>
-                        <input type="number" class="form-control form-control-sm" id="ms_grad_angle" value="135" min="0" max="360" style="width:70px" placeholder="Angle" />
-                        <span class="small text-muted">&deg;</span>
-                        <input type="color" class="form-control form-control-color" id="ms_grad_color1" value="#667eea" style="width:36px;height:30px" />
-                        <i class="bi bi-arrow-right"></i>
-                        <input type="color" class="form-control form-control-color" id="ms_grad_color2" value="#764ba2" style="width:36px;height:30px" />
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ms_grad_apply"><i class="bi bi-check-lg"></i></button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Text & Link Color Options -->
-        <div class="mt-3 pt-3 border-top">
-            <label class="form-label small fw-semibold mb-2"><i class="bi bi-fonts me-1"></i> Text &amp; Link Colors</label>
-            <div class="d-flex gap-4 align-items-center flex-wrap">
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small text-muted">Text:</span>
-                    <input type="color" class="form-control form-control-color" id="ms_banner_text_color" value="{$curTextColorPicker}" style="width:36px;height:30px" />
-                    <input type="text" class="form-control form-control-sm" id="ms_banner_text_color_hex" value="{$curTextColor}" placeholder="Default" style="width:90px" />
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="small text-muted">Links:</span>
-                    <input type="color" class="form-control form-control-color" id="ms_banner_link_color" value="{$curLinkColorPicker}" style="width:36px;height:30px" />
-                    <input type="text" class="form-control form-control-sm" id="ms_banner_link_color_hex" value="{$curLinkColor}" placeholder="Default" style="width:90px" />
-                </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="ms_color_reset" title="Reset to defaults"><i class="bi bi-arrow-counterclockwise"></i></button>
-            </div>
-            <div class="form-text">Leave empty to use theme defaults.</div>
-        </div>
-
-        <!-- Hidden fields for submission -->
-        <input type="hidden" id="ms_banner_type" value="" />
-        <input type="hidden" id="ms_banner_value" value="" />
-    </div>
-    <div class="modal-footer d-flex justify-content-between">
-        <button type="button" class="btn btn-sm btn-outline-danger" id="ms_banner_remove"><i class="bi bi-trash me-1"></i> Remove Banner</button>
-        <button type="button" class="btn btn-sm btn-primary" id="ms_banner_save"><i class="bi bi-check-lg me-1"></i> Save Banner</button>
-    </div>
-</div>
-</div>
-</div>
-HTML;
+    eval("\$GLOBALS['banner_change_modal'] = \"" . $templates->get("member_profile_banner_modal") . "\";");
     } // end else (own profile banner modal)
 
     // â”€â”€ Latest Posts Block â”€â”€
@@ -306,7 +195,7 @@ HTML;
 
 function ms_pe_inject_latest_posts()
 {
-    global $mybb, $db, $uid;
+    global $mybb, $db, $uid, $templates;
 
     $bburl = $mybb->settings['bburl'];
     $profileUid = (int)$uid;
@@ -339,51 +228,33 @@ function ms_pe_inject_latest_posts()
         LIMIT 5
     ");
 
-    $postItems = '';
+    $ms_lp_items = '';
     while ($post = $db->fetch_array($query)) {
-        $threadSubject = htmlspecialchars_uni($post['thread_subject']);
-        $forumName     = htmlspecialchars_uni($post['forum_name']);
-        $threadUrl     = htmlspecialchars_uni($bburl . '/showthread.php?tid=' . (int)$post['thread_tid'] . '&pid=' . (int)$post['pid'] . '#pid' . (int)$post['pid']);
-        $timeAgo       = my_date('relative', $post['dateline']);
+        $ms_lp_thread_subject = htmlspecialchars_uni($post['thread_subject']);
+        $ms_lp_forum_name     = htmlspecialchars_uni($post['forum_name']);
+        $ms_lp_thread_url     = htmlspecialchars_uni($bburl . '/showthread.php?tid=' . (int)$post['thread_tid'] . '&pid=' . (int)$post['pid'] . '#pid' . (int)$post['pid']);
+        $ms_lp_time_ago       = my_date('relative', $post['dateline']);
 
         // Excerpt: strip BBCode/HTML, truncate
-        $excerpt = strip_tags(str_replace(array('[/quote]','[/code]'), '', $post['message']));
-        $excerpt = preg_replace('/\[.*?\]/', '', $excerpt);
-        $excerpt = trim($excerpt);
-        if (my_strlen($excerpt) > 120) {
-            $excerpt = my_substr($excerpt, 0, 120) . '...';
+        $ms_lp_excerpt = strip_tags(str_replace(array('[/quote]','[/code]'), '', $post['message']));
+        $ms_lp_excerpt = preg_replace('/\[.*?\]/', '', $ms_lp_excerpt);
+        $ms_lp_excerpt = trim($ms_lp_excerpt);
+        if (my_strlen($ms_lp_excerpt) > 120) {
+            $ms_lp_excerpt = my_substr($ms_lp_excerpt, 0, 120) . '...';
         }
-        $excerpt = htmlspecialchars_uni($excerpt);
+        $ms_lp_excerpt = htmlspecialchars_uni($ms_lp_excerpt);
 
-        $postItems .= <<<POST
-<div class="profile-latest-post">
-    <div class="profile-latest-post-header">
-        <a href="{$threadUrl}" class="profile-latest-post-title">{$threadSubject}</a>
-        <span class="profile-latest-post-meta text-muted small">in {$forumName} &middot; {$timeAgo}</span>
-    </div>
-    <div class="profile-latest-post-excerpt text-muted small">{$excerpt}</div>
-</div>
-POST;
+        eval("\$ms_lp_items .= \"" . $templates->get("member_profile_latest_posts_row") . "\";");
     }
 
-    if (empty($postItems)) {
-        $postItems = '<div class="text-center text-muted py-3"><i class="bi bi-file-text d-block mb-1" style="font-size:1.5rem"></i><span class="small">No posts yet.</span></div>';
+    if (empty($ms_lp_items)) {
+        $ms_lp_items = '<div class="text-center text-muted py-3"><i class="bi bi-file-text d-block mb-1" style="font-size:1.5rem"></i><span class="small">No posts yet.</span></div>';
     }
 
     $findPostsUrl = htmlspecialchars_uni($bburl . '/search.php?action=finduser&uid=' . $profileUid);
-    $viewAllLink = '<a href="' . $findPostsUrl . '" class="small text-muted text-decoration-none">View All <i class="bi bi-arrow-right"></i></a>';
+    $ms_lp_view_all_link = '<a href="' . $findPostsUrl . '" class="small text-muted text-decoration-none">View All <i class="bi bi-arrow-right"></i></a>';
 
-    $GLOBALS['profile_latest_posts'] = <<<HTML
-<div class="tborder profile-right-card mb-3">
-    <div class="thead d-flex align-items-center justify-content-between">
-        <strong><i class="bi bi-file-text me-1"></i> Latest Posts</strong>
-        {$viewAllLink}
-    </div>
-    <div class="trow1" style="padding:0">
-        {$postItems}
-    </div>
-</div>
-HTML;
+    eval("\$GLOBALS['profile_latest_posts'] = \"" . $templates->get("member_profile_latest_posts") . "\";");
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -451,7 +322,7 @@ function ms_pe_save_banner()
                 // Prevent PHP execution in upload directory
                 $htaccess = $uploadDir . '.htaccess';
                 if (!file_exists($htaccess)) {
-                    @file_put_contents($htaccess, "<FilesMatch \"\\.php$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
+                    @file_put_contents($htaccess, "<FilesMatch \"\\.(php|phtml|phar|php[3-8]|shtml)$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
                 }
             }
 
@@ -501,6 +372,12 @@ function ms_pe_save_banner()
             $url = trim($mybb->get_input('banner_url'));
             if (!my_validate_url($url)) {
                 ms_profile_extras_json(array('error' => 'Invalid URL.'));
+                return;
+            }
+            // Only allow http/https schemes
+            $urlScheme = parse_url($url, PHP_URL_SCHEME);
+            if (!in_array(strtolower($urlScheme), array('http', 'https'))) {
+                ms_profile_extras_json(array('error' => 'Only http and https URLs are allowed.'));
                 return;
             }
             $value = $url;
@@ -659,8 +536,6 @@ function ms_pe_activate_banner()
 
     ms_profile_extras_json(array('success' => true, 'css' => $css, 'text_color' => $textColor, 'link_color' => $linkColor));
 }
-
-/* ── JSON response helper ── */
 function ms_profile_extras_json($data, $code = 200)
 {
     if ($code === 403) {

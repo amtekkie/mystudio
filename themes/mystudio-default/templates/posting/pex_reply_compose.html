@@ -1,0 +1,19 @@
+<div class="pex-reply-compose" data-tid="{$ms_pex_compose_tid}">
+    <img src="{$ms_pex_compose_avatar}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" alt="You" class="pex-reply-compose-avatar" />
+    <div class="pex-reply-compose-body">
+        <div class="pex-reply-editor" data-tid="{$ms_pex_compose_tid}">
+            <div class="pex-reply-toolbar">
+                <button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="b" title="Bold"><i class="bi bi-type-bold"></i></button>
+                <button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="i" title="Italic"><i class="bi bi-type-italic"></i></button>
+                <button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="u" title="Underline"><i class="bi bi-type-underline"></i></button>
+                <button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="url" title="Link"><i class="bi bi-link-45deg"></i></button>
+                <button type="button" class="pex-mycode-btn pex-reply-bb" data-bb="quote" title="Quote"><i class="bi bi-chat-quote"></i></button>
+            </div>
+            <textarea class="pex-reply-input" placeholder="Write a reply..." rows="1" data-tid="{$ms_pex_compose_tid}"></textarea>
+        </div>
+        <div class="pex-reply-actions">
+            <label class="pex-tool-btn" title="Upload image"><i class="bi bi-image"></i><input type="file" class="pex-reply-image-input" accept="image/*" style="display:none" /></label>
+            <button type="button" class="pex-reply-submit-btn" data-tid="{$ms_pex_compose_tid}" disabled>Reply</button>
+        </div>
+    </div>
+</div>

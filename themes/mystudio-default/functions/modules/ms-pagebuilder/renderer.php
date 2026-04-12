@@ -15,11 +15,6 @@
 if (!defined('IN_MYBB')) {
     die('Direct initialization of this file is not allowed.');
 }
-
-/* ══════════════════════════════════════════════════════════════
-   Entry Point — Serve an MyStudio Page
-   ══════════════════════════════════════════════════════════════ */
-
 /**
  * Look up a page by slug, evaluate template variables, and output.
  *
@@ -30,16 +25,12 @@ function ms_pb_serve_page($rawSlug)
     global $mybb, $db, $lang, $templates, $cache,
            $headerinclude, $header, $footer,
            $welcomeblock, $pm_notice;
-
-    // ── Sanitise slug ──
     $slug = preg_replace('/[^a-zA-Z0-9\-_\/]/', '', $rawSlug);
     $slug = trim($slug, '/');
 
     if (empty($slug)) {
         error_no_permission();
     }
-
-    // ── Fetch the page from the database ──
     $slug_esc = $db->escape_string($slug);
 
     // Allow admins to preview draft pages with ?preview=1
@@ -56,8 +47,6 @@ function ms_pb_serve_page($rawSlug)
     if (!$ms_page) {
         error($lang->error_invalid_page ?? 'The requested page could not be found.');
     }
-
-    // ── Permission check ──
     if (!empty($ms_page['allowed_groups'])) {
         $allowedGroups = array_map('intval', explode(',', $ms_page['allowed_groups']));
         $userGroups = array((int)$mybb->user['usergroup']);
@@ -68,54 +57,36 @@ function ms_pb_serve_page($rawSlug)
             error_no_permission();
         }
     }
-
-    // ── Store page data globally ──
     $GLOBALS['ms_current_page'] = $ms_page;
-
-    // ── Meta tags ──
     $pageTitle = htmlspecialchars_uni($ms_page['title']);
     $metaTitle = !empty($ms_page['meta_title']) ? htmlspecialchars_uni($ms_page['meta_title']) : $pageTitle;
     $metaDesc  = !empty($ms_page['meta_description']) ? htmlspecialchars_uni($ms_page['meta_description']) : '';
-
-    // ── Breadcrumb ──
     $bburl = $mybb->settings['bburl'];
     add_breadcrumb($pageTitle, $bburl . '/' . htmlspecialchars_uni($slug));
-
-    // ── Custom CSS / JS ──
     $pageCustomCss = '';
     if (!empty($ms_page['custom_css'])) {
-        $pageCustomCss = '<style>' . $ms_page['custom_css'] . '</style>';
+        // Strip </style> to prevent tag breakout
+        $safeCss = str_ireplace('</style', '<\\/style', $ms_page['custom_css']);
+        $pageCustomCss = '<style>' . $safeCss . '</style>';
     }
     $pageCustomJs = '';
     if (!empty($ms_page['custom_js'])) {
-        $pageCustomJs = '<script>' . $ms_page['custom_js'] . '</script>';
+        // Strip </script> to prevent tag breakout
+        $safeJs = str_ireplace('</script', '<\\/script', $ms_page['custom_js']);
+        $pageCustomJs = '<script>' . $safeJs . '</script>';
     }
-
-    // ── Build breadcrumb nav (so {$nav} works in templates) ──
     $nav = build_breadcrumb();
-
-    // ── Lazy-build global templates if referenced ──
     $rawContent = $ms_page['content'];
     ms_pb_build_globals_if_needed($rawContent);
-
-    // ── Evaluate template: expand {$variables} and <if> conditionals ──
     $pageContent = ms_pb_eval_template($rawContent);
-
-    // ── Store template variables for other plugins ──
     $GLOBALS['ms_page_title']   = $pageTitle;
     $GLOBALS['ms_page_content'] = $pageContent;
     $GLOBALS['ms_page_css']     = $pageCustomCss;
     $GLOBALS['ms_page_js']      = $pageCustomJs;
     $GLOBALS['ms_meta_title']   = $metaTitle;
     $GLOBALS['ms_meta_desc']    = $metaDesc;
-
-    // ── Detect if template includes the standard shell parts ──
     $hasHeaderInclude = (strpos($rawContent, '{$headerinclude}') !== false);
-
-    // ── Theme color mode (dark only) ──
     $ms_color_mode = 'dark';
-
-    // ── Build the full page HTML ──
     $page_html = '<!DOCTYPE html>
 <html lang="en" data-bs-theme="dark" data-theme="dark">
 <head>
@@ -132,11 +103,6 @@ function ms_pb_serve_page($rawSlug)
 
     output_page($page_html);
 }
-
-/* ══════════════════════════════════════════════════════════════
-   Template Evaluation Engine
-   ══════════════════════════════════════════════════════════════ */
-
 /**
  * Evaluate raw HTML content as a MyBB-style template.
  *
@@ -269,11 +235,6 @@ function ms_pb_safe_eval_condition($condition)
 
     return $result;
 }
-
-/* ══════════════════════════════════════════════════════════════
-   Lazy-Build Global Templates
-   ══════════════════════════════════════════════════════════════ */
-
 /**
  * If the page content references certain global templates that
  * aren't automatically built (e.g. {$boardstats}, {$forums}),
@@ -320,11 +281,6 @@ function ms_pb_build_globals_if_needed($rawContent)
         }
     }
 }
-
-/* ══════════════════════════════════════════════════════════════
-   Helper: Strip an HTML element by its id attribute
-   ══════════════════════════════════════════════════════════════ */
-
 /**
  * Remove the first element with the given id from an HTML string.
  *
