@@ -50,20 +50,19 @@ function ms_posting_extras_start()
         return;
     }
 
-    // Build and output the feed page, then exit to prevent normal portal rendering
-    ms_pex_feed_page();
+    // Prepare feed data as globals for the portal.html template
+    ms_pex_prepare_feed();
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   FEED PAGE — Full page render at portal.php
+   FEED PAGE — Prepare template variables for portal.html
    ═══════════════════════════════════════════════════════════════ */
 
-function ms_pex_feed_page()
+function ms_pex_prepare_feed()
 {
     global $mybb, $db, $lang, $templates, $header, $headerinclude, $footer, $theme, $cache;
 
     $bburl   = $mybb->settings['bburl'];
-    $bbname  = htmlspecialchars_uni($mybb->settings['bbname']);
     $uid     = (int)$mybb->user['uid'];
     $opts    = $GLOBALS['ms_pex_options'];
     $perPage = isset($opts['posts_per_page']) ? (int)$opts['posts_per_page'] : 20;
@@ -143,68 +142,33 @@ function ms_pex_feed_page()
     }
 
     // ── Pagination HTML ──
-    $pagination = '';
+    $pex_pagination = '';
     if ($totalPages > 1) {
-        $pagination = '<nav class="pex-pagination"><ul class="pagination pagination-sm justify-content-center">';
+        $pex_pagination = '<nav class="pex-pagination"><ul class="pagination pagination-sm justify-content-center">';
         for ($p = 1; $p <= $totalPages; $p++) {
             $activeClass = ($p == $page) ? ' active' : '';
-            $pagination .= '<li class="page-item' . $activeClass . '"><a class="page-link" href="' . $bburl . '/portal.php?page=' . $p . '">' . $p . '</a></li>';
+            $pex_pagination .= '<li class="page-item' . $activeClass . '"><a class="page-link" href="' . $bburl . '/portal.php?page=' . $p . '">' . $p . '</a></li>';
         }
-        $pagination .= '</ul></nav>';
+        $pex_pagination .= '</ul></nav>';
     }
 
-    // ── Sidebar ──
-    $sidebar = ms_pex_render_page_sidebar('portal.php');
+    // ── Set globals for portal.html template ──
+    $GLOBALS['pex_feed_items'] = $feedItems;
+    $GLOBALS['pex_pagination'] = $pex_pagination;
+    $GLOBALS['pex_sidebar']    = ms_pex_render_page_sidebar('portal.php');
+    $GLOBALS['pex_post_key']   = htmlspecialchars($mybb->post_code, ENT_QUOTES);
 
-    // ── Post key for JS ──
-    $postKeyJs = htmlspecialchars($mybb->post_code, ENT_QUOTES);
+    // Expose globals so the template eval can access them
+    global $pex_feed_items, $pex_pagination, $pex_sidebar, $pex_post_key;
+    $pex_feed_items = $GLOBALS['pex_feed_items'];
+    $pex_pagination = $GLOBALS['pex_pagination'];
+    $pex_sidebar    = $GLOBALS['pex_sidebar'];
+    $pex_post_key   = $GLOBALS['pex_post_key'];
 
-    // ── Build page ──
-    $content = <<<PAGE
-<html>
-<head>
-<title>{$bbname} - Portal</title>
-{$headerinclude}
-</head>
-<body>
-{$header}
-
-<div class="ms-page-shell">
-    <aside class="ms-page-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="msSidebarOffcanvas">
-        <div class="offcanvas-header d-lg-none">
-            <h6 class="offcanvas-title">Menu</h6>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#msSidebarOffcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-        {$sidebar}
-        </div>
-    </aside>
-
-    <main class="ms-page-content">
-        <div class="pex-main-header">
-            <button class="btn btn-sm btn-outline-secondary d-lg-none ms-sidebar-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#msSidebarOffcanvas" aria-controls="msSidebarOffcanvas"><i class="bi bi-list"></i></button>
-            <h5>Portal</h5>
-        </div>
-
-        <div class="pex-feed-list" id="pex_feed_list">
-            {$feedItems}
-        </div>
-        {$pagination}
-    </main>
-</div>
-
-<script>
-var PEX_CONFIG = {
-    bburl: '{$bburl}',
-    postKey: '{$postKeyJs}'
-};
-</script>
-{$footer}
-</body>
-</html>
-PAGE;
-
-    output_page($content);
+    // Evaluate the portal template and output — must exit to prevent
+    // portal.php's default announcement code from running
+    eval("\$portal = \"".$templates->get("portal")."\";");
+    output_page($portal);
     exit;
 }
 
@@ -272,8 +236,7 @@ function ms_pex_pre_output_page(&$page)
     if (!$hasShell && strpos($page, '<main class="container">') !== false) {
         $sidebar = ms_pex_render_page_sidebar($scriptName);
         if ($sidebar !== '') {
-            $sidebarToggle = '<button class="btn btn-sm btn-outline-secondary d-lg-none ms-sidebar-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#msSidebarOffcanvas" aria-controls="msSidebarOffcanvas"><i class="bi bi-list"></i></button>';
-            $mainHeader = '<div class="pex-main-header">' . $sidebarToggle . $breadcrumb . '</div>';
+            $mainHeader = '<div class="pex-main-header">' . $breadcrumb . '</div>';
 
             $page = preg_replace(
                 '/<main class="container">/',
@@ -400,8 +363,6 @@ function ms_pex_render_page_sidebar($scriptName)
                 . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'ipsearch' ? ' active' : '') . '" href="' . $modcpUrl . '?action=ipsearch">IP Search</a>'
                 . '</div></details>';
         }
-
-        $html .= '<a class="ms-sidebar-link" href="' . $logoutUrl . '"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>';
     } else {
         $html .= '<div class="ms-sidebar-card ms-sidebar-profile">'
             . '<div class="ms-sidebar-profile-top">'
@@ -419,9 +380,13 @@ function ms_pex_render_page_sidebar($scriptName)
 
     $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link"><i class="bi bi-house-door"></i><span>Home</span></a>'
         . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>'
-        . '<a href="' . htmlspecialchars_uni($bburl . '/memberlist.php') . '" class="ms-sidebar-link"><i class="bi bi-people"></i><span>Member List</span></a>'
-        . '<a href="' . htmlspecialchars_uni($bburl . '/search.php') . '" class="ms-sidebar-link"><i class="bi bi-search"></i><span>Search</span></a>'
-        . '</nav>';
+        . '<a href="' . htmlspecialchars_uni($bburl . '/search.php') . '" class="ms-sidebar-link"><i class="bi bi-search"></i><span>Search</span></a>';
+
+    if ($uid > 0) {
+        $html .= '<a class="ms-sidebar-link" href="' . htmlspecialchars_uni($bburl . '/member.php?action=logout&logoutkey=' . $mybb->user['logoutkey']) . '"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>';
+    }
+
+    $html .= '</nav>';
 
     return $html;
 }

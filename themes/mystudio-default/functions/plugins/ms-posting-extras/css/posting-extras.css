@@ -12,6 +12,7 @@
     display: flex;
     justify-content: flex-start;
     align-items: center;
+    gap: 0.5rem;
 }
 .ms-header-logo {
     display: flex;
@@ -48,8 +49,8 @@
     min-width: 0;
     padding-right: 0;
     border-right: 1px solid var(--bs-border-color, #dee2e6);
-    height: 100vh;
     overflow-y: auto;
+    min-height: calc(100vh - 147px);
 }
 
 .ms-page-content {
