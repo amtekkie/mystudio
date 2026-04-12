@@ -34,7 +34,23 @@ var PEX_CONFIG = {
 	bburl: '{$mybb->settings['bburl']}',
 	postKey: '{$pex_post_key}'
 };
+var quickdelete_confirm = "{$lang->quickdelete_confirm}";
+var quickrestore_confirm = "{$lang->quickrestore_confirm}";
+var allowEditReason = "{$mybb->settings['alloweditreason']}";
+var thread_deleted = "0";
+var visible_replies = "0";
+lang.save_changes = "{$lang->save_changes}";
+lang.cancel_edit = "{$lang->cancel_edit}";
+lang.quick_edit_update_error = "{$lang->quick_edit_update_error}";
+lang.quick_delete_error = "{$lang->quick_delete_error}";
+lang.quick_delete_success = "{$lang->quick_delete_success}";
+lang.quick_restore_error = "{$lang->quick_restore_error}";
+lang.quick_restore_success = "{$lang->quick_restore_success}";
+lang.editreason = "{$lang->postbit_editreason}";
 </script>
+<script src="{$mybb->asset_url}/jscripts/report.js?ver=1839"></script>
+<script src="{$mybb->asset_url}/jscripts/jeditable/jeditable.min.js"></script>
+<script src="{$mybb->asset_url}/jscripts/thread.js?ver=1839"></script>
 
 {$footer}
 </body>

@@ -56,10 +56,6 @@ class MyStudio
         return in_array($ext, self::ALLOWED_EDIT_EXTENSIONS);
     }
 
-    /* ══════════════════════════════════════════════
-       PUBLIC — Import from ZIP
-       ══════════════════════════════════════════════ */
-
     /**
      * Import a theme from an uploaded ZIP file.
      *
@@ -189,10 +185,6 @@ class MyStudio
 
         return $tid;
     }
-
-    /* ══════════════════════════════════════════════
-       PUBLIC — Export to ZIP
-       ══════════════════════════════════════════════ */
 
     /**
      * Export a theme.  If the theme lives on disk (themes/{slug}/), package
@@ -360,10 +352,6 @@ class MyStudio
 
         return $themeDir;
     }
-
-    /* ══════════════════════════════════════════════
-       PUBLIC — Sync (files → database)
-       ══════════════════════════════════════════════ */
 
     /**
      * Sync a theme's on-disk files back into the MyBB database.
@@ -580,10 +568,6 @@ class MyStudio
         return $result;
     }
 
-    /* ══════════════════════════════════════════════
-       PUBLIC — Activate / Deactivate themes
-       ══════════════════════════════════════════════ */
-
     /**
      * Set a theme as the default board theme.
      *
@@ -673,10 +657,6 @@ class MyStudio
         return $result;
     }
 
-    /* ══════════════════════════════════════════════
-       PUBLIC — Utilities
-       ══════════════════════════════════════════════ */
-
     /** @return string[] */
     public function getErrors()
     {
@@ -691,10 +671,6 @@ class MyStudio
             $this->tempDir = '';
         }
     }
-
-    /* ══════════════════════════════════════════════
-       PRIVATE — Validation
-       ══════════════════════════════════════════════ */
 
     /**
      * Validate that a theme directory has the mandatory structure.
@@ -738,10 +714,6 @@ class MyStudio
 
         return $ok;
     }
-
-    /* ══════════════════════════════════════════════
-       PRIVATE — Theme XML Builder
-       ══════════════════════════════════════════════ */
 
     /**
      * Build a valid MyBB theme XML string from modular files on disk.
@@ -835,10 +807,6 @@ class MyStudio
 
         return $xml;
     }
-
-    /* ══════════════════════════════════════════════
-       PRIVATE — Theme Import / Delete
-       ══════════════════════════════════════════════ */
 
     private function importThemeXml($xml, $parentTid = 1, $extraOptions = array())
     {
@@ -995,10 +963,6 @@ class MyStudio
         }
     }
 
-    /* ══════════════════════════════════════════════
-       PRIVATE — JS Deployment
-       ══════════════════════════════════════════════ */
-
     private function deployJs($themeDir)
     {
         $jsDir = $themeDir . '/js';
@@ -1013,10 +977,6 @@ class MyStudio
             }
         }
     }
-
-    /* ══════════════════════════════════════════════
-       PRIVATE — File Scanning
-       ══════════════════════════════════════════════ */
 
     private function findThemeRoot($dir)
     {
@@ -1104,10 +1064,6 @@ class MyStudio
         return $map;
     }
 
-    /* ══════════════════════════════════════════════
-       PRIVATE — String / CDATA helpers
-       ══════════════════════════════════════════════ */
-
     private function makeSlug($name)
     {
         $slug = strtolower(trim($name));
@@ -1120,10 +1076,6 @@ class MyStudio
     {
         return str_replace(']]>', ']]]]><![CDATA[>', $str);
     }
-
-    /* ══════════════════════════════════════════════
-       PRIVATE — Filesystem helpers
-       ══════════════════════════════════════════════ */
 
     /**
      * Recursively copy a directory.
@@ -1244,10 +1196,6 @@ class MyStudio
             update_theme_stylesheet_list($tid);
         }
     }
-
-    /* ══════════════════════════════════════════════
-       PUBLIC — Editor API
-       ══════════════════════════════════════════════ */
 
     /**
      * Get the file tree for a theme directory.
@@ -1397,10 +1345,6 @@ class MyStudio
 
         return $node;
     }
-
-    /* ══════════════════════════════════════════════
-       PUBLIC — File / Folder CRUD (Editor)
-       ══════════════════════════════════════════════ */
 
     /**
      * Create a new file inside a theme directory.
@@ -1605,10 +1549,6 @@ class MyStudio
         }
     }
 
-    /* ══════════════════════════════════════════════
-       PUBLIC — Theme Options (functions/ folder)
-       ══════════════════════════════════════════════ */
-
     /**
      * Read the theme options definition from functions/options.php.
      *
@@ -1714,10 +1654,6 @@ class MyStudio
         return $merged;
     }
 
-    /* ══════════════════════════════════════════════
-       PUBLIC — Language files (lang/ folder)
-       ══════════════════════════════════════════════ */
-
     /**
      * Load language files from the active theme's lang/ directory.
      *
@@ -1781,10 +1717,6 @@ class MyStudio
         return $this->makeSlug($name);
     }
 
-    /* ══════════════════════════════════════════════
-       PUBLIC — Dev Mode File Change Detection
-       ══════════════════════════════════════════════ */
-
     /**
      * Compute a hash of all theme file modification times.
      *
@@ -1832,10 +1764,6 @@ class MyStudio
         }
     }
 
-    /* ══════════════════════════════════════════════
-       PUBLIC — Theme Functions / Mini Plugins
-       ══════════════════════════════════════════════ */
-
     /**
      * Discover mini plugins inside a theme's functions/plugins/ directory.
      *
@@ -1860,13 +1788,25 @@ class MyStudio
      */
     public function listMiniPlugins($slug)
     {
-        $pluginsDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions/plugins';
-        $result = array();
-        if (!is_dir($pluginsDir)) return $result;
+        return $this->listModules($slug);
+    }
 
-        foreach (scandir($pluginsDir) as $entry) {
+    /**
+     * List all built-in modules for a theme.
+     * Scans themes/{slug}/functions/modules/ for subdirectories with a plugin.json.
+     *
+     * @param  string $slug  Theme slug
+     * @return array         Array of module info arrays
+     */
+    public function listModules($slug)
+    {
+        $modulesDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions/modules';
+        $result = array();
+        if (!is_dir($modulesDir)) return $result;
+
+        foreach (scandir($modulesDir) as $entry) {
             if ($entry === '.' || $entry === '..' || $entry[0] === '.') continue;
-            $dir = $pluginsDir . '/' . $entry;
+            $dir = $modulesDir . '/' . $entry;
             if (!is_dir($dir)) continue;
 
             $manifestPath = $dir . '/plugin.json';
@@ -1894,53 +1834,23 @@ class MyStudio
     }
 
     /**
-     * Get the enabled state of mini plugins for a theme.
-     * Stored in themes/{slug}/functions/plugins_enabled.json
-     *
-     * @param  string $slug
-     * @return array  plugin_id => bool
-     */
-    public function getMiniPluginStates($slug)
-    {
-        $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions/plugins_enabled.json';
-        if (!file_exists($file)) return array();
-        $data = @json_decode(file_get_contents($file), true);
-        return is_array($data) ? $data : array();
-    }
-
-    /**
-     * Save mini plugin enabled/disabled states.
-     *
-     * @param  string $slug
-     * @param  array  $states  plugin_id => bool
-     * @return bool
-     */
-    public function saveMiniPluginStates($slug, $states)
-    {
-        $dir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions';
-        if (!is_dir($dir)) @mkdir($dir, 0755, true);
-        $file = $dir . '/plugins_enabled.json';
-        return file_put_contents($file, json_encode($states, JSON_PRETTY_PRINT)) !== false;
-    }
-
-    /**
-     * Get mini plugin option values. Stored per-plugin.
+     * Get module option values. Stored per-module in default.json.
      *
      * @param  string $slug      Theme slug
-     * @param  string $pluginId  Plugin directory name
+     * @param  string $pluginId  Module directory name
      * @return array
      */
     public function getMiniPluginOptionValues($slug, $pluginId)
     {
         $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-              . '/functions/plugins/' . $pluginId . '/default.json';
+              . '/functions/modules/' . $pluginId . '/default.json';
         if (!file_exists($file)) return array();
         $data = @json_decode(file_get_contents($file), true);
         return is_array($data) ? $data : array();
     }
 
     /**
-     * Save mini plugin option values.
+     * Save module option values.
      *
      * @param  string $slug
      * @param  string $pluginId
@@ -1950,14 +1860,14 @@ class MyStudio
     public function saveMiniPluginOptionValues($slug, $pluginId, $values)
     {
         $dir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-             . '/functions/plugins/' . $pluginId;
+             . '/functions/modules/' . $pluginId;
         if (!is_dir($dir)) return false;
         $file = $dir . '/default.json';
         return file_put_contents($file, json_encode($values, JSON_PRETTY_PRINT)) !== false;
     }
 
     /**
-     * Get mini plugin option definitions.
+     * Get module option definitions.
      *
      * @param  string $slug
      * @param  string $pluginId
@@ -1966,7 +1876,7 @@ class MyStudio
     public function getMiniPluginOptions($slug, $pluginId)
     {
         $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-              . '/functions/plugins/' . $pluginId . '/options.php';
+              . '/functions/modules/' . $pluginId . '/options.php';
         if (!file_exists($file)) return false;
         $options = @include $file;
         if (!is_array($options) || empty($options)) return false;
@@ -1974,7 +1884,7 @@ class MyStudio
     }
 
     /**
-     * Get merged mini plugin option values (defaults + saved).
+     * Get merged module option values (defaults + saved).
      *
      * @param  string $slug
      * @param  string $pluginId
@@ -1997,27 +1907,17 @@ class MyStudio
     }
 
     /**
-     * Load and initialise all enabled mini plugins for a theme (frontend).
+     * Load and initialise all built-in modules for a theme (frontend).
      * Called from ms_load_theme_extras().
      *
      * @param  string $slug
      */
-    public function loadMiniPlugins($slug)
+    public function loadModules($slug)
     {
-        $plugins = $this->listMiniPlugins($slug);
-        $states  = $this->getMiniPluginStates($slug);
+        $modules = $this->listModules($slug);
 
-        foreach ($plugins as $p) {
-            // Skip disabled plugins
-            if (isset($states[$p['id']]) && !$states[$p['id']]) continue;
-            // Default to enabled if not explicitly set
-            if (!isset($states[$p['id']])) {
-                // Auto-enable new plugins
-            }
-
-            // Load init.php if it exists
+        foreach ($modules as $p) {
             if ($p['has_init']) {
-                // Make plugin options available to init.php
                 $ms_plugin_options = $this->getMergedMiniPluginOptions($slug, $p['id']);
                 $ms_plugin_dir = $p['dir'];
                 $ms_plugin_id = $p['id'];
@@ -2029,27 +1929,25 @@ class MyStudio
     }
 
     /**
-     * Collect frontend assets (JS/CSS) for all enabled mini plugins.
+     * Collect frontend assets (JS/CSS) for all built-in modules.
      *
      * @param  string $slug
      * @return array  ['js' => [...urls], 'css' => [...urls]]
      */
-    public function getMiniPluginAssets($slug)
+    public function getModuleAssets($slug)
     {
-        $plugins = $this->listMiniPlugins($slug);
-        $states  = $this->getMiniPluginStates($slug);
+        $modules = $this->listModules($slug);
         $assets  = array('js' => array(), 'css' => array());
 
-        foreach ($plugins as $p) {
-            if (isset($states[$p['id']]) && !$states[$p['id']]) continue;
-
-            $webBase = self::THEMES_DIR . '/' . $slug . '/functions/plugins/' . $p['id'];
+        foreach ($modules as $p) {
+            $webBase = self::THEMES_DIR . '/' . $slug . '/functions/modules/' . $p['id'];
 
             if ($p['has_css']) {
                 $cssDir = $p['dir'] . '/css';
                 foreach (scandir($cssDir) as $f) {
                     if (pathinfo($f, PATHINFO_EXTENSION) === 'css') {
-                        $assets['css'][] = $webBase . '/css/' . $f;
+                        $mtime = filemtime($cssDir . '/' . $f);
+                        $assets['css'][] = $webBase . '/css/' . $f . '?v=' . $mtime;
                     }
                 }
             }
@@ -2057,7 +1955,8 @@ class MyStudio
                 $jsDir = $p['dir'] . '/js';
                 foreach (scandir($jsDir) as $f) {
                     if (pathinfo($f, PATHINFO_EXTENSION) === 'js') {
-                        $assets['js'][] = $webBase . '/js/' . $f;
+                        $mtime = filemtime($jsDir . '/' . $f);
+                        $assets['js'][] = $webBase . '/js/' . $f . '?v=' . $mtime;
                     }
                 }
             }

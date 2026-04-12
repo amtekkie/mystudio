@@ -7,14 +7,11 @@
 	{$header}
 	<div class="tborder calendar_table">
 		
-				<div class="thead">
-			
-		{$monthnames[$month]} {$year}
-                  
-		<span class="float_right">
-						<a href="{$prev_link}"> {$prev_month['name']} {$prev_month['year']}</a> <a href="{$next_link}">{$next_month['name']} {$next_month['year']}</a>
-		</span>
-                  </div>
+				<div class="thead calendar_header">
+			<div class="cal-prev"><a href="{$prev_link}">{$prev_month['name']} {$prev_month['year']}</a></div>
+			<div class="cal-title">{$monthnames[$month]} {$year}</div>
+			<div class="cal-next"><a href="{$next_link}">{$next_month['name']} {$next_month['year']}</a></div>
+			</div>
 				
 			
 	<div class="calendar_row tcat clearfix">

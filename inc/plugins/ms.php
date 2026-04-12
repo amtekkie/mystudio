@@ -39,10 +39,6 @@ if (defined('IN_ADMINCP')) {
     ms_load_admin_mini_plugins();
 }
 
-/* ──────────────────────────────────────────────
-   Plugin Management
-   ────────────────────────────────────────────── */
-
 function ms_info()
 {
     global $mybb;
@@ -219,10 +215,6 @@ function ms_deactivate()
     // Settings persist until uninstall
 }
 
-/* ──────────────────────────────────────────────
-   Global Start — PHP 8.3 Compatibility
-   ────────────────────────────────────────────── */
-
 /**
  * Called on every frontend page load via global_start.
  *
@@ -256,10 +248,6 @@ function ms_global_start()
     }
 }
 
-/* ──────────────────────────────────────────────
-   Admin-side Mini Plugin Loading
-   ────────────────────────────────────────────── */
-
 /**
  * Load mini-plugin init.php files in admin context so they can register
  * admin hooks (e.g. forum management form fields).
@@ -276,11 +264,9 @@ function ms_load_admin_mini_plugins()
     $slug = $msCore->getActiveThemeSlug();
     if (!$slug) return;
 
-    $plugins = $msCore->listMiniPlugins($slug);
-    $states  = $msCore->getMiniPluginStates($slug);
+    $modules = $msCore->listModules($slug);
 
-    foreach ($plugins as $p) {
-        if (isset($states[$p['id']]) && !$states[$p['id']]) continue;
+    foreach ($modules as $p) {
         if ($p['has_init']) {
             $ms_plugin_options = $msCore->getMergedMiniPluginOptions($slug, $p['id']);
             $ms_plugin_dir = $p['dir'];
@@ -290,10 +276,6 @@ function ms_load_admin_mini_plugins()
         }
     }
 }
-
-/* ──────────────────────────────────────────────
-   Theme Extras — Language & Options (Frontend)
-   ────────────────────────────────────────────── */
 
 /**
  * Called on global_intermediate (after theme & language are loaded).
@@ -378,21 +360,17 @@ function ms_load_theme_extras()
         include_once $hooksFile;
     }
 
-    /* -- 4. Load enabled mini plugins -- */
+    /* -- 4. Load built-in modules -- */
     require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
     $msCore = new MyStudio();
-    $msCore->loadMiniPlugins($slug);
+    $msCore->loadModules($slug);
 
     // Store slug for asset injection later
     $mybb->ms_active_slug = $slug;
 }
 
-/* ──────────────────────────────────────────────
-   Asset Injection — Mini Plugin JS/CSS
-   ────────────────────────────────────────────── */
-
 /**
- * Called on pre_output_page to inject mini plugin CSS/JS into the page HTML.
+ * Called on pre_output_page to inject module CSS/JS into the page HTML.
  * This runs after the full page HTML is assembled so we can inject into <head>.
  *
  * @param  string &$contents  Full page HTML
@@ -408,7 +386,7 @@ function ms_inject_mini_plugin_assets(&$contents)
 
     require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
     $msCore = new MyStudio();
-    $assets = $msCore->getMiniPluginAssets($mybb->ms_active_slug);
+    $assets = $msCore->getModuleAssets($mybb->ms_active_slug);
 
     $inject = '';
     foreach ($assets['css'] as $css) {
@@ -432,10 +410,6 @@ function ms_inject_mini_plugin_assets(&$contents)
     return $contents;
 }
 
-/* ──────────────────────────────────────────────
-   Dev Mode Auto Sync — XMLHTTP handler
-   ────────────────────────────────────────────── */
-
 /**
  * Handle the ms_dev_sync AJAX action.
  * Checks if theme files have changed (via modification-time hash) and
@@ -452,8 +426,8 @@ function ms_xmlhttp_action()
 
     $action = $mybb->get_input('action');
 
-    /* ── Load mini-plugin xmlhttp handlers ──
-     * Mini-plugins are normally loaded on global_intermediate which xmlhttp.php
+    /* ── Load module xmlhttp handlers ──
+     * Modules are normally loaded on global_intermediate which xmlhttp.php
      * doesn't fire. We load them here and then re-run the xmlhttp hook so any
      * newly-registered handlers execute. A static guard prevents infinite
      * recursion since this function is itself an xmlhttp hook handler.
@@ -465,8 +439,14 @@ function ms_xmlhttp_action()
         $msCore = new MyStudio();
         $slug = $msCore->getActiveThemeSlug();
         if ($slug) {
-            $msCore->loadMiniPlugins($slug);
-            // Re-run xmlhttp hooks so mini-plugin handlers can fire.
+            // Load built-in posting-extras (quick-search handler)
+            $pexFile = MYBB_ROOT . 'themes/' . $slug . '/functions/posting-extras.php';
+            if (file_exists($pexFile)) {
+                include_once $pexFile;
+            }
+
+            $msCore->loadModules($slug);
+            // Re-run xmlhttp hooks so module handlers can fire.
             // The static guard above prevents this function from looping.
             $plugins->run_hooks('xmlhttp');
         }
@@ -555,10 +535,6 @@ function ms_xmlhttp_action()
     }
 }
 
-/* ──────────────────────────────────────────────
-   Dev Mode Auto Sync — Frontend Polling JS
-   ────────────────────────────────────────────── */
-
 /**
  * Injects auto-sync polling JavaScript into the page for admin users
  * when Dev Mode Auto Sync is enabled.
@@ -636,7 +612,3 @@ function ms_get_dev_sync_script()
 </script>
 ';
 }
-
-/* ──────────────────────────────────────────────
-   Admin Hooks (no longer needed — module_meta.php handles registration)
-   ────────────────────────────────────────────── */

@@ -14,7 +14,11 @@
 {$pmspacebar}
 	
 {$limitwarning}
-</div>	
+</div>
+
+<div class="d-flex justify-content-end mb-2">
+	<a href="private.php?action=send" class="btn btn-sm btn-primary"><i class="bi bi-pencil-square me-1"></i>{$lang->compose}</a>
+</div>
 	
 <form action="private.php" method="post" name="pmForm">
 <input type="hidden" name="my_post_key" value="{$mybb->post_code}" />

@@ -38,11 +38,6 @@ if (!defined('IN_ADMINCP')) {
         $plugins->add_hook('index_start', 'ms_pagebuilder_front_page');
     }
 }
-
-/* ══════════════════════════════════════════════════════════════
-   MISC_START — Route handler for clean page URLs
-   ══════════════════════════════════════════════════════════════ */
-
 /**
  * Intercept misc.php requests to serve custom pages.
  * .htaccess rewrites /slug → misc.php?ms_page=slug
@@ -57,11 +52,6 @@ function ms_pb_misc_start()
         exit;
     }
 }
-
-/* ══════════════════════════════════════════════════════════════
-   INDEX_START — Front page override
-   ══════════════════════════════════════════════════════════════ */
-
 /**
  * Serve a custom front page or portal instead of the forum index.
  *
@@ -103,8 +93,6 @@ function ms_pagebuilder_front_page()
 function ms_pagebuilder_ensure_tables($actions)
 {
     global $db;
-
-    // ── Pages table ──
     if (!$db->table_exists('ms_pages')) {
         $collation = $db->build_create_table_collation();
         $db->write_query("

@@ -5,7 +5,11 @@
     "site_logo_width": "200",
     "site_logo_height": "0",
     "favicon": "",
-    "custom_nav_links": "[{\"text\":\"Forums\",\"url\":\"index.php\",\"icon\":\"bi-house-door\"},{\"text\":\"Search\",\"url\":\"search.php\",\"icon\":\"bi-search\"},{\"text\":\"Members\",\"url\":\"memberlist.php\",\"icon\":\"bi-people\"}]",
-    "footer_text": "",
-    "footer_about_text": ""
+    "notif_pm": "1",
+    "notif_like": "1",
+    "notif_mention": "1",
+    "notif_quote": "1",
+    "notif_sub_thread": "1",
+    "notif_sub_forum": "1",
+    "notif_reputation": "1"
 }

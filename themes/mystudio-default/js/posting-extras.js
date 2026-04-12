@@ -1,14 +1,10 @@
-/**
- * MyStudio Posting Extras — Client-side JavaScript
- * Handles reply, delete, and feed interactions on portal.php
- */
 (function() {
     'use strict';
 
     // Exit if not on the posting extras feed page
     var pageConfig = typeof PEX_CONFIG !== 'undefined' ? PEX_CONFIG : {};
-    var defaultBburl = pageConfig.bburl || '';
-    var defaultPostKey = pageConfig.postKey || '';
+    var bburl = pageConfig.bburl || '';
+    var postKey = pageConfig.postKey || '';
 
     document.addEventListener('DOMContentLoaded', function() {
         initLikes();
@@ -31,6 +27,14 @@
             if (likeCount) {
                 e.preventDefault();
                 handleLikeCount(likeCount);
+                return;
+            }
+
+            // Close any open likes popups when clicking outside
+            if (!e.target.closest('.pex-likes-section')) {
+                document.querySelectorAll('.pex-likes-section').forEach(function(s) {
+                    s.style.display = 'none';
+                });
             }
         });
     }
@@ -102,10 +106,6 @@
         }
     }
 
-    /* ═══════════════════════════════════════════════════════════
-       FEED — Toggle replies, delete, etc.
-       ═══════════════════════════════════════════════════════════ */
-
     function initFeed() {
         document.querySelectorAll('.pex-feed-item').forEach(function(item) {
             bindFeedItem(item);
@@ -169,10 +169,6 @@
             });
         }
     }
-
-    /* ═══════════════════════════════════════════════════════════
-       REPLIES — Compose, submit, delete
-       ═══════════════════════════════════════════════════════════ */
 
     function bindReplies(list, tid) {
         // Reply compose
@@ -283,18 +279,14 @@
 
     function getLikeContext(node) {
         var wrap = node.closest('.pex-like-wrap');
-        var bburl = (wrap && wrap.getAttribute('data-bburl')) || defaultBburl || window.location.origin || '';
-        var postKey = (wrap && wrap.getAttribute('data-post-key')) || defaultPostKey || '';
+        var ctx_bburl = (wrap && wrap.getAttribute('data-bburl')) || bburl || window.location.origin || '';
+        var ctx_postKey = (wrap && wrap.getAttribute('data-post-key')) || postKey || '';
 
         return {
-            bburl: bburl,
-            postKey: postKey
+            bburl: ctx_bburl,
+            postKey: ctx_postKey
         };
     }
-
-    /* ═══════════════════════════════════════════════════════════
-       HELPERS
-       ═══════════════════════════════════════════════════════════ */
 
     function insertBBCode(textarea, tag) {
         var start = textarea.selectionStart;

@@ -1,8 +1,0 @@
-{
-    "name": "Posting Extras",
-    "description": "Transforms portal.php into a social feed where status posts are forum threads and comments are thread replies, using MyBB's native posting system.",
-    "version": "1.0.0",
-    "author": "Tektove",
-    "author_url": "https://tektove.com",
-    "compatibility": "18*"
-}

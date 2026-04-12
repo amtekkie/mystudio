@@ -7,47 +7,44 @@
 <body>
 {$header}
 
-<!-- Banner + Avatar Hero -->
+<div class="profile-page">
+
+<!-- Hero Card -->
 <div class="profile-hero">
   <div class="profile-banner trow1" id="profile_banner" style="{$banner_style}">
-    <div class="profile-banner-left">
-      <span class="profile-username largetext"><strong>{$formattedname}</strong></span>
-      <span class="profile-usertitle smalltext">({$usertitle})</span>
-    </div>
-    <div class="profile-banner-right">
-      <div class="profile-meta smalltext">
-        {$groupimage}
-        {$userstars}
-        <span class="profile-status">{$online_status}</span>
-      </div>
-    </div>
     {$banner_change_overlay}
   </div>
   <div class="profile-hero-body">
     <div class="profile-avatar-wrap scaleimages">{$avatar}{$profile_avatar_overlay}</div>
+    <div class="profile-identity">
+      <div class="profile-name-line">
+        <span class="profile-username largetext"><strong>{$formattedname}</strong></span>
+        <span class="profile-usertitle smalltext">{$usertitle}</span>
+      </div>
+      <div class="profile-meta-line smalltext">
+        {$groupimage}{$userstars}
+        <span class="profile-status-indicator">{$online_status}</span>
+      </div>
+    </div>
     <div class="profile-actions">
       {$buddy_options}{$ignore_options}{$report_options}
     </div>
+  </div>
+  <div class="profile-stats-strip">
+    <button type="button" class="profile-stat-btn" data-bs-toggle="modal" data-bs-target="#statPostsModal">
+      <strong>{$memprofile['postnum']}</strong> <span>{$lang->total_posts}</span>
+    </button>
+    <button type="button" class="profile-stat-btn" data-bs-toggle="modal" data-bs-target="#statThreadsModal">
+      <strong>{$memprofile['threadnum']}</strong> <span>{$lang->total_threads}</span>
+    </button>
+    {$referrals}
+    {$reputation}
   </div>
 </div>
 
 {$awaybit}{$bannedbit}
 
-<!-- Stat Cards -->
-<div class="profile-stats">
-  <div class="profile-stat-card" role="button" data-bs-toggle="modal" data-bs-target="#statPostsModal">
-    <div class="profile-stat-value">{$memprofile['postnum']}</div>
-    <div class="profile-stat-label">{$lang->total_posts}</div>
-  </div>
-  <div class="profile-stat-card" role="button" data-bs-toggle="modal" data-bs-target="#statThreadsModal">
-    <div class="profile-stat-value">{$memprofile['threadnum']}</div>
-    <div class="profile-stat-label">{$lang->total_threads}</div>
-  </div>
-  {$referrals}
-  {$reputation}
-</div>
-
-<!-- Stat Card Modals -->
+<!-- Stat Modals -->
 <div class="modal fade" id="statPostsModal" tabindex="-1" aria-hidden="true">
 <div class="modal-dialog modal-dialog-centered modal-sm">
 <div class="modal-content">
@@ -63,7 +60,6 @@
 </div>
 </div>
 </div>
-
 <div class="modal fade" id="statThreadsModal" tabindex="-1" aria-hidden="true">
 <div class="modal-dialog modal-dialog-centered modal-sm">
 <div class="modal-content">
@@ -79,47 +75,62 @@
 </div>
 </div>
 </div>
-
 {$stat_reputation_modal}
 {$stat_rate_modal}
 {$stat_referrals_modal}
 
-<!-- Profile Content -->
-<div class="member_profile_content row g-3">
-
-  <!-- Left Sidebar -->
-  <div class="col-md-3">
-    <!-- About -->
-    <div class="profile-sidebar-card tborder">
-      <div class="thead"><i class="bi bi-person-vcard me-1"></i> <strong>{$lang->users_forum_info}</strong></div>
-      <ul class="profile-info-list">
-        <li><span class="profile-info-label"><i class="bi bi-calendar-event me-1"></i>{$lang->joined}</span><span class="profile-info-value">{$memregdate}</span></li>
-        <li><span class="profile-info-label"><i class="bi bi-clock-history me-1"></i>{$lang->lastvisit}</span><span class="profile-info-value">{$memlastvisitdate}</span></li>
-        <li><span class="profile-info-label"><i class="bi bi-cake2 me-1"></i>{$lang->date_of_birth}</span><span class="profile-info-value">{$membday} {$membdayage}</span></li>
-        <li><span class="profile-info-label"><i class="bi bi-geo-alt me-1"></i>{$lang->local_time}</span><span class="profile-info-value">{$localtime}</span></li>
-        <li><span class="profile-info-label"><i class="bi bi-hourglass-split me-1"></i>{$lang->timeonline}</span><span class="profile-info-value">{$timeonline}</span></li>
-        {$warning_level}
-      </ul>
+<!-- Info Grid -->
+<div class="profile-section">
+  <div class="profile-section-head"><i class="bi bi-person-vcard me-1"></i> {$lang->users_forum_info}</div>
+  <div class="profile-info-grid">
+    <div class="profile-info-cell">
+      <span class="profile-info-label"><i class="bi bi-calendar-event"></i> {$lang->joined}</span>
+      <span class="profile-info-value">{$memregdate}</span>
     </div>
-
-    {$contact_details}
-    {$profilefields}
-    {$modoptions}
-    {$adminoptions}
+    <div class="profile-info-cell">
+      <span class="profile-info-label"><i class="bi bi-clock-history"></i> {$lang->lastvisit}</span>
+      <span class="profile-info-value">{$memlastvisitdate}</span>
+    </div>
+    <div class="profile-info-cell">
+      <span class="profile-info-label"><i class="bi bi-cake2"></i> {$lang->date_of_birth}</span>
+      <span class="profile-info-value">{$membday} {$membdayage}</span>
+    </div>
+    <div class="profile-info-cell">
+      <span class="profile-info-label"><i class="bi bi-geo-alt"></i> {$lang->local_time}</span>
+      <span class="profile-info-value">{$localtime}</span>
+    </div>
+    <div class="profile-info-cell">
+      <span class="profile-info-label"><i class="bi bi-hourglass-split"></i> {$lang->timeonline}</span>
+      <span class="profile-info-value">{$timeonline}</span>
+    </div>
+    {$warning_level}
   </div>
+</div>
 
-  <!-- Right Content -->
-  <div class="col-md-9">
-    {$profile_latest_posts}
-    {$signature}
-  </div>
+<!-- Contact & Custom Fields -->
+<div class="profile-contacts-row">
+  {$contact_details}
+  {$profilefields}
+</div>
+
+<!-- Latest Posts -->
+{$profile_latest_posts}
+
+<!-- Signature -->
+{$signature}
+
+<!-- Mod / Admin -->
+<div class="profile-admin-row">
+  {$modoptions}
+  {$adminoptions}
+</div>
 
 </div>
 
 {$profile_avatar_modal}
 {$banner_change_modal}
-<link rel="stylesheet" href="{$mybb->settings['bburl']}/themes/mystudio-default/functions/plugins/ms-profile-extras/css/profile-extras.css" />
-<script src="{$mybb->settings['bburl']}/themes/mystudio-default/functions/plugins/ms-profile-extras/js/profile-extras.js"></script>
+<link rel="stylesheet" href="{$mybb->settings['bburl']}/themes/mystudio-default/functions/modules/ms-profile-extras/css/profile-extras.css" />
+<script src="{$mybb->settings['bburl']}/themes/mystudio-default/functions/modules/ms-profile-extras/js/profile-extras.js"></script>
 {$footer}
 </body>
 </html>

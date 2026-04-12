@@ -1,0 +1,105 @@
+<div class="modal fade" id="ms_banner_modal" tabindex="-1" aria-labelledby="ms_banner_label" aria-hidden="true">
+<div class="modal-dialog modal-dialog-centered modal-lg">
+<div class="modal-content">
+    <div class="modal-header">
+        <h6 class="modal-title" id="ms_banner_label"><i class="bi bi-image me-1"></i> Change Profile Banner</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <div class="modal-body">
+        <!-- Banner Preview -->
+        <div id="ms_banner_preview" class="banner-preview mb-3" style="{$banner_style}">
+            <div class="banner-preview-text">
+                <span id="ms_preview_text" style="{$previewTextStyle}">Username</span>
+                <a href="#" id="ms_preview_link" onclick="return false" style="{$previewLinkStyle}">View Profile</a>
+            </div>
+            <span class="banner-preview-label">Preview</span>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs nav-fill mb-3" role="tablist">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#bannerUpload" role="tab"><i class="bi bi-upload me-1"></i> Upload</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bannerGallery" role="tab"><i class="bi bi-collection me-1"></i> Previous</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bannerSolid" role="tab"><i class="bi bi-palette me-1"></i> Solid</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#bannerGradient" role="tab"><i class="bi bi-rainbow me-1"></i> Gradient</a></li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- Upload Tab -->
+            <div class="tab-pane fade show active" id="bannerUpload" role="tabpanel">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold"><i class="bi bi-cloud-upload me-1"></i> Upload Banner Image</label>
+                    <input type="file" class="form-control form-control-sm" accept="image/*" id="ms_banner_file" />
+                    <div class="form-text">Recommended size: 1200 x 200 pixels. Max 2MB. JPG, PNG, GIF, WebP.</div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold"><i class="bi bi-link-45deg me-1"></i> Or Image URL</label>
+                    <input type="text" class="form-control form-control-sm" id="ms_banner_url" placeholder="https://example.com/banner.jpg" />
+                </div>
+            </div>
+
+            <!-- Previous Banners Gallery -->
+            <div class="tab-pane fade" id="bannerGallery" role="tabpanel">
+                <div class="banner-gallery">{$galleryItems}</div>
+            </div>
+
+            <!-- Solid Color Tab -->
+            <div class="tab-pane fade" id="bannerSolid" role="tabpanel">
+                <div class="solid-presets mb-3">{$solidSwatches}</div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label small fw-semibold mb-0">Custom:</label>
+                    <input type="color" class="form-control form-control-color" id="ms_banner_color" value="#0d9488" style="width:40px;height:32px" />
+                    <input type="text" class="form-control form-control-sm" id="ms_banner_color_hex" value="#0d9488" style="width:100px" />
+                </div>
+            </div>
+
+            <!-- Gradient Tab -->
+            <div class="tab-pane fade" id="bannerGradient" role="tabpanel">
+                <div class="gradient-presets mb-3">{$gradientSwatches}</div>
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Custom Gradient</label>
+                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                        <select class="form-select form-select-sm" id="ms_grad_type" style="width:auto">
+                            <option value="linear">Linear</option>
+                            <option value="radial">Radial</option>
+                        </select>
+                        <input type="number" class="form-control form-control-sm" id="ms_grad_angle" value="135" min="0" max="360" style="width:70px" placeholder="Angle" />
+                        <span class="small text-muted">&deg;</span>
+                        <input type="color" class="form-control form-control-color" id="ms_grad_color1" value="#667eea" style="width:36px;height:30px" />
+                        <i class="bi bi-arrow-right"></i>
+                        <input type="color" class="form-control form-control-color" id="ms_grad_color2" value="#764ba2" style="width:36px;height:30px" />
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="ms_grad_apply"><i class="bi bi-check-lg"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Text & Link Color Options -->
+        <div class="mt-3 pt-3 border-top">
+            <label class="form-label small fw-semibold mb-2"><i class="bi bi-fonts me-1"></i> Text &amp; Link Colors</label>
+            <div class="d-flex gap-4 align-items-center flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted">Text:</span>
+                    <input type="color" class="form-control form-control-color" id="ms_banner_text_color" value="{$curTextColorPicker}" style="width:36px;height:30px" />
+                    <input type="text" class="form-control form-control-sm" id="ms_banner_text_color_hex" value="{$curTextColor}" placeholder="Default" style="width:90px" />
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="small text-muted">Links:</span>
+                    <input type="color" class="form-control form-control-color" id="ms_banner_link_color" value="{$curLinkColorPicker}" style="width:36px;height:30px" />
+                    <input type="text" class="form-control form-control-sm" id="ms_banner_link_color_hex" value="{$curLinkColor}" placeholder="Default" style="width:90px" />
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="ms_color_reset" title="Reset to defaults"><i class="bi bi-arrow-counterclockwise"></i></button>
+            </div>
+            <div class="form-text">Leave empty to use theme defaults.</div>
+        </div>
+
+        <!-- Hidden fields for submission -->
+        <input type="hidden" id="ms_banner_type" value="" />
+        <input type="hidden" id="ms_banner_value" value="" />
+    </div>
+    <div class="modal-footer d-flex justify-content-between">
+        <button type="button" class="btn btn-sm btn-outline-danger" id="ms_banner_remove"><i class="bi bi-trash me-1"></i> Remove Banner</button>
+        <button type="button" class="btn btn-sm btn-primary" id="ms_banner_save"><i class="bi bi-check-lg me-1"></i> Save Banner</button>
+    </div>
+</div>
+</div>
+</div>

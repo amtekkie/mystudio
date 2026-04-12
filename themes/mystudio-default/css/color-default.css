@@ -1,8 +1,3 @@
-/* ═══════════════════════════════════════════════════════
-   MyStudio Default — Hardcoded Dark Color Palette
-   All theme color variables defined here (dark mode only).
-   ═══════════════════════════════════════════════════════ */
-
 :root {
   /* Core */
   --bs-body-bg: #0f172a;
