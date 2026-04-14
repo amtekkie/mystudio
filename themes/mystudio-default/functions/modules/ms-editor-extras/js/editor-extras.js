@@ -7,10 +7,11 @@
  *  2. Paste formatting fix
  *  3. Image paste / drag-drop upload
  *  4. Emoji picker / GIF picker
- *  5. Enhanced table paste
- *  6. Code block enhancements (hljs, line numbers, copy button)
- *  7. Auto-save, word count, @mentions
- *  8. Dark/light mode sync into editor iframe
+ *  5. Table support (BBCode, toolbar button, paste)
+ *  6. Bootstrap Icon picker
+ *  7. Code block enhancements (hljs, line numbers, copy button)
+ *  8. Auto-save, word count, @mentions
+ *  9. Dark/light mode sync into editor iframe
  */
 (function($) {
 "use strict";
@@ -96,6 +97,40 @@ $(function() {
 $(function() {
 
 if (typeof $.fn.sceditor === 'undefined') return;
+
+	// Re-register table BBCode formats that MyBB removes.
+	// The BBCode→HTML parser reads from the format dictionary at parse time,
+	// so late registration works for the toHtml() direction (source → WYSIWYG).
+	// HTML→BBCode is handled by our DOM patch in initTableEnhance().
+	if (EE.table && $.sceditor && $.sceditor.formats && $.sceditor.formats.bbcode) {
+		$.sceditor.formats.bbcode
+			.set('table', {
+				tags: { table: null },
+				isInline: false,
+				isHtmlInline: true,
+				skipLastLineBreak: true,
+				html: '<table>{0}</table>'
+			})
+			.set('tr', {
+				tags: { tr: null },
+				isInline: false,
+				skipLastLineBreak: true,
+				html: '<tr>{0}</tr>'
+			})
+			.set('td', {
+				tags: { td: null },
+				allowsEmpty: true,
+				isInline: false,
+				html: '<td>{0}</td>'
+			})
+			.set('th', {
+				tags: { th: null },
+				allowsEmpty: true,
+				isInline: false,
+				html: '<td>{0}</td>'
+			});
+	}
+
 	if (typeof MyBBEditor !== 'undefined' && MyBBEditor) {
 		var $textarea = null;
 		$('textarea').each(function() {
@@ -166,7 +201,8 @@ function initEditorExtras($textarea) {
 
 	if (EE.gif) initGifPicker(editor, $container);
 	if (EE.table) initTableEnhance(editor, $container);
-	if (EE.autosave) initAutoSave(editor, $container);
+	if (EE.bootstrapIcons) initIconPicker(editor, $container);
+
 	if (EE.mention) initMentions(editor, $container);
 }
 
@@ -258,8 +294,23 @@ function initPasteFix(editor) {
 				if (/font-size\s*:\s*(xx-small|x-small|[0-7]px|[0-7]pt)/i.test(style)) {
 					this.style.fontSize = '';
 				}
+				// Convert modern CSS colors (lch, oklch, lab, oklab, color())
+				// to hex so MyBB's [color] parser can handle them
+				if (this.style.color && /lch|lab|okl|color\(/i.test(this.style.color)) {
+					this.style.color = computedToHex(this);
+				}
+				if (this.style.backgroundColor && /lch|lab|okl|color\(/i.test(this.style.backgroundColor)) {
+					this.style.backgroundColor = computedBgToHex(this);
+				}
 				if (EE.pasteStripStyles) {
 					this.removeAttribute('style');
+				}
+			});
+			// Also handle <font color="lch(...)"> attributes
+			$(body).find('font[color]').each(function() {
+				var c = this.getAttribute('color') || '';
+				if (/lch|lab|okl|color\(/i.test(c)) {
+					this.setAttribute('color', computedToHex(this));
 				}
 			});
 			$(body).find('[class^="Mso"]').removeAttr('class');
@@ -271,6 +322,27 @@ function initPasteFix(editor) {
 			editor.updateOriginal();
 		}, 50);
 	});
+}
+
+// Convert an element's computed foreground color to #hex
+function computedToHex(el) {
+	var doc = el.ownerDocument || document;
+	var w = doc.defaultView || window;
+	var rgb = w.getComputedStyle(el).color;
+	return rgbToHex(rgb);
+}
+function computedBgToHex(el) {
+	var doc = el.ownerDocument || document;
+	var w = doc.defaultView || window;
+	var rgb = w.getComputedStyle(el).backgroundColor;
+	return rgbToHex(rgb);
+}
+function rgbToHex(rgb) {
+	if (!rgb) return '#000000';
+	// getComputedStyle always returns rgb()/rgba() even for lch input
+	var m = rgb.match(/rgba?\(\s*(\d+),\s*(\d+),\s*(\d+)/);
+	if (!m) return '#000000';
+	return '#' + ((1 << 24) + (parseInt(m[1]) << 16) + (parseInt(m[2]) << 8) + parseInt(m[3])).toString(16).slice(1);
 }
 
 /* ── 2. Image Paste & Drag-Drop ── */
@@ -865,15 +937,402 @@ function loadGifs($picker, query, provider) {
 	}).fail(function() { $grid.html('<div class="ee-gif-loading">Failed to load GIFs</div>'); });
 }
 
-/* ── 6. Enhanced Table Paste ── */
-function initTableEnhance(editor) {
-	$(editor.getBody()).on('paste', function(e) {
+/* ── 6. Table Support ── */
+function initTableEnhance(editor, $container) {
+
+	// MyBB removes SCEditor's built-in table BBCode formats, and the internal
+	// tag→BBCode cache is built at init before we can re-add them. So we
+	// handle table HTML ↔ BBCode conversion ourselves by patching the editor.
+
+	// --- Getter: WYSIWYG → BBCode ---
+	// Temporarily swap <table> elements for BBCode text nodes in the live DOM
+	// BEFORE SCEditor clones and runs toSource(), then restore them.
+	var origGetVal = editor.getWysiwygEditorValue.bind(editor);
+	editor.getWysiwygEditorValue = function(filter) {
+		var body = editor.getBody();
+		var doc = body.ownerDocument;
+		var tables = Array.from(body.querySelectorAll('table'));
+		var saved = [];
+
+		tables.forEach(function(tbl) {
+			var bb = domTableToBBCode(tbl);
+			var ph = doc.createTextNode(bb);
+			tbl.parentNode.replaceChild(ph, tbl);
+			saved.push({ ph: ph, tbl: tbl });
+		});
+
+		var result = origGetVal(filter);
+
+		// Restore visual tables
+		saved.forEach(function(s) {
+			if (s.ph.parentNode) {
+				s.ph.parentNode.replaceChild(s.tbl, s.ph);
+			}
+		});
+
+		return result;
+	};
+
+	// --- Toolbar button (manual injection like emoji/gif) ---
+	var $toolbar = $container.find('.sceditor-toolbar');
+	var $tableBtn = $('<a class="sceditor-button sceditor-button-table" unselectable="on" title="Insert Table"><div unselectable="on"> </div></a>');
+	// Insert before the last group (source button group)
+	var $sourceGroup = $toolbar.find('.sceditor-button-source').closest('.sceditor-group');
+	if ($sourceGroup.length) {
+		var $tblGroup = $('<div class="sceditor-group"></div>').append($tableBtn);
+		$sourceGroup.before($tblGroup);
+	} else {
+		$toolbar.find('.sceditor-group').last().append($tableBtn);
+	}
+
+	var $picker = null;
+	$tableBtn.on('click', function(e) {
+		e.preventDefault(); e.stopPropagation();
+		if ($picker && $picker.is(':visible')) { $picker.remove(); $picker = null; return; }
+		$picker = $('<div class="ee-table-picker"></div>');
+		var $label = $('<div class="ee-table-picker-label">Insert Table</div>');
+		var $grid = $('<div class="ee-table-picker-grid"></div>');
+		var maxR = 8, maxC = 8;
+
+		for (var r = 0; r < maxR; r++) {
+			for (var c = 0; c < maxC; c++) {
+				$grid.append($('<div class="ee-table-picker-cell" data-r="' + (r+1) + '" data-c="' + (c+1) + '"></div>'));
+			}
+		}
+
+		$grid.on('mouseover', '.ee-table-picker-cell', function() {
+			var hr = parseInt($(this).data('r'), 10);
+			var hc = parseInt($(this).data('c'), 10);
+			$grid.find('.ee-table-picker-cell').each(function() {
+				var cr = parseInt($(this).data('r'), 10);
+				var cc = parseInt($(this).data('c'), 10);
+				$(this).toggleClass('highlight', cr <= hr && cc <= hc);
+			});
+			$label.text(hr + ' × ' + hc);
+		});
+
+		$grid.on('click', '.ee-table-picker-cell', function(ev) {
+			ev.preventDefault();
+			var rows = parseInt($(this).data('r'), 10);
+			var cols = parseInt($(this).data('c'), 10);
+			insertTable(editor, rows, cols);
+			$picker.remove(); $picker = null;
+		});
+
+		$picker.append($label, $grid);
+		$('body').append($picker);
+		var btnOffset = $tableBtn.offset();
+		$picker.css({ top: btnOffset.top + $tableBtn.outerHeight() + 4, left: Math.max(4, btnOffset.left - 60) });
+		setTimeout(function() {
+			$(document).one('click', function(ev) {
+				if ($picker && !$(ev.target).closest('.ee-table-picker').length) { $picker.remove(); $picker = null; }
+			});
+		}, 100);
+	});
+
+	// --- Table editing inside the iframe ---
+	var body = editor.getBody();
+	var doc = body.ownerDocument;
+
+	// Inject table styles into iframe
+	var tblStyleId = 'ee-table-iframe-styles';
+	if (!doc.getElementById(tblStyleId)) {
+		var s = doc.createElement('style');
+		s.id = tblStyleId;
+		s.textContent =
+			'table { border-collapse: collapse; width: 100%; margin: 8px 0; }' +
+			'table td { border: 1px solid #ced4da; padding: 6px 10px; min-width: 40px; vertical-align: top; }' +
+			'table td:focus { outline: 2px solid #0d9488; outline-offset: -2px; }' +
+			'.ee-table-ctx { position: fixed; z-index: 99999; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.15); padding: 4px 0; min-width: 180px; }' +
+			'.ee-table-ctx-item { padding: 6px 14px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; }' +
+			'.ee-table-ctx-item:hover { background: #f1f3f5; }' +
+			'.ee-table-ctx-sep { border-top: 1px solid #dee2e6; margin: 4px 0; }';
+		doc.head.appendChild(s);
+	}
+
+	// Keyboard handling inside table cells
+	$(body).on('keydown', function(e) {
+		// --- Tab navigation between cells ---
+		if (e.key === 'Tab') {
+			var node = doc.getSelection().anchorNode;
+			var cell = findParent(node, ['TD','TH'], body);
+			if (!cell) return;
+			e.preventDefault();
+
+			var row = cell.parentNode;
+			var table = findParent(row, ['TABLE'], body);
+			if (!table) return;
+
+			var cells = Array.from(table.querySelectorAll('td, th'));
+			var idx = cells.indexOf(cell);
+
+			if (e.shiftKey) {
+				// Move backward
+				if (idx > 0) {
+					focusCell(cells[idx - 1], doc);
+				}
+			} else {
+				// Move forward
+				if (idx < cells.length - 1) {
+					focusCell(cells[idx + 1], doc);
+				} else {
+					// Last cell — add a new row
+					var colCount = row.children.length;
+					var newRow = doc.createElement('tr');
+					for (var c = 0; c < colCount; c++) {
+						var td = doc.createElement('td');
+						td.innerHTML = '&nbsp;';
+						newRow.appendChild(td);
+					}
+					var tbody = table.querySelector('tbody') || table;
+					tbody.appendChild(newRow);
+					focusCell(newRow.children[0], doc);
+					editor.updateOriginal();
+				}
+			}
+			return;
+		}
+
+		// --- Backspace on empty row → delete row ---
+		if (e.key === 'Backspace') {
+			var node = doc.getSelection().anchorNode;
+			var cell = findParent(node, ['TD','TH'], body);
+			if (!cell) return;
+
+			// Check if ALL cells in this row are empty
+			var row = cell.parentNode;
+			var rowCells = row.children;
+			var allEmpty = true;
+			for (var i = 0; i < rowCells.length; i++) {
+				var text = (rowCells[i].textContent || '').replace(/\s|\u00a0/g, '');
+				if (text !== '') { allEmpty = false; break; }
+			}
+			if (!allEmpty) return;
+
+			var table = findParent(row, ['TABLE'], body);
+			if (!table) return;
+
+			e.preventDefault();
+			var allRows = table.querySelectorAll('tr');
+			if (allRows.length <= 1) {
+				// Only one row left — delete the whole table
+				table.parentNode.removeChild(table);
+			} else {
+				// Focus cell above before deleting
+				var cellIdx = Array.from(row.children).indexOf(cell);
+				var prevRow = row.previousElementSibling;
+				row.parentNode.removeChild(row);
+				if (prevRow && prevRow.children[cellIdx]) {
+					focusCell(prevRow.children[cellIdx], doc);
+				}
+			}
+			editor.updateOriginal();
+		}
+	});
+
+	// Right-click context menu on table cells
+	$(body).on('contextmenu', 'td, th', function(e) {
+		e.preventDefault();
+		var cell = this;
+		var row = cell.parentNode;
+		var table = findParent(row, ['TABLE'], body);
+		if (!table) return;
+
+		removeCtxMenu(doc);
+		var menu = doc.createElement('div');
+		menu.className = 'ee-table-ctx';
+
+		var items = [
+			{ label: '↑ Insert Row Above', icon: 'arrow-bar-up', action: function() { insertRowAt(table, row, 'before', doc); } },
+			{ label: '↓ Insert Row Below', icon: 'arrow-bar-down', action: function() { insertRowAt(table, row, 'after', doc); } },
+			{ sep: true },
+			{ label: '← Insert Column Left', icon: 'arrow-bar-left', action: function() { insertColAt(table, cell, 'before', doc); } },
+			{ label: '→ Insert Column Right', icon: 'arrow-bar-right', action: function() { insertColAt(table, cell, 'after', doc); } },
+			{ sep: true },
+			{ label: '✕ Delete Row', icon: 'trash', action: function() { deleteRow(table, row); } },
+			{ label: '✕ Delete Column', icon: 'trash', action: function() { deleteCol(table, cell); } },
+			{ sep: true },
+			{ label: '🗑 Delete Table', icon: 'x-circle', action: function() { table.parentNode.removeChild(table); } }
+		];
+
+		items.forEach(function(item) {
+			if (item.sep) {
+				var sep = doc.createElement('div');
+				sep.className = 'ee-table-ctx-sep';
+				menu.appendChild(sep);
+				return;
+			}
+			var div = doc.createElement('div');
+			div.className = 'ee-table-ctx-item';
+			div.textContent = item.label;
+			div.addEventListener('click', function() {
+				item.action();
+				removeCtxMenu(doc);
+				editor.updateOriginal();
+			});
+			menu.appendChild(div);
+		});
+
+		menu.style.left = e.clientX + 'px';
+		menu.style.top = e.clientY + 'px';
+		body.appendChild(menu);
+
+		// Close menu on click elsewhere
+		setTimeout(function() {
+			var closeHandler = function() {
+				removeCtxMenu(doc);
+				doc.removeEventListener('mousedown', closeHandler);
+			};
+			doc.addEventListener('mousedown', closeHandler);
+		}, 50);
+	});
+
+	// Enhanced paste: intercept HTML table pastes and convert to BBCode
+	$(body).on('paste', function(e) {
 		var clipboardData = e.originalEvent.clipboardData;
 		if (!clipboardData) return;
 		var html = clipboardData.getData('text/html');
 		if (html && /<table[\s>]/i.test(html)) {
 			e.preventDefault();
 			editor.insert(htmlTableToBBCode(html));
+		}
+	});
+
+	// --- Column resize via right-edge drag ---
+	var resizing = null;
+
+	$(body).on('mousemove', 'td, th', function(e) {
+		if (resizing) return;
+		var rect = this.getBoundingClientRect();
+		this.style.cursor = (e.clientX >= rect.right - 5) ? 'col-resize' : '';
+	});
+
+	$(body).on('mousedown', 'td, th', function(e) {
+		var rect = this.getBoundingClientRect();
+		if (e.clientX < rect.right - 5) return;
+
+		e.preventDefault();
+		var cell = this;
+		var table = findParent(cell, ['TABLE'], body);
+		if (!table) return;
+
+		// Switch to fixed layout so widths are respected
+		table.style.tableLayout = 'fixed';
+
+		// Snapshot explicit widths on the first row so other columns stay put
+		var firstRow = table.querySelector('tr');
+		if (firstRow) {
+			Array.from(firstRow.children).forEach(function(c) {
+				if (!c.style.width) c.style.width = c.offsetWidth + 'px';
+			});
+		}
+
+		var cellIdx = Array.from(cell.parentNode.children).indexOf(cell);
+		resizing = { table: table, colIdx: cellIdx, startX: e.clientX, startWidth: cell.offsetWidth };
+	});
+
+	$(doc).on('mousemove', function(e) {
+		if (!resizing) return;
+		e.preventDefault();
+		var newWidth = Math.max(40, resizing.startWidth + (e.clientX - resizing.startX));
+		var firstRow = resizing.table.querySelector('tr');
+		if (firstRow && firstRow.children[resizing.colIdx]) {
+			firstRow.children[resizing.colIdx].style.width = newWidth + 'px';
+		}
+	});
+
+	$(doc).on('mouseup', function() {
+		if (resizing) {
+			resizing = null;
+			editor.updateOriginal();
+		}
+	});
+}
+
+function insertTable(editor, rows, cols) {
+	var html = '<table>';
+	for (var r = 0; r < rows; r++) {
+		html += '<tr>';
+		for (var c = 0; c < cols; c++) {
+			html += '<td>\u00a0</td>';
+		}
+		html += '</tr>';
+	}
+	html += '</table><p>\u00a0</p>';
+	editor.wysiwygEditorInsertHtml(html);
+}
+
+function findParent(node, tags, root) {
+	while (node && node !== root) {
+		if (node.nodeType === 1 && tags.indexOf(node.tagName) !== -1) return node;
+		node = node.parentNode;
+	}
+	return null;
+}
+
+function focusCell(cell, doc) {
+	cell.focus();
+	var range = doc.createRange();
+	range.selectNodeContents(cell);
+	range.collapse(false);
+	var sel = doc.getSelection();
+	sel.removeAllRanges();
+	sel.addRange(range);
+}
+
+function removeCtxMenu(doc) {
+	var old = doc.querySelector('.ee-table-ctx');
+	if (old) old.parentNode.removeChild(old);
+}
+
+function insertRowAt(table, refRow, position, doc) {
+	var colCount = refRow.children.length;
+	var newRow = doc.createElement('tr');
+	for (var c = 0; c < colCount; c++) {
+		var td = doc.createElement('td');
+		td.innerHTML = '&nbsp;';
+		newRow.appendChild(td);
+	}
+	if (position === 'before') {
+		refRow.parentNode.insertBefore(newRow, refRow);
+	} else {
+		refRow.parentNode.insertBefore(newRow, refRow.nextSibling);
+	}
+}
+
+function insertColAt(table, refCell, position, doc) {
+	var cellIdx = Array.from(refCell.parentNode.children).indexOf(refCell);
+	var rows = table.querySelectorAll('tr');
+	rows.forEach(function(row) {
+		var cells = row.children;
+		var newCell = doc.createElement('td');
+		newCell.innerHTML = '&nbsp;';
+		if (position === 'before') {
+			row.insertBefore(newCell, cells[cellIdx] || null);
+		} else {
+			row.insertBefore(newCell, cells[cellIdx + 1] || null);
+		}
+	});
+}
+
+function deleteRow(table, row) {
+	if (table.querySelectorAll('tr').length <= 1) {
+		table.parentNode.removeChild(table);
+		return;
+	}
+	row.parentNode.removeChild(row);
+}
+
+function deleteCol(table, refCell) {
+	var cellIdx = Array.from(refCell.parentNode.children).indexOf(refCell);
+	var rows = table.querySelectorAll('tr');
+	if (rows[0] && rows[0].children.length <= 1) {
+		table.parentNode.removeChild(table);
+		return;
+	}
+	rows.forEach(function(row) {
+		if (row.children[cellIdx]) {
+			row.removeChild(row.children[cellIdx]);
 		}
 	});
 }
@@ -884,10 +1343,9 @@ function htmlTableToBBCode(html) {
 	if (!$table.length) return '';
 	var bbcode = '[table]\n';
 	$table.find('tr').each(function() {
-		bbcode += '[tr]\n';
+		bbcode += '[tr]';
 		$(this).find('td, th').each(function() {
-			var tag = this.tagName.toLowerCase() === 'th' ? 'th' : 'td';
-			bbcode += '[' + tag + ']' + $(this).text().trim() + '[/' + tag + ']\n';
+			bbcode += '[td]' + $(this).text().trim() + '[/td]';
 		});
 		bbcode += '[/tr]\n';
 	});
@@ -895,36 +1353,113 @@ function htmlTableToBBCode(html) {
 	return bbcode;
 }
 
-/* ── 7. Auto-Save Drafts ── */
-function initAutoSave(editor, $container) {
-	var key = 'ee_draft_' + window.location.pathname + window.location.search;
-	$container.css('position', 'relative');
-	var $indicator = $('<div class="ee-autosave-indicator"><i class="bi bi-check-circle"></i> Saved</div>');
-	$container.append($indicator);
-	try {
-		var saved = localStorage.getItem(key);
-		if (saved) {
-			var current = editor.val();
-			if (!current || current.trim() === '') editor.val(saved);
-		}
-	} catch(e) {}
-	var saveTimer = setInterval(function() {
-		try {
-			var val = editor.val();
-			if (val && val.trim()) {
-				localStorage.setItem(key, val);
-				$indicator.addClass('show');
-				setTimeout(function() { $indicator.removeClass('show'); }, 1500);
+// Convert a live DOM <table> element to BBCode string
+function domTableToBBCode(table) {
+	var bb = '\n[table]\n';
+	var rows = table.querySelectorAll('tr');
+	for (var i = 0; i < rows.length; i++) {
+		bb += '[tr]';
+		var cells = rows[i].children;
+		for (var j = 0; j < cells.length; j++) {
+			var tag = cells[j].tagName;
+			if (tag === 'TD' || tag === 'TH') {
+				var text = cells[j].textContent.replace(/\u00a0/g, ' ').trim();
+				bb += '[td]' + text + '[/td]';
 			}
-		} catch(e) {}
-	}, 30000);
-	$container.closest('form').on('submit', function() {
-		try { localStorage.removeItem(key); } catch(e) {}
-		clearInterval(saveTimer);
+		}
+		bb += '[/tr]\n';
+	}
+	bb += '[/table]\n';
+	return bb;
+}
+
+/* ── 7. Bootstrap Icon Picker ── */
+function initIconPicker(editor, $container) {
+	var icons = [
+		'house','person','gear','envelope','bell','chat','search','star','heart','hand-thumbs-up',
+		'hand-thumbs-down','check-circle','x-circle','exclamation-triangle','info-circle','question-circle',
+		'lock','unlock','key','shield-check','eye','eye-slash','pencil','trash','folder','file-earmark',
+		'download','upload','cloud','link-45deg','pin','bookmark','flag','tag','calendar','clock',
+		'alarm','globe','map','geo-alt','telephone','camera','image','film','music-note','volume-up',
+		'mic','play-circle','pause-circle','stop-circle','lightning','fire','droplet','sun','moon','snow',
+		'trophy','award','gift','bag','cart','credit-card','wallet','cash','percent','graph-up',
+		'bar-chart','pie-chart','speedometer','cpu','database','hdd','terminal','code-slash','bug','tools',
+		'wrench','hammer','palette','brush','rulers','grid','layers','columns','layout-text-window',
+		'box','archive','clipboard','journal','book','mortarboard','lightbulb','rocket','airplane',
+		'truck','bicycle','ev-front','fuel-pump','building','hospital','shop','bank','tree','flower1',
+		'emoji-smile','emoji-frown','emoji-heart-eyes','emoji-laughing','emoji-neutral','people',
+		'person-plus','person-check','person-x','chat-dots','chat-left-text','megaphone','broadcast',
+		'rss','wifi','bluetooth','usb','printer','qr-code','fingerprint','shield-lock','patch-check',
+		'arrow-up','arrow-down','arrow-left','arrow-right','chevron-up','chevron-down','chevron-left',
+		'chevron-right','plus','dash','x-lg','check-lg','three-dots','list','grid-3x3-gap',
+		'share','box-arrow-up-right','clipboard-check','signpost','compass','cursor','hand-index',
+		'joystick','controller','headset','smartwatch','phone','laptop','display','tablet','mouse',
+		'keyboard','earbuds','speaker','camera-video','projector','cast','router','modem'
+	];
+
+	// Manual toolbar button injection (same pattern as emoji/gif)
+	var $toolbar = $container.find('.sceditor-toolbar');
+	var $iconBtn = $('<a class="sceditor-button sceditor-button-biicon" unselectable="on" title="Insert Icon"><div unselectable="on"> </div></a>');
+	var $sourceGroup = $toolbar.find('.sceditor-button-source').closest('.sceditor-group');
+	if ($sourceGroup.length) {
+		var $iconGroup = $('<div class="sceditor-group"></div>').append($iconBtn);
+		$sourceGroup.before($iconGroup);
+	} else {
+		$toolbar.find('.sceditor-group').last().append($iconBtn);
+	}
+
+	var $picker = null;
+	$iconBtn.on('click', function(e) {
+		e.preventDefault(); e.stopPropagation();
+		if ($picker && $picker.is(':visible')) { $picker.remove(); $picker = null; return; }
+
+		$picker = $('<div class="ee-icon-picker"></div>');
+		var $search = $('<input type="text" class="ee-icon-picker-search" placeholder="Search icons..." />');
+		var $grid = $('<div class="ee-icon-picker-grid"></div>');
+
+		function renderIcons(filter) {
+			$grid.empty();
+			var filtered = filter ? icons.filter(function(n) { return n.indexOf(filter) !== -1; }) : icons;
+			filtered.forEach(function(name) {
+				var $btn = $('<button type="button" class="ee-icon-picker-item" title="' + name + '"><i class="bi bi-' + name + '"></i></button>');
+				$btn.on('click', function(ev) {
+					ev.preventDefault(); ev.stopPropagation();
+					editor.insert('[icon]' + name + '[/icon]');
+					$picker.remove(); $picker = null;
+				});
+				$grid.append($btn);
+			});
+			if (!filtered.length) {
+				$grid.append('<div class="ee-icon-picker-empty">No icons found</div>');
+			}
+		}
+
+		var searchTimer = null;
+		$search.on('input', function() {
+			var q = this.value.trim().toLowerCase();
+			clearTimeout(searchTimer);
+			searchTimer = setTimeout(function() { renderIcons(q); }, 150);
+		});
+
+		renderIcons(null);
+		$picker.append($search, $grid);
+		$('body').append($picker);
+		var btnOffset = $iconBtn.offset();
+		$picker.css({ top: btnOffset.top + $iconBtn.outerHeight() + 4, left: Math.max(4, btnOffset.left - 120) });
+		$search.focus();
+
+		setTimeout(function() {
+			$(document).one('click', function(ev) {
+				if ($picker && !$(ev.target).closest('.ee-icon-picker').length) { $picker.remove(); $picker = null; }
+			});
+		}, 100);
+		$picker.on('click', function(ev) { ev.stopPropagation(); });
 	});
 }
 
-/* ── 9. @Mentions ── */
+
+
+/* ── 10. @Mentions ── */
 function initMentions(editor, $container) {
 	var body = editor.getBody();
 	var $dropdown = null;
