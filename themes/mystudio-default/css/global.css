@@ -6,6 +6,14 @@ body {
   color: var(--bs-body-color) !important;
 }
 
+html,
+body,
+p,
+code:before,
+table {
+  color: var(--bs-body-color) !important;
+}
+
 
 /* === Links === */
 a:link, a:visited { color: var(--tekbb-link); text-decoration: none; }
