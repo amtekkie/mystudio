@@ -88,7 +88,7 @@ function ms_profile_extras_banner()
     if ($banner) {
         switch ($banner['type']) {
             case 'upload':
-                $imgUrl = htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $banner['value']);
+                $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $banner['value']));
                 $banner_style = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
                 break;
             case 'solid':
@@ -115,7 +115,7 @@ function ms_profile_extras_banner()
     } else {
 
     // Overlay (inside .profile-banner)
-    $GLOBALS['banner_change_overlay'] = '<div class="profile-banner-change" data-bs-toggle="modal" data-bs-target="#ms_banner_modal"><i class="bi bi-image me-1"></i> Change Banner</div>';
+    $GLOBALS['banner_change_overlay'] = '<div class="profile-banner-change" data-bs-toggle="modal" data-bs-target="#ms_banner_modal"><i class="bi bi-image me-1"></i> ' . $lang->ms_change_banner . '</div>';
 
     // â”€â”€ Build previous banners gallery â”€â”€
     $galleryItems = '';
@@ -125,7 +125,7 @@ function ms_profile_extras_banner()
         $bid = (int)$row['bid'];
         switch ($row['type']) {
             case 'upload':
-                $thumbUrl = htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $row['value']);
+                $thumbUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $row['value']));
                 $galleryItems .= '<div class="banner-gallery-item' . $active . '" data-bid="' . $bid . '" style="background-image:url(\'' . $thumbUrl . '\');background-size:cover;background-position:center"></div>';
                 break;
             case 'solid':
@@ -139,7 +139,7 @@ function ms_profile_extras_banner()
         }
     }
     if (empty($galleryItems)) {
-        $galleryItems = '<div class="text-muted small text-center py-2">No previous banners yet.</div>';
+        $galleryItems = '<div class="text-muted small text-center py-2">' . $lang->ms_no_previous_banners . '</div>';
     }
 
     $postKey = htmlspecialchars_uni($mybb->post_code);
@@ -195,7 +195,7 @@ function ms_profile_extras_banner()
 
 function ms_pe_inject_latest_posts()
 {
-    global $mybb, $db, $uid, $templates;
+    global $mybb, $db, $uid, $templates, $lang;
 
     $bburl = $mybb->settings['bburl'];
     $profileUid = (int)$uid;
@@ -248,11 +248,11 @@ function ms_pe_inject_latest_posts()
     }
 
     if (empty($ms_lp_items)) {
-        $ms_lp_items = '<div class="text-center text-muted py-3"><i class="bi bi-file-text d-block mb-1" style="font-size:1.5rem"></i><span class="small">No posts yet.</span></div>';
+        $ms_lp_items = '<div class="text-center text-muted py-3"><i class="bi bi-file-text d-block mb-1" style="font-size:1.5rem"></i><span class="small">' . $lang->ms_no_posts_yet . '</span></div>';
     }
 
     $findPostsUrl = htmlspecialchars_uni($bburl . '/search.php?action=finduser&uid=' . $profileUid);
-    $ms_lp_view_all_link = '<a href="' . $findPostsUrl . '" class="small text-muted text-decoration-none">View All <i class="bi bi-arrow-right"></i></a>';
+    $ms_lp_view_all_link = '<a href="' . $findPostsUrl . '" class="small text-muted text-decoration-none">' . $lang->ms_view_all . ' <i class="bi bi-arrow-right"></i></a>';
 
     eval("\$GLOBALS['profile_latest_posts'] = \"" . $templates->get("member_profile_latest_posts") . "\";");
 }
@@ -263,14 +263,14 @@ function ms_pe_inject_latest_posts()
 
 function ms_profile_extras_ajax()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
 
     $action = $mybb->get_input('ms_action');
     if (empty($action)) return;
 
     // Must be logged in
     if ($mybb->user['uid'] <= 0) {
-        ms_profile_extras_json(array('error' => 'Not logged in.'), 403);
+        ms_profile_extras_json(array('error' => $lang->ms_error_not_logged_in), 403);
         return;
     }
 
@@ -278,7 +278,7 @@ function ms_profile_extras_ajax()
     $readOnlyActions = array('get_banner');
     if (!in_array($action, $readOnlyActions)) {
         if (!verify_post_check($mybb->get_input('my_post_key'), true)) {
-            ms_profile_extras_json(array('error' => 'Invalid security token.'), 403);
+            ms_profile_extras_json(array('error' => $lang->ms_error_invalid_token), 403);
             return;
         }
     }
@@ -303,12 +303,12 @@ function ms_profile_extras_ajax()
 /* â”€â”€ Banner: Save â”€â”€ */
 function ms_pe_save_banner()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
 
     $uid  = (int)$mybb->user['uid'];
     $type = $mybb->get_input('banner_type');
     if (!in_array($type, array('upload', 'solid', 'gradient'))) {
-        ms_profile_extras_json(array('error' => 'Invalid banner type.'));
+        ms_profile_extras_json(array('error' => $lang->ms_error_invalid_banner_type));
         return;
     }
 
@@ -329,7 +329,7 @@ function ms_pe_save_banner()
             $allowed = array('jpg', 'jpeg', 'png', 'gif', 'webp');
             $ext = strtolower(pathinfo($_FILES['banner_file']['name'], PATHINFO_EXTENSION));
             if (!in_array($ext, $allowed)) {
-                ms_profile_extras_json(array('error' => 'Invalid file type. Allowed: ' . implode(', ', $allowed)));
+                ms_profile_extras_json(array('error' => $lang->ms_error_invalid_file_type . implode(', ', $allowed)));
                 return;
             }
 
@@ -340,14 +340,14 @@ function ms_pe_save_banner()
                 $detectedMime = finfo_file($finfo, $_FILES['banner_file']['tmp_name']);
                 finfo_close($finfo);
                 if ($detectedMime === false || !in_array($detectedMime, $allowedMimes)) {
-                    ms_profile_extras_json(array('error' => 'File content does not match an allowed image type.'));
+                    ms_profile_extras_json(array('error' => $lang->ms_error_file_content_mismatch));
                     return;
                 }
             }
 
             // Max 2MB
             if ($_FILES['banner_file']['size'] > 2 * 1024 * 1024) {
-                ms_profile_extras_json(array('error' => 'File too large. Max 2MB.'));
+                ms_profile_extras_json(array('error' => $lang->ms_error_file_too_large_2mb));
                 return;
             }
 
@@ -358,12 +358,12 @@ function ms_pe_save_banner()
             $realUploadDir = realpath($uploadDir);
             $realBase = realpath(MYBB_ROOT . 'uploads');
             if ($realUploadDir === false || $realBase === false || strpos($realUploadDir, $realBase) !== 0) {
-                ms_profile_extras_json(array('error' => 'Invalid upload directory.'));
+                ms_profile_extras_json(array('error' => $lang->ms_error_invalid_upload_dir));
                 return;
             }
 
             if (!move_uploaded_file($_FILES['banner_file']['tmp_name'], $dest)) {
-                ms_profile_extras_json(array('error' => 'Upload failed.'));
+                ms_profile_extras_json(array('error' => $lang->ms_error_invalid_upload));
                 return;
             }
             $value = 'uploads/banners/' . $filename;
@@ -371,31 +371,31 @@ function ms_pe_save_banner()
             // URL-based upload
             $url = trim($mybb->get_input('banner_url'));
             if (!my_validate_url($url)) {
-                ms_profile_extras_json(array('error' => 'Invalid URL.'));
+                ms_profile_extras_json(array('error' => $lang->ms_error_invalid_url));
                 return;
             }
             // Only allow http/https schemes
             $urlScheme = parse_url($url, PHP_URL_SCHEME);
             if (!in_array(strtolower($urlScheme), array('http', 'https'))) {
-                ms_profile_extras_json(array('error' => 'Only http and https URLs are allowed.'));
+                ms_profile_extras_json(array('error' => $lang->ms_error_https_only));
                 return;
             }
             $value = $url;
         } else {
-            ms_profile_extras_json(array('error' => 'No file or URL provided.'));
+            ms_profile_extras_json(array('error' => $lang->ms_error_no_file_or_url));
             return;
         }
     } elseif ($type === 'solid') {
         $value = $mybb->get_input('banner_value');
         if (!preg_match('/^#[0-9a-fA-F]{3,8}$/', $value)) {
-            ms_profile_extras_json(array('error' => 'Invalid color value.'));
+            ms_profile_extras_json(array('error' => $lang->ms_error_invalid_color));
             return;
         }
     } elseif ($type === 'gradient') {
         $value = $mybb->get_input('banner_value');
         // Basic sanity check for gradient CSS
         if (strpos($value, 'gradient') === false) {
-            ms_profile_extras_json(array('error' => 'Invalid gradient value.'));
+            ms_profile_extras_json(array('error' => $lang->ms_error_invalid_gradient));
             return;
         }
         // Sanitize: only allow gradient-safe characters
@@ -426,7 +426,7 @@ function ms_pe_save_banner()
     $css = '';
     switch ($type) {
         case 'upload':
-            $imgUrl = $mybb->settings['bburl'] . '/' . $value;
+            $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $value));
             $css = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
             break;
         case 'solid':
@@ -443,14 +443,14 @@ function ms_pe_save_banner()
 /* â”€â”€ Banner: Update Colors Only â”€â”€ */
 function ms_pe_update_banner_colors()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
     $uid = (int)$mybb->user['uid'];
 
     // Find active banner
     $query = $db->simple_select('ms_user_banners', '*', "uid={$uid} AND is_active=1", array('limit' => 1));
     $banner = $db->fetch_array($query);
     if (!$banner) {
-        ms_profile_extras_json(array('error' => 'No active banner to update.'));
+        ms_profile_extras_json(array('error' => $lang->ms_error_no_active_banner));
         return;
     }
 
@@ -468,7 +468,7 @@ function ms_pe_update_banner_colors()
     $css = '';
     switch ($banner['type']) {
         case 'upload':
-            $imgUrl = $mybb->settings['bburl'] . '/' . $banner['value'];
+            $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $banner['value']));
             $css = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
             break;
         case 'solid':
@@ -494,7 +494,7 @@ function ms_pe_remove_banner()
 /* â”€â”€ Banner: Activate previous â”€â”€ */
 function ms_pe_activate_banner()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
     $uid = (int)$mybb->user['uid'];
     $bid = $mybb->get_input('bid', MyBB::INPUT_INT);
 
@@ -502,7 +502,7 @@ function ms_pe_activate_banner()
     $query = $db->simple_select('ms_user_banners', '*', "bid={$bid} AND uid={$uid}", array('limit' => 1));
     $banner = $db->fetch_array($query);
     if (!$banner) {
-        ms_profile_extras_json(array('error' => 'Banner not found.'));
+        ms_profile_extras_json(array('error' => $lang->ms_error_banner_not_found));
         return;
     }
 
@@ -523,7 +523,7 @@ function ms_pe_activate_banner()
     $css = '';
     switch ($banner['type']) {
         case 'upload':
-            $imgUrl = $mybb->settings['bburl'] . '/' . $banner['value'];
+            $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $banner['value']));
             $css = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
             break;
         case 'solid':

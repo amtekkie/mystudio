@@ -1,0 +1,25 @@
+<nav class="ms-sidebar-nav">
+	<div class="ms-sidebar-card ms-sidebar-profile">
+		<div class="ms-sidebar-profile-top">
+			<img src="images/default_avatar.png" alt="{$lang->ms_sidebar_guest}" class="ms-sidebar-avatar" />
+			<div class="ms-sidebar-profile-copy">
+				<span class="ms-sidebar-name">{$lang->ms_sidebar_guest}</span>
+				<span class="ms-sidebar-handle">{$lang->ms_sidebar_welcome_guest}</span>
+			</div>
+		</div>
+	</div>
+
+	<a class="ms-sidebar-link ms-sidebar-link-primary" href="{$ms_sb_login_url}"><i class="bi bi-box-arrow-in-right"></i><span>{$lang->ms_sidebar_login}</span></a>
+	<a class="ms-sidebar-link ms-sidebar-link-accent" href="{$ms_sb_register_url}"><i class="bi bi-person-plus"></i><span>{$lang->ms_sidebar_register}</span></a>
+
+	<a href="{$ms_sb_portal_url}" class="ms-sidebar-link{$ms_sb_portal_active}"><i class="bi bi-house-door"></i><span>{$lang->ms_sidebar_home}</span></a>
+	<a href="{$ms_sb_forums_url}" class="ms-sidebar-link{$ms_sb_forums_active}"><i class="bi bi-grid-3x3-gap"></i><span>{$lang->ms_sidebar_forums}</span></a>
+
+	<details class="ms-sidebar-details"{$ms_sb_search_open}>
+		<summary class="ms-sidebar-link{$ms_sb_search_active}"><a href="{$ms_sb_search_url}"><i class="bi bi-search"></i><span>{$lang->ms_sidebar_search}</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>
+		<div class="ms-sidebar-sub">
+			<a class="ms-sidebar-sublink{$ms_sb_search_new_active}" href="{$ms_sb_search_url}?action=getnew">{$lang->ms_sidebar_new_posts}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_search_daily_active}" href="{$ms_sb_search_url}?action=getdaily">{$lang->ms_sidebar_todays_posts}</a>
+		</div>
+	</details>
+</nav>

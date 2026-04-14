@@ -114,7 +114,7 @@ function ms_pex_prepare_feed()
     $templates->cache['postbit_multiquote'] = $savedMultiquote;
 
     if (empty($feedItems)) {
-        $feedItems = '<div class="pex-empty-state"><i class="bi bi-chat-square-text"></i><p>No posts yet.</p><span>Be the first to share something!</span></div>';
+        eval("\$feedItems = \"" . $templates->get("pex_empty_state") . "\";");
     }
     $pex_pagination = '';
     if ($totalPages > 1) {
@@ -188,7 +188,7 @@ function ms_pex_render_thread_postbit($threadRow, $forumCache = null)
 
 function ms_pex_pre_output_page(&$page)
 {
-    global $mybb;
+    global $mybb, $lang;
 
     $scriptName = basename($_SERVER['SCRIPT_NAME']);
 
@@ -210,10 +210,11 @@ function ms_pex_pre_output_page(&$page)
         $sidebar = ms_pex_render_page_sidebar($scriptName);
         if ($sidebar !== '') {
             $mainHeader = '<div class="pex-main-header">' . $breadcrumb . '</div>';
+            $menuLabel = htmlspecialchars_uni($lang->ms_sidebar_menu);
 
             $page = preg_replace(
                 '/<main class="container">/',
-                '<main class="container"><div class="ms-page-shell"><aside class="ms-page-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="msSidebarOffcanvas"><div class="offcanvas-header d-lg-none"><h6 class="offcanvas-title">Menu</h6><button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#msSidebarOffcanvas" aria-label="Close"></button></div><div class="offcanvas-body">' . $sidebar . '</div></aside><div class="ms-page-content">' . $mainHeader,
+                '<main class="container"><div class="ms-page-shell"><aside class="ms-page-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="msSidebarOffcanvas"><div class="offcanvas-header d-lg-none"><h6 class="offcanvas-title">' . $menuLabel . '</h6><button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#msSidebarOffcanvas" aria-label="Close"></button></div><div class="offcanvas-body">' . $sidebar . '</div></aside><div class="ms-page-content">' . $mainHeader,
                 $page,
                 1
             );
@@ -239,145 +240,97 @@ function ms_pex_pre_output_page(&$page)
 
 function ms_pex_render_page_sidebar($scriptName)
 {
-    global $mybb, $lang, $foruminfo, $thread, $memprofile;
+    global $mybb, $lang, $templates;
 
     $bburl = $mybb->settings['bburl'];
     $uid = (int)$mybb->user['uid'];
 
-    $html = '';
+    // Common URLs
+    $ms_sb_portal_url = htmlspecialchars_uni($bburl . '/portal.php');
+    $ms_sb_forums_url = htmlspecialchars_uni($bburl . '/index.php');
+    $ms_sb_search_url = htmlspecialchars_uni($bburl . '/search.php');
 
-    $html .= '<nav class="ms-sidebar-nav">';
+    // Common active states
+    $ms_sb_portal_active = ($scriptName === 'portal.php') ? ' active' : '';
+    $ms_sb_forums_active = in_array($scriptName, array('index.php', 'forumdisplay.php', 'showthread.php')) ? ' active' : '';
+    $searchActive = ($scriptName === 'search.php');
+    $ms_sb_search_active = $searchActive ? ' active' : '';
+    $ms_sb_search_open = $searchActive ? ' open' : '';
+    $searchAction = $mybb->get_input('action');
+    $ms_sb_search_new_active = ($searchActive && $searchAction === 'getnew') ? ' active' : '';
+    $ms_sb_search_daily_active = ($searchActive && $searchAction === 'getdaily') ? ' active' : '';
 
     if ($uid > 0) {
-        $userAvatar = !empty($mybb->user['avatar']) ? htmlspecialchars_uni($mybb->user['avatar']) : 'images/default_avatar.png';
-        $username = htmlspecialchars_uni($mybb->user['username']);
-        $profileUrl = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . $uid);
-        $usercpUrl = htmlspecialchars_uni($bburl . '/usercp.php');
-        $pmUrl = htmlspecialchars_uni($bburl . '/private.php');
-        $logoutUrl = htmlspecialchars_uni($bburl . '/member.php?action=logout&logoutkey=' . $mybb->user['logoutkey']);
+        // Member sidebar
+        $ms_sb_avatar = !empty($mybb->user['avatar']) ? htmlspecialchars_uni($mybb->user['avatar']) : 'images/default_avatar.png';
+        $ms_sb_username = htmlspecialchars_uni($mybb->user['username']);
+        $ms_sb_profile_url = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . $uid);
+        $ms_sb_formatted_name = format_name($mybb->user['username'], $mybb->user['usergroup'], $mybb->user['displaygroup']);
+        $ms_sb_usertitle = !empty($mybb->user['usertitle']) ? '<span class="ms-sidebar-handle">' . htmlspecialchars_uni($mybb->user['usertitle']) . '</span>' : '';
+        $ms_sb_groupimage = !empty($mybb->user['groupimage']) ? '<img src="' . htmlspecialchars_uni($mybb->user['groupimage']) . '" alt="" class="ms-sidebar-groupimage" />' : '';
 
-        $userTitle = !empty($mybb->user['usertitle']) ? htmlspecialchars_uni($mybb->user['usertitle']) : '';
-        $groupImage = '';
-        if (!empty($mybb->user['groupimage'])) {
-            $groupImage = '<img src="' . htmlspecialchars_uni($mybb->user['groupimage']) . '" alt="" class="ms-sidebar-groupimage" />';
-        }
+        // URLs
+        $ms_sb_ucp_url = htmlspecialchars_uni($bburl . '/usercp.php');
+        $ms_sb_pm_url = htmlspecialchars_uni($bburl . '/private.php');
+        $ms_sb_logout_url = htmlspecialchars_uni($bburl . '/member.php?action=logout&logoutkey=' . $mybb->user['logoutkey']);
 
-        $html .= '<div class="ms-sidebar-card ms-sidebar-profile">'
-            . '<div class="ms-sidebar-profile-top">'
-            . '<a href="' . $profileUrl . '">'
-            . '<img src="' . $userAvatar . '" alt="' . $username . '" class="ms-sidebar-avatar" />'
-            . '</a>'
-            . '<div class="ms-sidebar-profile-copy">'
-            . '<span class="ms-sidebar-name">' . format_name($mybb->user['username'], $mybb->user['usergroup'], $mybb->user['displaygroup']) . '</span>'
-            . ($userTitle ? '<span class="ms-sidebar-handle">' . $userTitle . '</span>' : '')
-            . $groupImage
-            . '</div>'
-            . '</div>'
-            . '</div>';
-
-        $html .= '<a href="#" class="ms-sidebar-link ms-sidebar-link-primary" role="button" data-bs-toggle="modal" data-bs-target="#ms_newthread_modal"><i class="bi bi-plus-lg"></i><span>Post Thread</span></a>';
-
-        $portalActive = ($scriptName === 'portal.php');
-        $forumsActive = in_array($scriptName, array('index.php', 'forumdisplay.php', 'showthread.php'));
-
-        $searchUrl = htmlspecialchars_uni($bburl . '/search.php');
-        $searchActive = ($scriptName === 'search.php');
-        $searchOpen = $searchActive ? ' open' : '';
-        $searchAction = $mybb->get_input('action');
-
-        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link' . ($portalActive ? ' active' : '') . '"><i class="bi bi-house-door"></i><span>Home</span></a>'
-            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link' . ($forumsActive ? ' active' : '') . '"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
-
-        $html .= '<details class="ms-sidebar-details"' . $searchOpen . '>'
-            . '<summary class="ms-sidebar-link' . ($searchActive ? ' active' : '') . '"><a href="' . $searchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
-            . '<div class="ms-sidebar-sub">'
-            . '<a class="ms-sidebar-sublink' . ($searchActive && $searchAction === 'getnew' ? ' active' : '') . '" href="' . $searchUrl . '?action=getnew">New Posts</a>'
-            . '<a class="ms-sidebar-sublink' . ($searchActive && $searchAction === 'getdaily' ? ' active' : '') . '" href="' . $searchUrl . '?action=getdaily">Today\'s Posts</a>'
-            . '</div></details>';
+        // UserCP active states
         $ucpActive = ($scriptName === 'usercp.php');
-        $ucpOpen = $ucpActive ? ' open' : '';
+        $ms_sb_ucp_active = $ucpActive ? ' active' : '';
+        $ms_sb_ucp_open = $ucpActive ? ' open' : '';
         $ucpAction = $mybb->get_input('action');
-        $html .= '<details class="ms-sidebar-details"' . $ucpOpen . '>'
-            . '<summary class="ms-sidebar-link' . ($ucpActive ? ' active' : '') . '"><a href="' . $usercpUrl . '"><i class="bi bi-gear"></i><span>User CP</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
-            . '<div class="ms-sidebar-sub">'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === '' ? ' active' : '') . '" href="' . $usercpUrl . '">Home</a>'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'profile' ? ' active' : '') . '" href="' . $usercpUrl . '?action=profile">Edit Profile</a>'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'changename' ? ' active' : '') . '" href="' . $usercpUrl . '?action=changename">Change Username</a>'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'password' ? ' active' : '') . '" href="' . $usercpUrl . '?action=password">Password</a>'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'email' ? ' active' : '') . '" href="' . $usercpUrl . '?action=email">Email</a>'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'avatar' ? ' active' : '') . '" href="' . $usercpUrl . '?action=avatar">Avatar</a>'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'editsig' ? ' active' : '') . '" href="' . $usercpUrl . '?action=editsig">Signature</a>'
-            . '<a class="ms-sidebar-sublink' . ($ucpActive && $ucpAction === 'options' ? ' active' : '') . '" href="' . $usercpUrl . '?action=options">Edit Options</a>'
-            . '</div></details>';
+        $ms_sb_ucp_home_active = ($ucpActive && $ucpAction === '') ? ' active' : '';
+        $ms_sb_ucp_profile_active = ($ucpActive && $ucpAction === 'profile') ? ' active' : '';
+        $ms_sb_ucp_changename_active = ($ucpActive && $ucpAction === 'changename') ? ' active' : '';
+        $ms_sb_ucp_password_active = ($ucpActive && $ucpAction === 'password') ? ' active' : '';
+        $ms_sb_ucp_email_active = ($ucpActive && $ucpAction === 'email') ? ' active' : '';
+        $ms_sb_ucp_avatar_active = ($ucpActive && $ucpAction === 'avatar') ? ' active' : '';
+        $ms_sb_ucp_sig_active = ($ucpActive && $ucpAction === 'editsig') ? ' active' : '';
+        $ms_sb_ucp_options_active = ($ucpActive && $ucpAction === 'options') ? ' active' : '';
+
+        // PM active states
         $pmActive = ($scriptName === 'private.php');
-        $pmOpen = $pmActive ? ' open' : '';
+        $ms_sb_pm_active = $pmActive ? ' active' : '';
+        $ms_sb_pm_open = $pmActive ? ' open' : '';
         $pmAction = $mybb->get_input('action');
         $pmFid = $mybb->get_input('fid', MyBB::INPUT_INT);
-        $html .= '<details class="ms-sidebar-details"' . $pmOpen . '>'
-            . '<summary class="ms-sidebar-link' . ($pmActive ? ' active' : '') . '"><a href="' . $pmUrl . '"><i class="bi bi-chat-dots"></i><span>Private Messages</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
-            . '<div class="ms-sidebar-sub">'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === 'send' ? ' active' : '') . '" href="' . $pmUrl . '?action=send">Compose</a>'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction !== 'send' && $pmAction !== 'tracking' && $pmAction !== 'folders' && ($pmFid === 0 || $pmFid === 1) ? ' active' : '') . '" href="' . $pmUrl . '">Inbox</a>'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === '' && $pmFid === 4 ? ' active' : '') . '" href="' . $pmUrl . '?fid=4">Unread</a>'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === '' && $pmFid === 2 ? ' active' : '') . '" href="' . $pmUrl . '?fid=2">Sent</a>'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === '' && $pmFid === 3 ? ' active' : '') . '" href="' . $pmUrl . '?fid=3">Drafts</a>'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === '' && $pmFid === 5 ? ' active' : '') . '" href="' . $pmUrl . '?fid=5">Trash</a>'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === 'tracking' ? ' active' : '') . '" href="' . $pmUrl . '?action=tracking">Tracking</a>'
-            . '<a class="ms-sidebar-sublink' . ($pmActive && $pmAction === 'folders' ? ' active' : '') . '" href="' . $pmUrl . '?action=folders">Edit Folders</a>'
-            . '</div></details>';
+        $ms_sb_pm_compose_active = ($pmActive && $pmAction === 'send') ? ' active' : '';
+        $ms_sb_pm_inbox_active = ($pmActive && $pmAction !== 'send' && $pmAction !== 'tracking' && $pmAction !== 'folders' && ($pmFid === 0 || $pmFid === 1)) ? ' active' : '';
+        $ms_sb_pm_unread_active = ($pmActive && $pmAction === '' && $pmFid === 4) ? ' active' : '';
+        $ms_sb_pm_sent_active = ($pmActive && $pmAction === '' && $pmFid === 2) ? ' active' : '';
+        $ms_sb_pm_drafts_active = ($pmActive && $pmAction === '' && $pmFid === 3) ? ' active' : '';
+        $ms_sb_pm_trash_active = ($pmActive && $pmAction === '' && $pmFid === 5) ? ' active' : '';
+        $ms_sb_pm_tracking_active = ($pmActive && $pmAction === 'tracking') ? ' active' : '';
+        $ms_sb_pm_folders_active = ($pmActive && $pmAction === 'folders') ? ' active' : '';
+
+        // Mod CP section (only for moderators)
+        $ms_sb_modcp_section = '';
         if ($mybb->usergroup['canmodcp'] == 1) {
-            $modcpUrl = htmlspecialchars_uni($bburl . '/modcp.php');
+            $ms_sb_modcp_url = htmlspecialchars_uni($bburl . '/modcp.php');
             $mcpActive = ($scriptName === 'modcp.php');
-            $mcpOpen = $mcpActive ? ' open' : '';
+            $ms_sb_modcp_active = $mcpActive ? ' active' : '';
+            $ms_sb_modcp_open = $mcpActive ? ' open' : '';
             $mcpAction = $mybb->get_input('action');
-            $html .= '<details class="ms-sidebar-details"' . $mcpOpen . '>'
-                . '<summary class="ms-sidebar-link' . ($mcpActive ? ' active' : '') . '"><a href="' . $modcpUrl . '"><i class="bi bi-shield-check"></i><span>Mod CP</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
-                . '<div class="ms-sidebar-sub">'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === '' ? ' active' : '') . '" href="' . $modcpUrl . '">Home</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'modqueue' ? ' active' : '') . '" href="' . $modcpUrl . '?action=modqueue">Mod Queue</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'reports' ? ' active' : '') . '" href="' . $modcpUrl . '?action=reports">Report Center</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'modlogs' ? ' active' : '') . '" href="' . $modcpUrl . '?action=modlogs">Mod Logs</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'announcements' ? ' active' : '') . '" href="' . $modcpUrl . '?action=announcements">Announcements</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'finduser' ? ' active' : '') . '" href="' . $modcpUrl . '?action=finduser">Edit Profile</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'banning' ? ' active' : '') . '" href="' . $modcpUrl . '?action=banning">Banning</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'warninglogs' ? ' active' : '') . '" href="' . $modcpUrl . '?action=warninglogs">Warning Logs</a>'
-                . '<a class="ms-sidebar-sublink' . ($mcpActive && $mcpAction === 'ipsearch' ? ' active' : '') . '" href="' . $modcpUrl . '?action=ipsearch">IP Search</a>'
-                . '</div></details>';
+            $ms_sb_modcp_home_active = ($mcpActive && $mcpAction === '') ? ' active' : '';
+            $ms_sb_modcp_queue_active = ($mcpActive && $mcpAction === 'modqueue') ? ' active' : '';
+            $ms_sb_modcp_reports_active = ($mcpActive && $mcpAction === 'reports') ? ' active' : '';
+            $ms_sb_modcp_logs_active = ($mcpActive && $mcpAction === 'modlogs') ? ' active' : '';
+            $ms_sb_modcp_announce_active = ($mcpActive && $mcpAction === 'announcements') ? ' active' : '';
+            $ms_sb_modcp_finduser_active = ($mcpActive && $mcpAction === 'finduser') ? ' active' : '';
+            $ms_sb_modcp_banning_active = ($mcpActive && $mcpAction === 'banning') ? ' active' : '';
+            $ms_sb_modcp_warnings_active = ($mcpActive && $mcpAction === 'warninglogs') ? ' active' : '';
+            $ms_sb_modcp_ipsearch_active = ($mcpActive && $mcpAction === 'ipsearch') ? ' active' : '';
+            eval("\$ms_sb_modcp_section = \"" . $templates->get("pex_sidebar_modcp") . "\";");
         }
 
-        $html .= '<a class="ms-sidebar-link" href="' . $logoutUrl . '"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a>';
+        eval("\$html = \"" . $templates->get("pex_sidebar_member") . "\";");
     } else {
-        $html .= '<div class="ms-sidebar-card ms-sidebar-profile">'
-            . '<div class="ms-sidebar-profile-top">'
-            . '<img src="images/default_avatar.png" alt="' . htmlspecialchars_uni($lang->guest) . '" class="ms-sidebar-avatar" />'
-            . '<div class="ms-sidebar-profile-copy">'
-            . '<span class="ms-sidebar-name">Guest</span>'
-            . '<span class="ms-sidebar-handle">Welcome Guest!</span>'
-            . '</div>'
-            . '</div>'
-            . '</div>';
+        // Guest sidebar
+        $ms_sb_login_url = htmlspecialchars_uni($bburl . '/member.php?action=login');
+        $ms_sb_register_url = htmlspecialchars_uni($bburl . '/member.php?action=register');
 
-        $html .= '<a class="ms-sidebar-link ms-sidebar-link-primary" href="' . htmlspecialchars_uni($bburl . '/member.php?action=login') . '"><i class="bi bi-box-arrow-in-right"></i><span>Login</span></a>'
-            . '<a class="ms-sidebar-link ms-sidebar-link-accent" href="' . htmlspecialchars_uni($bburl . '/member.php?action=register') . '"><i class="bi bi-person-plus"></i><span>Register</span></a>';
-
-        $guestPortalActive = ($scriptName === 'portal.php');
-        $guestForumsActive = in_array($scriptName, array('index.php', 'forumdisplay.php', 'showthread.php'));
-        $html .= '<a href="' . htmlspecialchars_uni($bburl . '/portal.php') . '" class="ms-sidebar-link' . ($guestPortalActive ? ' active' : '') . '"><i class="bi bi-house-door"></i><span>Home</span></a>'
-            . '<a href="' . htmlspecialchars_uni($bburl . '/index.php') . '" class="ms-sidebar-link' . ($guestForumsActive ? ' active' : '') . '"><i class="bi bi-grid-3x3-gap"></i><span>Forums</span></a>';
-
-        $guestSearchUrl = htmlspecialchars_uni($bburl . '/search.php');
-        $guestSearchActive = ($scriptName === 'search.php');
-        $guestSearchOpen = $guestSearchActive ? ' open' : '';
-        $guestSearchAction = $mybb->get_input('action');
-        $html .= '<details class="ms-sidebar-details"' . $guestSearchOpen . '>'
-            . '<summary class="ms-sidebar-link' . ($guestSearchActive ? ' active' : '') . '"><a href="' . $guestSearchUrl . '"><i class="bi bi-search"></i><span>Search</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>'
-            . '<div class="ms-sidebar-sub">'
-            . '<a class="ms-sidebar-sublink' . ($guestSearchActive && $guestSearchAction === 'getnew' ? ' active' : '') . '" href="' . $guestSearchUrl . '?action=getnew">New Posts</a>'
-            . '<a class="ms-sidebar-sublink' . ($guestSearchActive && $guestSearchAction === 'getdaily' ? ' active' : '') . '" href="' . $guestSearchUrl . '?action=getdaily">Today\'s Posts</a>'
-            . '</div></details>';
+        eval("\$html = \"" . $templates->get("pex_sidebar_guest") . "\";");
     }
-
-    $html .= '</nav>';
 
     return $html;
 }
@@ -460,7 +413,7 @@ function ms_pex_render_forum_tree($children, $pid, $bburl, $depth)
 }
 function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
 {
-    global $mybb;
+    global $mybb, $lang;
 
     if (empty($_FILES[$fileKey]['name'])) {
         return null;
@@ -478,7 +431,7 @@ function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
     $allowed = array('jpg', 'jpeg', 'png', 'gif', 'webp');
     $ext = strtolower(pathinfo($_FILES[$fileKey]['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, $allowed)) {
-        return array('error' => 'Invalid image type.');
+        return array('error' => $lang->ms_error_invalid_image);
     }
 
     $allowedMimes = array('image/jpeg', 'image/png', 'image/gif', 'image/webp');
@@ -487,12 +440,12 @@ function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
         $detectedMime = finfo_file($finfo, $_FILES[$fileKey]['tmp_name']);
         finfo_close($finfo);
         if ($detectedMime === false || !in_array($detectedMime, $allowedMimes)) {
-            return array('error' => 'File content does not match an allowed image type.');
+            return array('error' => $lang->ms_error_image_content);
         }
     }
 
     if ($_FILES[$fileKey]['size'] > 5 * 1024 * 1024) {
-        return array('error' => 'Image too large. Max 5MB.');
+        return array('error' => $lang->ms_error_image_too_large);
     }
 
     $filename = $prefix . '_' . $uid . '_' . TIME_NOW . '.' . $ext;
@@ -501,11 +454,11 @@ function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
     $realUploadDir = realpath($uploadDir);
     $realBase = realpath(MYBB_ROOT . 'uploads');
     if ($realUploadDir === false || $realBase === false || strpos($realUploadDir, $realBase) !== 0) {
-        return array('error' => 'Invalid upload directory.');
+        return array('error' => $lang->ms_error_invalid_upload_dir);
     }
 
     if (!move_uploaded_file($_FILES[$fileKey]['tmp_name'], $dest)) {
-        return array('error' => 'Image upload failed.');
+        return array('error' => $lang->ms_error_upload_failed);
     }
 
     $imgUrl = $mybb->settings['bburl'] . '/uploads/posting_extras/' . $filename;
@@ -543,7 +496,7 @@ function ms_pex_parse_message($message, $smilieoff = 0)
 
 function ms_pex_render_reply($post)
 {
-    global $mybb, $templates;
+    global $mybb, $lang, $templates;
     $bburl   = $mybb->settings['bburl'];
     $uid     = (int)$mybb->user['uid'];
     $ms_pex_reply_avatar = !empty($post['avatar']) ? htmlspecialchars_uni($post['avatar']) : 'images/default_avatar.png';
@@ -556,7 +509,7 @@ function ms_pex_render_reply($post)
 
     $ms_pex_reply_delete_btn = '';
     if ($uid > 0 && ($uid == (int)$post['uid'] || $mybb->usergroup['canmodcp'])) {
-        $ms_pex_reply_delete_btn = '<a href="javascript:void(0)" class="pex-delete-reply text-danger" data-pid="' . $ms_pex_pid . '" title="Delete reply"><i class="bi bi-trash"></i></a>';
+        $ms_pex_reply_delete_btn = '<a href="javascript:void(0)" class="pex-delete-reply text-danger" data-pid="' . $ms_pex_pid . '" title="' . htmlspecialchars_uni($lang->ms_delete_reply) . '"><i class="bi bi-trash"></i></a>';
     }
 
     eval("\$html = \"" . $templates->get("pex_reply") . "\";");
@@ -564,14 +517,14 @@ function ms_pex_render_reply($post)
 }
 function ms_pex_ajax()
 {
-    global $mybb;
+    global $mybb, $lang;
 
     $action = $mybb->get_input('ms_action');
     if (empty($action)) return;
 
     // Guests may view liker lists, but all write actions require login.
     if ($mybb->user['uid'] <= 0 && $action !== 'load_likes') {
-        ms_pex_json(array('error' => 'Not logged in.'), 403);
+        ms_pex_json(array('error' => $lang->ms_error_not_logged_in), 403);
         return;
     }
 
@@ -579,7 +532,7 @@ function ms_pex_ajax()
     $readOnly = array('load_replies', 'load_likes');
     if (!in_array($action, $readOnly)) {
         if (!verify_post_check($mybb->get_input('my_post_key'), true)) {
-            ms_pex_json(array('error' => 'Invalid security token.'), 403);
+            ms_pex_json(array('error' => $lang->ms_error_invalid_token), 403);
             return;
         }
     }
@@ -610,26 +563,26 @@ function ms_pex_ajax()
 }
 function ms_pex_create_thread()
 {
-    global $mybb, $db, $cache;
+    global $mybb, $db, $cache, $lang;
 
     $uid     = (int)$mybb->user['uid'];
     $fid     = $mybb->get_input('fid', MyBB::INPUT_INT);
     $message = trim($mybb->get_input('message'));
 
     if (empty($message)) {
-        ms_pex_json(array('error' => 'Message cannot be empty.'));
+        ms_pex_json(array('error' => $lang->ms_error_message_empty));
         return;
     }
 
     if ($fid <= 0) {
-        ms_pex_json(array('error' => 'Please select a forum.'));
+        ms_pex_json(array('error' => $lang->ms_error_select_forum));
         return;
     }
 
     // Verify user can post in this forum
     $fperms = forum_permissions($fid);
     if (empty($fperms['canpostthreads'])) {
-        ms_pex_json(array('error' => 'You do not have permission to post in this forum.'));
+        ms_pex_json(array('error' => $lang->ms_error_no_post_permission));
         return;
     }
 
@@ -646,7 +599,7 @@ function ms_pex_create_thread()
         $subject = my_substr($subject, 0, 80) . '...';
     }
     if (empty($subject)) {
-        $subject = 'Status Update';
+        $subject = $lang->ms_pex_status_update;
     }
 
     // Use PostDataHandler to create thread
@@ -703,19 +656,19 @@ function ms_pex_create_thread()
 }
 function ms_pex_create_reply()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
 
     $uid     = (int)$mybb->user['uid'];
     $tid     = $mybb->get_input('tid', MyBB::INPUT_INT);
     $message = trim($mybb->get_input('message'));
 
     if (empty($message)) {
-        ms_pex_json(array('error' => 'Reply cannot be empty.'));
+        ms_pex_json(array('error' => $lang->ms_error_reply_empty));
         return;
     }
 
     if ($tid <= 0) {
-        ms_pex_json(array('error' => 'Invalid thread.'));
+        ms_pex_json(array('error' => $lang->ms_error_invalid_thread));
         return;
     }
 
@@ -723,14 +676,14 @@ function ms_pex_create_reply()
     $query = $db->simple_select('threads', 'tid, fid, subject, closed', "tid={$tid} AND visible='1'", array('limit' => 1));
     $thread = $db->fetch_array($query);
     if (!$thread) {
-        ms_pex_json(array('error' => 'Thread not found.'));
+        ms_pex_json(array('error' => $lang->ms_error_thread_not_found));
         return;
     }
 
     // Check permissions
     $fperms = forum_permissions($thread['fid']);
     if (empty($fperms['canpostreplys'])) {
-        ms_pex_json(array('error' => 'You do not have permission to reply.'));
+        ms_pex_json(array('error' => $lang->ms_error_no_reply_permission));
         return;
     }
 
@@ -750,7 +703,7 @@ function ms_pex_create_reply()
         'tid'      => $tid,
         'replyto'  => 0,
         'fid'      => (int)$thread['fid'],
-        'subject'  => 'RE: ' . $thread['subject'],
+        'subject'  => $lang->ms_reply_prefix . ' ' . $thread['subject'],
         'uid'      => $uid,
         'username' => $mybb->user['username'],
         'message'  => $message,
@@ -789,11 +742,11 @@ function ms_pex_create_reply()
 }
 function ms_pex_load_replies()
 {
-    global $mybb, $db, $templates;
+    global $mybb, $db, $lang, $templates;
 
     $tid = $mybb->get_input('tid', MyBB::INPUT_INT);
     if ($tid <= 0) {
-        ms_pex_json(array('error' => 'Invalid thread.'));
+        ms_pex_json(array('error' => $lang->ms_error_invalid_thread));
         return;
     }
 
@@ -801,7 +754,7 @@ function ms_pex_load_replies()
     $tQuery = $db->simple_select('threads', 'tid, fid, firstpost', "tid={$tid} AND visible='1'", array('limit' => 1));
     $thread = $db->fetch_array($tQuery);
     if (!$thread) {
-        ms_pex_json(array('error' => 'Thread not found.'));
+        ms_pex_json(array('error' => $lang->ms_error_thread_not_found));
         return;
     }
 
@@ -837,7 +790,7 @@ function ms_pex_load_replies()
 }
 function ms_pex_delete_thread()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
 
     $uid = (int)$mybb->user['uid'];
     $tid = $mybb->get_input('tid', MyBB::INPUT_INT);
@@ -845,13 +798,13 @@ function ms_pex_delete_thread()
     $query = $db->simple_select('threads', 'uid, fid', "tid={$tid}", array('limit' => 1));
     $thread = $db->fetch_array($query);
     if (!$thread) {
-        ms_pex_json(array('error' => 'Thread not found.'));
+        ms_pex_json(array('error' => $lang->ms_error_thread_not_found));
         return;
     }
 
     // Verify ownership or mod
     if ((int)$thread['uid'] !== $uid && !$mybb->usergroup['canmodcp']) {
-        ms_pex_json(array('error' => 'Permission denied.'));
+        ms_pex_json(array('error' => $lang->ms_error_permission_denied));
         return;
     }
 
@@ -870,7 +823,7 @@ function ms_pex_delete_thread()
 }
 function ms_pex_delete_reply()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
 
     $uid = (int)$mybb->user['uid'];
     $pid = $mybb->get_input('pid', MyBB::INPUT_INT);
@@ -878,13 +831,13 @@ function ms_pex_delete_reply()
     $query = $db->simple_select('posts', 'uid, tid, fid', "pid={$pid}", array('limit' => 1));
     $post = $db->fetch_array($query);
     if (!$post) {
-        ms_pex_json(array('error' => 'Reply not found.'));
+        ms_pex_json(array('error' => $lang->ms_error_reply_not_found));
         return;
     }
 
     // Verify ownership or mod
     if ((int)$post['uid'] !== $uid && !$mybb->usergroup['canmodcp']) {
-        ms_pex_json(array('error' => 'Permission denied.'));
+        ms_pex_json(array('error' => $lang->ms_error_permission_denied));
         return;
     }
 
@@ -942,38 +895,37 @@ function ms_pex_get_like_state($targetType, $targetId, $uid = 0)
 
 function ms_pex_render_like_controls($targetType, $targetId, $likeCount, $likedByUser = false, $bburl = '', $postKey = '')
 {
-    $targetType = htmlspecialchars_uni($targetType);
-    $targetId = (int)$targetId;
-    $likeCount = (int)$likeCount;
-    $likedClass = $likedByUser ? ' is-liked' : '';
-    $heartIcon = $likedByUser ? 'bi-heart-fill' : 'bi-heart';
-    $countClass = $likeCount > 0 ? '' : ' is-hidden';
-    $bburl = htmlspecialchars_uni((string)$bburl);
-    $postKey = htmlspecialchars_uni((string)$postKey);
+    global $lang, $templates;
 
-    return '<div class="pex-like-wrap" data-target-type="' . $targetType . '" data-target-id="' . $targetId . '" data-bburl="' . $bburl . '" data-post-key="' . $postKey . '">'
-        . '<a href="javascript:void(0)" class="pex-action-btn pex-like-toggle' . $likedClass . '" data-target-type="' . $targetType . '" data-target-id="' . $targetId . '" title="Like"><i class="bi ' . $heartIcon . '"></i></a>'
-        . '<a href="javascript:void(0)" class="pex-like-count' . $countClass . '" data-target-type="' . $targetType . '" data-target-id="' . $targetId . '" title="View likes"><span class="pex-like-count-num">' . $likeCount . '</span></a>'
-        . '<div class="pex-likes-section" data-target-type="' . $targetType . '" data-target-id="' . $targetId . '" style="display:none"><div class="pex-likes-list"></div></div>'
-        . '</div>';
+    $ms_like_target_type = htmlspecialchars_uni($targetType);
+    $ms_like_target_id = (int)$targetId;
+    $ms_like_count = (int)$likeCount;
+    $ms_like_liked_class = $likedByUser ? ' is-liked' : '';
+    $ms_like_heart_icon = $likedByUser ? 'bi-heart-fill' : 'bi-heart';
+    $ms_like_count_class = $ms_like_count > 0 ? '' : ' is-hidden';
+    $ms_like_bburl = htmlspecialchars_uni((string)$bburl);
+    $ms_like_post_key = htmlspecialchars_uni((string)$postKey);
+
+    eval("\$html = \"" . $templates->get("pex_like_controls") . "\";");
+    return $html;
 }
 
 function ms_pex_toggle_like()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang;
 
     ms_pex_ensure_like_table();
 
     $uid = (int)$mybb->user['uid'];
     if ($uid <= 0) {
-        ms_pex_json(array('error' => 'Not logged in.'), 403);
+        ms_pex_json(array('error' => $lang->ms_error_not_logged_in), 403);
         return;
     }
 
     $targetType = trim($mybb->get_input('target_type'));
     $targetId = $mybb->get_input('target_id', MyBB::INPUT_INT);
     if ($targetType !== 'post' || $targetId <= 0) {
-        ms_pex_json(array('error' => 'Invalid target.'));
+        ms_pex_json(array('error' => $lang->ms_error_invalid_target));
         return;
     }
 
@@ -1004,14 +956,14 @@ function ms_pex_toggle_like()
 
 function ms_pex_load_likes()
 {
-    global $mybb, $db;
+    global $mybb, $db, $lang, $templates;
 
     ms_pex_ensure_like_table();
 
     $targetType = trim($mybb->get_input('target_type'));
     $targetId = $mybb->get_input('target_id', MyBB::INPUT_INT);
     if ($targetType !== 'post' || $targetId <= 0) {
-        ms_pex_json(array('error' => 'Invalid target.'));
+        ms_pex_json(array('error' => $lang->ms_error_invalid_target));
         return;
     }
 
@@ -1020,15 +972,15 @@ function ms_pex_load_likes()
 
     $html = '';
     while ($row = $db->fetch_array($query)) {
-        $avatar = !empty($row['avatar']) ? htmlspecialchars_uni($row['avatar']) : 'images/default_avatar.png';
-        $profileUrl = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . (int)$row['uid']);
-        $username = htmlspecialchars_uni($row['username'] ?: $mybb->lang->guest);
-        $formatted = format_name($username, $row['usergroup'], $row['displaygroup']);
-        $html .= '<div class="pex-like-user"><a href="' . $profileUrl . '"><img src="' . $avatar . '" alt="' . $username . '" class="pex-like-user-avatar" /></a><a href="' . $profileUrl . '" class="pex-like-user-name">' . $formatted . '</a></div>';
+        $ms_liker_avatar = !empty($row['avatar']) ? htmlspecialchars_uni($row['avatar']) : 'images/default_avatar.png';
+        $ms_liker_profile_url = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . (int)$row['uid']);
+        $ms_liker_username = htmlspecialchars_uni($row['username'] ?: $mybb->lang->guest);
+        $ms_liker_formatted = format_name($ms_liker_username, $row['usergroup'], $row['displaygroup']);
+        eval("\$html .= \"" . $templates->get("pex_like_user") . "\";");
     }
 
     if ($html === '') {
-        $html = '<div class="text-muted small p-2">No likes yet.</div>';
+        $html = '<div class="text-muted small p-2">' . $lang->ms_no_likes_yet . '</div>';
     }
 
     ms_pex_json(array('success' => true, 'html' => $html));

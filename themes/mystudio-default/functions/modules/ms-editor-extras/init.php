@@ -89,17 +89,17 @@ function ms_ee_xmlhttp()
         header('Content-type: application/json; charset=' . $charset);
 
         if (!verify_post_check($mybb->get_input('my_post_key'), true)) {
-            echo json_encode(array('error' => 'Invalid post key.'));
+            echo json_encode(array('error' => $lang->ms_error_invalid_post_key));
             exit;
         }
 
         if ($mybb->user['uid'] == 0) {
-            echo json_encode(array('error' => 'You must be logged in to upload.'));
+            echo json_encode(array('error' => $lang->ms_error_login_to_upload));
             exit;
         }
 
         if (!isset($_FILES['upload']) || $_FILES['upload']['error'] !== UPLOAD_ERR_OK) {
-            echo json_encode(array('error' => 'No file received.'));
+            echo json_encode(array('error' => $lang->ms_error_no_file_received));
             exit;
         }
 
@@ -109,7 +109,7 @@ function ms_ee_xmlhttp()
         $forumpermissions = $fid ? forum_permissions($fid) : array('canpostattachments' => 1);
 
         if (empty($forumpermissions['canpostattachments'])) {
-            echo json_encode(array('error' => 'You do not have permission to upload attachments.'));
+            echo json_encode(array('error' => $lang->ms_error_no_upload_permission));
             exit;
         }
 
@@ -154,12 +154,12 @@ function ms_ee_xmlhttp()
         header('Content-type: application/json; charset=' . $charset);
 
         if (!verify_post_check($mybb->get_input('my_post_key'), true)) {
-            echo json_encode(array('error' => 'Invalid post key.'));
+            echo json_encode(array('error' => $lang->ms_error_invalid_post_key));
             exit;
         }
 
         if ($mybb->user['uid'] == 0) {
-            echo json_encode(array('error' => 'You must be logged in.'));
+            echo json_encode(array('error' => $lang->ms_error_login_required));
             exit;
         }
 
@@ -169,39 +169,39 @@ function ms_ee_xmlhttp()
         $forumpermissions = $fid ? forum_permissions($fid) : array('canpostattachments' => 1);
 
         if (empty($forumpermissions['canpostattachments'])) {
-            echo json_encode(array('error' => 'You do not have permission to upload attachments.'));
+            echo json_encode(array('error' => $lang->ms_error_no_upload_permission));
             exit;
         }
 
         $image_url = trim($mybb->get_input('url'));
         if (empty($image_url)) {
-            echo json_encode(array('error' => 'No URL provided.'));
+            echo json_encode(array('error' => $lang->ms_error_no_url_provided));
             exit;
         }
 
         // Validate URL scheme
         $parsed = parse_url($image_url);
         if (!$parsed || !isset($parsed['scheme']) || !in_array(strtolower($parsed['scheme']), array('http', 'https'))) {
-            echo json_encode(array('error' => 'Invalid URL.'));
+            echo json_encode(array('error' => $lang->ms_error_invalid_url));
             exit;
         }
 
         // Don't proxy our own attachment URLs
         if (strpos($image_url, $mybb->settings['bburl']) === 0) {
-            echo json_encode(array('error' => 'Image is already local.'));
+            echo json_encode(array('error' => $lang->ms_error_already_local));
             exit;
         }
 
         // Download the image
         $image_data = ms_ee_fetch_url_raw($image_url);
         if ($image_data === false || strlen($image_data) < 100) {
-            echo json_encode(array('error' => 'Failed to download image.'));
+            echo json_encode(array('error' => $lang->ms_error_download_failed));
             exit;
         }
 
         // Max 10MB
         if (strlen($image_data) > 10 * 1024 * 1024) {
-            echo json_encode(array('error' => 'Image too large (max 10MB).'));
+            echo json_encode(array('error' => $lang->ms_error_image_too_large_10mb));
             exit;
         }
 
@@ -216,7 +216,7 @@ function ms_ee_xmlhttp()
             'image/bmp'  => 'bmp',
         );
         if (!isset($mime_map[$mime])) {
-            echo json_encode(array('error' => 'Not a valid image type.'));
+            echo json_encode(array('error' => $lang->ms_error_not_valid_image));
             exit;
         }
 
@@ -276,7 +276,7 @@ function ms_ee_xmlhttp()
     // --- GIF Search ---
     if ($action == 'editorextras_gif_search') {
         if ($mybb->user['uid'] <= 0) {
-            echo json_encode(array('error' => 'Login required.'));
+            echo json_encode(array('error' => $lang->ms_error_login_required));
             exit;
         }
         $opts = $GLOBALS['ms_ee_options'];
@@ -288,7 +288,7 @@ function ms_ee_xmlhttp()
         header('Content-type: application/json; charset=' . $charset);
 
         if (empty($api_key)) {
-            echo json_encode(array('error' => 'GIF API key not configured.'));
+            echo json_encode(array('error' => $lang->ms_error_gif_api_not_configured));
             exit;
         }
 
@@ -297,7 +297,7 @@ function ms_ee_xmlhttp()
         } elseif ($provider == 'giphy') {
             $url = "https://api.giphy.com/v1/gifs/search?q={$query}&api_key={$api_key}&limit={$limit}&rating=g";
         } else {
-            echo json_encode(array('error' => 'Invalid GIF provider.'));
+            echo json_encode(array('error' => $lang->ms_error_invalid_gif_provider));
             exit;
         }
 
@@ -308,7 +308,7 @@ function ms_ee_xmlhttp()
     // --- GIF Trending ---
     if ($action == 'editorextras_gif_trending') {
         if ($mybb->user['uid'] <= 0) {
-            echo json_encode(array('error' => 'Login required.'));
+            echo json_encode(array('error' => $lang->ms_error_login_required));
             exit;
         }
         $opts = $GLOBALS['ms_ee_options'];
@@ -319,7 +319,7 @@ function ms_ee_xmlhttp()
         header('Content-type: application/json; charset=' . $charset);
 
         if (empty($api_key)) {
-            echo json_encode(array('error' => 'GIF API key not configured.'));
+            echo json_encode(array('error' => $lang->ms_error_gif_api_not_configured));
             exit;
         }
 
@@ -339,6 +339,7 @@ function ms_ee_xmlhttp()
  */
 function ms_ee_fetch_url($url)
 {
+    global $lang;
     if (function_exists('curl_init')) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -347,20 +348,40 @@ function ms_ee_fetch_url($url)
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
         $response = curl_exec($ch);
         curl_close($ch);
-        return $response ?: json_encode(array('error' => 'Request failed.'));
+        return $response ?: json_encode(array('error' => $lang->ms_error_request_failed));
     } elseif (ini_get('allow_url_fopen')) {
         $ctx = stream_context_create(array('http' => array('timeout' => 10)));
         $response = @file_get_contents($url, false, $ctx);
-        return $response ?: json_encode(array('error' => 'Request failed.'));
+        return $response ?: json_encode(array('error' => $lang->ms_error_request_failed));
     }
-    return json_encode(array('error' => 'No HTTP client available (cURL or allow_url_fopen required).'));
+    return json_encode(array('error' => $lang->ms_error_no_http_client));
 }
 
 /**
  * Fetch URL and return raw binary data (for image proxy).
+ * Validates against SSRF by blocking private/reserved IP ranges.
  */
 function ms_ee_fetch_url_raw($url)
 {
+    // SSRF protection: block private/reserved IP ranges and localhost
+    $host = parse_url($url, PHP_URL_HOST);
+    if (!$host) {
+        return false;
+    }
+    $lower_host = strtolower($host);
+    if (in_array($lower_host, array('localhost', 'localhost.localdomain', '[::1]'))) {
+        return false;
+    }
+    // Resolve hostname to IP and check against private/reserved ranges
+    $ip = gethostbyname($host);
+    if ($ip === $host && !filter_var($host, FILTER_VALIDATE_IP)) {
+        // DNS resolution failed
+        return false;
+    }
+    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+        return false;
+    }
+
     if (function_exists('curl_init')) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -416,13 +437,13 @@ function ms_ee_save_as_attachment($file, $mybb, $db)
     }
 
     if (!isset($attachtypes[$ext])) {
-        return array('error' => 'File type not allowed (' . htmlspecialchars_uni($ext) . ').');
+        return array('error' => $lang->ms_error_file_type_not_allowed . htmlspecialchars_uni($ext) . ').');
     }
 
     $attachtype = $attachtypes[$ext];
 
     if ($file['size'] > $attachtype['maxsize'] * 1024 && $attachtype['maxsize'] != '') {
-        return array('error' => 'File too large (max ' . $attachtype['maxsize'] . 'KB).');
+        return array('error' => $lang->ms_error_file_too_large_max . $attachtype['maxsize'] . 'KB).');
     }
 
     $posthash = $db->escape_string($mybb->get_input('posthash'));
@@ -438,7 +459,7 @@ function ms_ee_save_as_attachment($file, $mybb, $db)
     $filepath = $upload_path . '/' . $month_dir . '/' . $filename_internal;
 
     if (!@copy($file['tmp_name'], $filepath)) {
-        return array('error' => 'Failed to save file.');
+        return array('error' => $lang->ms_error_save_failed);
     }
     @chmod($filepath, 0644);
 
