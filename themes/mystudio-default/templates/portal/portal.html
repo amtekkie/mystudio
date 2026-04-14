@@ -5,7 +5,6 @@
 </head>
 <body>
 {$header}
-
 <div class="ms-page-shell">
 	<aside class="ms-page-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="msSidebarOffcanvas">
 		<div class="offcanvas-header d-lg-none">
@@ -51,6 +50,18 @@ lang.editreason = "{$lang->postbit_editreason}";
 <script src="{$mybb->asset_url}/jscripts/report.js?ver=1839"></script>
 <script src="{$mybb->asset_url}/jscripts/jeditable/jeditable.min.js"></script>
 <script src="{$mybb->asset_url}/jscripts/thread.js?ver=1839"></script>
+<script>
+$(function(){
+	// Move header alerts/notices into portal content area, after the breadcrumb header
+	var tgt = $('.pex-main-header');
+	$('main.container').children().not('script').each(function(){
+		if (!$(this).find('.ms-page-shell').length && !$(this).is('.ms-page-shell')) {
+			$(this).insertAfter(tgt);
+			tgt = $(this);
+		}
+	});
+});
+</script>
 
 {$footer}
 </body>

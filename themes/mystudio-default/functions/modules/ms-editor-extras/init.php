@@ -23,6 +23,7 @@ $GLOBALS['ms_ee_options'] = isset($ms_plugin_options) ? $ms_plugin_options : arr
 if (!defined('IN_ADMINCP')) {
     $plugins->add_hook('global_end', 'ms_ee_inject_config');
     $plugins->add_hook('xmlhttp',    'ms_ee_xmlhttp');
+    $plugins->add_hook('parse_message_end', 'ms_ee_parse_bbcode');
 }
 /**
  * Hook: global_end
@@ -54,7 +55,7 @@ function ms_ee_inject_config()
         'gif'             => (!isset($opts['gif']) || $opts['gif']) && !empty($opts['gif_api_key']),
         'gifProvider'     => isset($opts['gif_provider']) ? $opts['gif_provider'] : 'tenor',
         'table'           => (!isset($opts['table']) || $opts['table']),
-        'autosave'        => (!isset($opts['autosave']) || $opts['autosave']),
+        'autosave'        => false,
         'wordCount'       => (!isset($opts['word_count']) || $opts['word_count']),
         'mention'         => (!isset($opts['mention']) || $opts['mention']),
         'syntaxHighlight' => (!isset($opts['syntax_highlight']) || $opts['syntax_highlight']),
@@ -74,6 +75,33 @@ function ms_ee_inject_config()
         $headerinclude .= "\n" . '<script>document.documentElement.classList.add(' . implode(',', array_map(function($c){ return "'" . $c . "'"; }, $classes)) . ');</script>';
     }
 }
+/**
+ * Hook: parse_message_end
+ * Convert [table], [tr], [td], [th], and [icon] BBCode to HTML.
+ */
+function ms_ee_parse_bbcode($message)
+{
+    // Table BBCode → HTML
+    $message = preg_replace('#\[table\]\s*#si', '<div class="mycode_table_wrapper"><table class="mycode_table">', $message);
+    $message = preg_replace('#\s*\[/table\]#si', '</table></div>', $message);
+    $message = preg_replace('#\[tr\]\s*#si', '<tr>', $message);
+    $message = preg_replace('#\s*\[/tr\]#si', '</tr>', $message);
+    $message = preg_replace('#\[th\](.*?)\[/th\]#si', '<th>$1</th>', $message);
+    $message = preg_replace('#\[td\](.*?)\[/td\]#si', '<td>$1</td>', $message);
+
+    // [icon]icon-name[/icon] → Bootstrap Icon <i> tag
+    $message = preg_replace_callback(
+        '#\[icon\]([a-z0-9\-]+)\[/icon\]#si',
+        function ($m) {
+            $name = preg_replace('/[^a-z0-9\-]/', '', strtolower($m[1]));
+            return '<i class="bi bi-' . htmlspecialchars($name, ENT_QUOTES) . '"></i>';
+        },
+        $message
+    );
+
+    return $message;
+}
+
 /**
  * Hook: xmlhttp
  * Handle image upload and GIF search/trending AJAX requests.

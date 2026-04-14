@@ -8,7 +8,6 @@
 <script>var _jqModal = $.fn.modal, _jqModalStatic = $.modal;</script>
 
 <link href="{$mybb->asset_url}/themes/mystudio-default/vendor/bootstrap.min.css" rel="stylesheet">
-<script src="{$mybb->asset_url}/jscripts/popper.min.js"></script>
 <script src="{$mybb->asset_url}/themes/mystudio-default/vendor/bootstrap.bundle.min.js"></script>
 <script>$.fn.modal = _jqModal; $.modal = _jqModalStatic;
 document.addEventListener('DOMContentLoaded', function() { $.fn.modal = _jqModal; $.modal = _jqModalStatic; });</script>
@@ -19,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() { $.fn.modal = _jqModal
 
 {$stylesheets}
 
-<script src="{$mybb->settings['bburl']}/themes/mystudio-default/js/selection-quote.js" defer></script>
+<script src="{$mybb->asset_url}/themes/mystudio-default/js/selection-quote.js" defer></script>
 
 <script type="text/javascript">
 	lang.unknown_error = "{$lang->unknown_error}";

@@ -93,6 +93,7 @@
 .ee-bi-icons .sceditor-button-emoji div::before         { content: "\f327"; } /* emoji-smile */
 .ee-bi-icons .sceditor-button-gif div::before           { content: "GIF"; font-family: Arial, sans-serif !important; font-size: 9px; font-weight: 900; letter-spacing: -0.5px; } /* text-based GIF label */
 .ee-bi-icons .sceditor-button-spoiler div::before       { content: "\f340"; } /* eye-slash */
+.ee-bi-icons .sceditor-button-biicon div::before        { content: "\f53a"; font-size: 13px; } /* stars */
 
 /* Subscript / Superscript distinct icons */
 .ee-bi-icons .sceditor-button-subscript div::before     { content: "₂"; font-family: inherit !important; font-weight: 700; }
@@ -348,26 +349,6 @@
 .ee-attachment-row { display: none; }
 
 /* ==========================================================================
-   AUTOSAVE INDICATOR
-   ========================================================================== */
-
-.ee-autosave-indicator {
-    position: absolute;
-    top: 4px;
-    right: 8px;
-    font-size: 11px;
-    color: #999;
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: 10;
-    pointer-events: none;
-}
-
-.ee-autosave-indicator.show {
-    opacity: 1;
-}
-
-/* ==========================================================================
    CODE BLOCK ENHANCEMENTS — Line Numbers + Copy Button
    ========================================================================== */
 
@@ -438,4 +419,168 @@ td.ee-line-code {
 [data-bs-theme="dark"] td.ee-line-num {
     color: #6e7681;
     border-right-color: #30363d;
+}
+
+/* ==========================================================================
+   TABLE BBCODE RENDERING
+   ========================================================================== */
+.mycode_table_wrapper {
+    overflow-x: auto;
+    margin: .75em 0;
+}
+
+.mycode_table {
+    border-collapse: collapse;
+    width: auto;
+    min-width: 200px;
+    border: 1px solid var(--tekbb-border, #dee2e6);
+}
+
+.mycode_table th,
+.mycode_table td {
+    border: 1px solid var(--tekbb-border, #dee2e6);
+    padding: 6px 12px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.mycode_table th {
+    background: var(--tekbb-heading-bg, #f1f3f5);
+    font-weight: 600;
+    color: var(--tekbb-text-inv, #333);
+}
+
+.mycode_table tr:nth-child(even) td {
+    background: var(--glass-bg, rgba(0,0,0,.02));
+}
+
+[data-bs-theme="dark"] .mycode_table {
+    border-color: #30363d;
+}
+[data-bs-theme="dark"] .mycode_table th,
+[data-bs-theme="dark"] .mycode_table td {
+    border-color: #30363d;
+}
+[data-bs-theme="dark"] .mycode_table th {
+    background: rgba(255,255,255,.06);
+    color: #e6edf3;
+}
+[data-bs-theme="dark"] .mycode_table tr:nth-child(even) td {
+    background: rgba(255,255,255,.02);
+}
+
+/* ==========================================================================
+   TABLE PICKER (INSERT TABLE DROPDOWN)
+   ========================================================================== */
+.ee-table-picker {
+    position: absolute;
+    z-index: 5000;
+    background: var(--bs-body-bg, #fff);
+    border: 1px solid var(--glass-border, #ddd);
+    border-radius: .5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+    padding: 8px;
+    min-width: 200px;
+}
+
+.ee-table-picker-label {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--bs-body-color, #333);
+}
+
+.ee-table-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 22px);
+    grid-template-rows: repeat(8, 22px);
+    gap: 2px;
+    justify-content: center;
+}
+
+.ee-table-picker-cell {
+    width: 22px;
+    height: 22px;
+    border: 1px solid var(--tekbb-border, #ced4da);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: background .1s, border-color .1s;
+}
+
+.ee-table-picker-cell.highlight {
+    background: var(--tekbb-accent, #0d9488);
+    border-color: var(--tekbb-accent, #0d9488);
+    opacity: .7;
+}
+
+.ee-table-picker-cell:hover {
+    border-color: var(--tekbb-accent, #0d9488);
+}
+
+/* ==========================================================================
+   ICON PICKER (INSERT BOOTSTRAP ICON DROPDOWN)
+   ========================================================================== */
+.ee-icon-picker {
+    position: absolute;
+    z-index: 5000;
+    background: var(--bs-body-bg, #fff);
+    border: 1px solid var(--glass-border, #ddd);
+    border-radius: .5rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,.15);
+    width: 320px;
+    max-height: 360px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.ee-icon-picker-search {
+    border: none;
+    border-bottom: 1px solid var(--glass-border, #ddd);
+    padding: 8px 12px;
+    width: 100%;
+    font-size: 14px;
+    outline: none;
+    background: transparent;
+    color: var(--bs-body-color, #333);
+}
+
+.ee-icon-picker-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 8px;
+    overflow-y: auto;
+    max-height: 280px;
+}
+
+.ee-icon-picker-item {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--bs-body-color, #333);
+    transition: background .15s, border-color .15s, color .15s;
+    padding: 0;
+}
+
+.ee-icon-picker-item:hover {
+    background: var(--glass-bg, rgba(0,0,0,.04));
+    border-color: var(--tekbb-accent, #0d9488);
+    color: var(--tekbb-accent, #0d9488);
+}
+
+.ee-icon-picker-empty {
+    padding: 16px;
+    text-align: center;
+    color: #999;
+    font-size: 13px;
+    width: 100%;
 }
