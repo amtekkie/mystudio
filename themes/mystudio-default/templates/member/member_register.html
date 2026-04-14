@@ -4,66 +4,82 @@
     <title>{$mybb->settings['bbname']} - {$lang->registration}</title>
     {$headerinclude}
     <script src="{$mybb->asset_url}/jscripts/validate/jquery.validate.min.js?ver=1821"></script>
-    <style>.ms-user-dropdown,.ms-guest-actions,.navigation{display:none!important}</style>
+    <style>.ms-user-dropdown,.ms-guest-actions,.navigation,.ms-sidebar-toggle{display:none!important}</style>
 </head>
 
 <body>
     {$header}
-    <div class="container" style="max-width:520px">
-    <div class="card my-4">
-        <div class="card-body p-4">
-            <div class="text-center mb-4">
-                <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:56px;height:56px;background:var(--tekbb-accent-subtle,rgba(var(--bs-primary-rgb),.1))">
-                    <i class="bi bi-person-plus-fill fs-3" style="color:var(--tekbb-accent)"></i>
+    <div class="mx-auto my-4" style="max-width:720px">
+
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:56px;height:56px;background:var(--tekbb-accent-subtle,rgba(var(--bs-primary-rgb),.1))">
+                <i class="bi bi-person-plus-fill fs-3" style="color:var(--tekbb-accent)"></i>
+            </div>
+            <h4 class="fw-bold mb-1">{$lang->registration}</h4>
+            <p class="text-muted small mb-0">{$lang->account_details}</p>
+        </div>
+
+        {$regerrors}
+
+        <form action="member.php" method="post" id="registration_form">
+            <input type="text" style="display:none" value="" name="regcheck1" />
+            <input type="text" style="display:none" value="true" name="regcheck2" />
+
+            <div class="row g-3">
+                <!-- Left column: account fields -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="text-muted small text-uppercase fw-semibold mb-3"><i class="bi bi-person me-1"></i>Account</h6>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                <input type="text" class="form-control" name="username" id="username" value="{$username}" placeholder="{$lang->ms_placeholder_enter_username}" autocomplete="username" />
+                            </div>
+
+                            {$passboxes}
+
+                            <div class="input-group mb-3">
+                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                                <input type="email" class="form-control" name="email" id="email" maxlength="50" value="{$email}" placeholder="{$lang->ms_placeholder_enter_email}" autocomplete="email" />
+                            </div>
+                            <input type="hidden" name="email2" id="email2" value="{$email2}" />
+                            <div id="email_status"></div>
+
+                            {$referrer}
+                        </div>
+                    </div>
                 </div>
-                <h4 class="fw-bold mb-1">{$lang->registration}</h4>
-                <p class="text-muted small mb-0">{$lang->account_details}</p>
+
+                <!-- Right column: verification -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="text-muted small text-uppercase fw-semibold mb-3"><i class="bi bi-shield-check me-1"></i>Verification</h6>
+                            {$hiddencaptcha}
+                            {$regimage}
+                            {$questionbox}
+                            {$requiredfields}
+                            {$customfields}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {$regerrors}
+            <div class="d-grid mt-4">
+                <input type="hidden" name="regtime" value="{$time}" />
+                <input type="hidden" name="step" value="registration" />
+                <input type="hidden" name="action" value="do_register" />
+                <button type="submit" name="regsubmit" class="btn btn-primary btn-lg"><i class="bi bi-check-circle me-2"></i>{$lang->submit_registration}</button>
+            </div>
+        </form>
 
-            <form action="member.php" method="post" id="registration_form">
-                <input type="text" style="display:none" value="" name="regcheck1" />
-                <input type="text" style="display:none" value="true" name="regcheck2" />
-
-                <div class="input-group mb-3">
-                    <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-                    <input type="text" class="form-control" name="username" id="username" value="{$username}" placeholder="{$lang->ms_placeholder_enter_username}" autocomplete="username" />
-                </div>
-
-                {$passboxes}
-
-                <div class="input-group mb-3">
-                    <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
-                    <input type="email" class="form-control" name="email" id="email" maxlength="50" value="{$email}" placeholder="{$lang->ms_placeholder_enter_email}" autocomplete="email" />
-                </div>
-
-                <input type="hidden" name="email2" id="email2" value="{$email2}" />
-                <div id="email_status"></div>
-
-                {$referrer}
-
-                {$hiddencaptcha}
-
-                {$requiredfields}
-                {$customfields}
-
-                {$regimage}
-                {$questionbox}
-
-                <div class="d-grid mt-4">
-                    <input type="hidden" name="regtime" value="{$time}" />
-                    <input type="hidden" name="step" value="registration" />
-                    <input type="hidden" name="action" value="do_register" />
-                    <button type="submit" name="regsubmit" class="btn btn-primary btn-lg"><i class="bi bi-check-circle me-2"></i>{$lang->submit_registration}</button>
-                </div>
-            </form>
-        </div>
-    </div>
     </div>
     {$validator_javascript}
     <script type="text/javascript" src="{$mybb->asset_url}/jscripts/regvalidator.js?ver=1823"></script>
-    <script>document.getElementById('email').addEventListener('input',function(){document.getElementById('email2').value=this.value;});</script>
+    <script>
+    document.getElementById('email').addEventListener('input',function(){document.getElementById('email2').value=this.value;});
+    document.getElementById('password').addEventListener('input',function(){document.getElementById('password2').value=this.value;});
+    </script>
     {$footer}
 </body>
 

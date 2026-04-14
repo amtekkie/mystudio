@@ -5,9 +5,9 @@
 <div class="flex-grow-1 min-w-0">
 	<div class="d-flex align-items-center gap-1">
 		<span class="d-md-none forum_{$lightbulb['folder']} ajax_mark_read ficons_{$forum['fid']}" title="{$lightbulb['altonoff']}" id="mark_read_{$forum['fid']}"><i class="bi bi-chat-left-fill"></i></span>
-		<a href="{$forum_url}" class="fw-semibold text-truncate">{$forum['name']}</a>
+		<a href="{$forum_url}" class="fw-semibold text-truncate" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{$forum['description']}">{$forum['name']}</a>
 	</div>
-	<div class="text-muted small text-truncate d-none d-md-block">{$forum['description']}</div>
+	
 	<div class="d-md-none small text-muted mt-1">
 		<span class="me-2">{$threads} threads</span>
 		<span>{$posts} posts</span>
@@ -16,8 +16,8 @@
 	{$forum_viewers_text}{$modlist}{$subforums}
 </div>
 <div class="d-none d-md-flex align-items-center gap-2 text-muted small flex-shrink-0">
-	<span>{$threads} threads,</span>
-	<span>{$posts} posts</span>
+	{$threads} threads<br>
+	{$posts} posts
 </div>
 <div class="d-none d-md-block small text-end flex-shrink-0" style="width:200px">
 	{$lastpost}

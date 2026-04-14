@@ -50,3 +50,7 @@
 
   color-scheme: dark;
 }
+
+.text-muted {
+  color: var(--tekbb-muted);
+}

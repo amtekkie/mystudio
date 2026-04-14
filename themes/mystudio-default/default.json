@@ -1,15 +1,8 @@
 {
-    "logo_icon": "bi-brush",
-    "logo_text": "My Studio",
+    "logo_icon": "bi-chat-dots",
+    "logo_text": "Forumeze",
     "site_logo": "",
     "site_logo_width": "200",
     "site_logo_height": "0",
-    "favicon": "",
-    "notif_pm": "1",
-    "notif_like": "1",
-    "notif_mention": "1",
-    "notif_quote": "1",
-    "notif_sub_thread": "1",
-    "notif_sub_forum": "1",
-    "notif_reputation": "1"
+    "favicon": "themes/mystudio-default/images/uploads/favicon.svg"
 }

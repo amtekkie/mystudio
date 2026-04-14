@@ -352,7 +352,7 @@ function ms_pex_render_page_sidebar($scriptName)
             . '<img src="images/default_avatar.png" alt="' . htmlspecialchars_uni($lang->guest) . '" class="ms-sidebar-avatar" />'
             . '<div class="ms-sidebar-profile-copy">'
             . '<span class="ms-sidebar-name">Guest</span>'
-            . '<span class="ms-sidebar-handle">' . htmlspecialchars_uni($mybb->settings['bbname']) . '</span>'
+            . '<span class="ms-sidebar-handle">Welcome Guest!</span>'
             . '</div>'
             . '</div>'
             . '</div>';
