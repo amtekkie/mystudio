@@ -2,8 +2,6 @@
 <head>
 <title>{$mybb->settings['bbname']} - {$lang->search}</title>
 {$headerinclude}
-<link rel="stylesheet" href="{$mybb->asset_url}/jscripts/select2/select2.css?ver=1806">
-<script src="{$mybb->asset_url}/jscripts/select2/select2.min.js"></script>
 </head>
 <body>
 {$header}
@@ -34,7 +32,7 @@
 
 		<div class="mb-3">
 			<label class="form-label fw-semibold">{$lang->search_username}</label>
-			<input type="text" id="author" name="author" maxlength="{$mybb->settings['maxnamelength']}" />
+			<input type="text" class="form-control" id="author" name="author" maxlength="{$mybb->settings['maxnamelength']}" />
 			<div class="form-check mt-1">
 				<input class="form-check-input" type="checkbox" name="matchusername" value="1" id="matchusername" checked="checked" />
 				<label class="form-check-label small" for="matchusername">{$lang->match_username}</label>
@@ -127,41 +125,8 @@
 
 {$footer}
 
-<script>
-<!--
-if(use_xmlhttprequest == "1")
-{
-	MyBB.select2();
-	$("#author").select2({
-		placeholder: "{$lang->search_user}",
-		minimumInputLength: 2,
-		multiple: false,
-		allowClear: true,
-		ajax: {
-			url: "xmlhttp.php?action=get_users",
-			dataType: 'json',
-			data: function (term, page) {
-				return {
-					query: term,
-				};
-			},
-			results: function (data, page) {
-				return {results: data};
-			}
-		},
-		initSelection: function(element, callback) {
-			var value = $(element).val();
-			if (value !== "") {
-				callback({
-					id: value,
-					text: value
-				});
-			}
-		},
-	});
-}
-// -->
-</script>
+<script src="{$mybb->asset_url}/themes/mystudio-default/js/user-autocomplete.js"></script>
+<script>if(use_xmlhttprequest=="1"){UserAutoComplete('author');}</script>
 
 </body>
 </html>

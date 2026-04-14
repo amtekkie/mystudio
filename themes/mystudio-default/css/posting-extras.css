@@ -116,7 +116,7 @@
     flex-shrink: 0;
     transition: color 0.2s;
 }
-.ms-header-search-close:hover { color: #f87171; }
+.ms-header-search-close:hover { color: #fff; }
 
 /* ─ Autocomplete Dropdown ─ */
 .ms-ac {
