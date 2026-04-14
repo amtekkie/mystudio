@@ -937,32 +937,6 @@ class MyStudio
         return true;
     }
 
-    private function deleteThemeByName($name)
-    {
-        global $db;
-
-        $name_esc = $db->escape_string($name);
-        $query = $db->simple_select('themes', 'tid', "name='{$name_esc}' AND tid != 1");
-        while ($t = $db->fetch_array($query)) {
-            $tid = (int) $t['tid'];
-            $tq = $db->simple_select('themes', 'properties', "tid='{$tid}'");
-            $theme = $db->fetch_array($tq);
-            if ($theme) {
-                $props = my_unserialize($theme['properties']);
-                if (isset($props['templateset'])) {
-                    $sid = (int) $props['templateset'];
-                    $db->delete_query('templates', "sid='{$sid}'");
-                    $db->delete_query('templatesets', "sid='{$sid}'");
-                }
-            }
-            $db->delete_query('themestylesheets', "tid='{$tid}'");
-            $db->delete_query('themes', "tid='{$tid}'");
-
-            @array_map('unlink', (array) glob(MYBB_ROOT . 'cache/themes/theme' . $tid . '/*'));
-            @rmdir(MYBB_ROOT . 'cache/themes/theme' . $tid);
-        }
-    }
-
     private function deployJs($themeDir)
     {
         $jsDir = $themeDir . '/js';

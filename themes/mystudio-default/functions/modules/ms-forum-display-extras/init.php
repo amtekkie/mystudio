@@ -221,6 +221,15 @@ CSS;
 
         if ($enableModal) {
             $bburl = $mybb->settings['bburl'];
+            global $lang;
+            $uc_posts = $lang->ms_usercard_posts;
+            $uc_rep = $lang->ms_usercard_rep;
+            $uc_joined = $lang->ms_usercard_joined;
+            $uc_profile = $lang->ms_usercard_profile;
+            $uc_pm = $lang->ms_usercard_pm;
+            $uc_rate_user = $lang->ms_usercard_rate_user;
+            $uc_failed_load = $lang->ms_error_failed_load;
+            $uc_failed_load_rep = $lang->ms_error_failed_load_rep;
             $js .= <<<JSEOF
 /* MyStudio Forum Display Extras — User Info Modal */
 (function(){
@@ -261,19 +270,19 @@ CSS;
           +'</div>'
           +'<div class="px-3 py-2">'
           +'<div class="row g-2 text-center small mb-2">'
-          +'<div class="col-4"><div class="fw-semibold">'+u.postnum+'</div><div class="text-muted">Posts</div></div>'
-          +'<div class="col-4"><div class="fw-semibold">'+u.reputation+'</div><div class="text-muted">Rep</div></div>'
-          +'<div class="col-4"><div class="fw-semibold">'+u.regdate+'</div><div class="text-muted">Joined</div></div>'
+          +'<div class="col-4"><div class="fw-semibold">'+u.postnum+'</div><div class="text-muted">{$uc_posts}</div></div>'
+          +'<div class="col-4"><div class="fw-semibold">'+u.reputation+'</div><div class="text-muted">{$uc_rep}</div></div>'
+          +'<div class="col-4"><div class="fw-semibold">'+u.regdate+'</div><div class="text-muted">{$uc_joined}</div></div>'
           +'</div>'
           +'<div class="d-flex gap-2 mt-2 mb-1">'
-          +'<a href="'+u.profile_url+'" class="btn btn-sm btn-outline-primary flex-fill"><i class="bi bi-person me-1"></i>Profile</a>';
-        if(u.can_pm) html+='<a href="'+u.pm_url+'" class="btn btn-sm btn-outline-success flex-fill"><i class="bi bi-envelope me-1"></i>PM</a>';
+          +'<a href="'+u.profile_url+'" class="btn btn-sm btn-outline-primary flex-fill"><i class="bi bi-person me-1"></i>{$uc_profile}</a>';
+        if(u.can_pm) html+='<a href="'+u.pm_url+'" class="btn btn-sm btn-outline-success flex-fill"><i class="bi bi-envelope me-1"></i>{$uc_pm}</a>';
         html+='</div>';
-        if(u.can_rate) html+='<a href="javascript:void(0)" data-ms-rate-uid="'+u.uid+'" class="btn btn-sm btn-outline-warning w-100 mt-1 mb-1"><i class="bi bi-star me-1"></i>Rate User</a>';
+        if(u.can_rate) html+='<a href="javascript:void(0)" data-ms-rate-uid="'+u.uid+'" class="btn btn-sm btn-outline-warning w-100 mt-1 mb-1"><i class="bi bi-star me-1"></i>{$uc_rate_user}</a>';
         html+='</div>';
         body.innerHTML=html;
       })
-      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">Failed to load.</div>';});
+      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">{$uc_failed_load}</div>';});
   });
   document.addEventListener('click',function(e){
     var rateBtn=e.target.closest('[data-ms-rate-uid]');
@@ -294,7 +303,7 @@ CSS;
         if(form){
           // Prevent the default MyBB JS submit handler, use standard form submit
           form.removeAttribute('onsubmit');
-          body.innerHTML='<div class="p-3"><h6 class="mb-3 fw-bold"><i class="bi bi-star me-1"></i>Rate User</h6></div>';
+          body.innerHTML='<div class="p-3"><h6 class="mb-3 fw-bold"><i class="bi bi-star me-1"></i>{$uc_rate_user}</h6></div>';
           body.querySelector('div').appendChild(form);
         } else {
           // Error or unexpected content — show as-is
@@ -302,7 +311,7 @@ CSS;
           body.innerHTML='<div class="p-3">'+card.innerHTML+'</div>';
         }
       })
-      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">Failed to load reputation form.</div>';});
+      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">{$uc_failed_load_rep}</div>';});
   });
 })();
 JSEOF;
@@ -397,7 +406,7 @@ $plugins->add_hook('xmlhttp', 'ms_fde_xmlhttp_usercard');
 
 function ms_fde_xmlhttp_usercard()
 {
-    global $mybb, $db, $charset;
+    global $mybb, $db, $charset, $lang;
 
     if ($mybb->get_input('action') !== 'ms_fde_usercard') {
         return;
@@ -411,13 +420,13 @@ function ms_fde_xmlhttp_usercard()
 
     // Permission check
     if ($mybb->usergroup['canviewprofiles'] != 1) {
-        echo json_encode(array('success' => false, 'error' => 'No permission'));
+        echo json_encode(array('success' => false, 'error' => $lang->ms_error_no_permission));
         exit;
     }
 
     $uid = $mybb->get_input('uid', MyBB::INPUT_INT);
     if ($uid <= 0) {
-        echo json_encode(array('success' => false, 'error' => 'Invalid user ID'));
+        echo json_encode(array('success' => false, 'error' => $lang->ms_error_invalid_user_id));
         exit;
     }
 
@@ -430,7 +439,7 @@ function ms_fde_xmlhttp_usercard()
     $user = $db->fetch_array($query);
 
     if (!$user) {
-        echo json_encode(array('success' => false, 'error' => 'User not found'));
+        echo json_encode(array('success' => false, 'error' => $lang->ms_error_user_not_found));
         exit;
     }
 

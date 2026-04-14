@@ -1,0 +1,59 @@
+<nav class="ms-sidebar-nav">
+	<div class="ms-sidebar-card ms-sidebar-profile">
+		<div class="ms-sidebar-profile-top">
+			<a href="{$ms_sb_profile_url}">
+				<img src="{$ms_sb_avatar}" alt="{$ms_sb_username}" class="ms-sidebar-avatar" />
+			</a>
+			<div class="ms-sidebar-profile-copy">
+				<span class="ms-sidebar-name">{$ms_sb_formatted_name}</span>
+				{$ms_sb_usertitle}
+				{$ms_sb_groupimage}
+			</div>
+		</div>
+	</div>
+
+	<a href="#" class="ms-sidebar-link ms-sidebar-link-primary" role="button" data-bs-toggle="modal" data-bs-target="#ms_newthread_modal"><i class="bi bi-plus-lg"></i><span>{$lang->ms_sidebar_post_thread}</span></a>
+
+	<a href="{$ms_sb_portal_url}" class="ms-sidebar-link{$ms_sb_portal_active}"><i class="bi bi-house-door"></i><span>{$lang->ms_sidebar_home}</span></a>
+	<a href="{$ms_sb_forums_url}" class="ms-sidebar-link{$ms_sb_forums_active}"><i class="bi bi-grid-3x3-gap"></i><span>{$lang->ms_sidebar_forums}</span></a>
+
+	<details class="ms-sidebar-details"{$ms_sb_search_open}>
+		<summary class="ms-sidebar-link{$ms_sb_search_active}"><a href="{$ms_sb_search_url}"><i class="bi bi-search"></i><span>{$lang->ms_sidebar_search}</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>
+		<div class="ms-sidebar-sub">
+			<a class="ms-sidebar-sublink{$ms_sb_search_new_active}" href="{$ms_sb_search_url}?action=getnew">{$lang->ms_sidebar_new_posts}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_search_daily_active}" href="{$ms_sb_search_url}?action=getdaily">{$lang->ms_sidebar_todays_posts}</a>
+		</div>
+	</details>
+
+	<details class="ms-sidebar-details"{$ms_sb_ucp_open}>
+		<summary class="ms-sidebar-link{$ms_sb_ucp_active}"><a href="{$ms_sb_ucp_url}"><i class="bi bi-gear"></i><span>{$lang->ms_sidebar_usercp}</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>
+		<div class="ms-sidebar-sub">
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_home_active}" href="{$ms_sb_ucp_url}">{$lang->ms_sidebar_usercp_home}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_profile_active}" href="{$ms_sb_ucp_url}?action=profile">{$lang->ms_sidebar_edit_profile}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_changename_active}" href="{$ms_sb_ucp_url}?action=changename">{$lang->ms_sidebar_change_username}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_password_active}" href="{$ms_sb_ucp_url}?action=password">{$lang->ms_sidebar_password}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_email_active}" href="{$ms_sb_ucp_url}?action=email">{$lang->ms_sidebar_email}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_avatar_active}" href="{$ms_sb_ucp_url}?action=avatar">{$lang->ms_sidebar_avatar}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_sig_active}" href="{$ms_sb_ucp_url}?action=editsig">{$lang->ms_sidebar_signature}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_ucp_options_active}" href="{$ms_sb_ucp_url}?action=options">{$lang->ms_sidebar_edit_options}</a>
+		</div>
+	</details>
+
+	<details class="ms-sidebar-details"{$ms_sb_pm_open}>
+		<summary class="ms-sidebar-link{$ms_sb_pm_active}"><a href="{$ms_sb_pm_url}"><i class="bi bi-chat-dots"></i><span>{$lang->ms_sidebar_pms}</span></a><i class="bi bi-chevron-down ms-sidebar-chevron"></i></summary>
+		<div class="ms-sidebar-sub">
+			<a class="ms-sidebar-sublink{$ms_sb_pm_compose_active}" href="{$ms_sb_pm_url}?action=send">{$lang->ms_sidebar_compose}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_pm_inbox_active}" href="{$ms_sb_pm_url}">{$lang->ms_sidebar_inbox}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_pm_unread_active}" href="{$ms_sb_pm_url}?fid=4">{$lang->ms_sidebar_unread}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_pm_sent_active}" href="{$ms_sb_pm_url}?fid=2">{$lang->ms_sidebar_sent}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_pm_drafts_active}" href="{$ms_sb_pm_url}?fid=3">{$lang->ms_sidebar_drafts}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_pm_trash_active}" href="{$ms_sb_pm_url}?fid=5">{$lang->ms_sidebar_trash}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_pm_tracking_active}" href="{$ms_sb_pm_url}?action=tracking">{$lang->ms_sidebar_tracking}</a>
+			<a class="ms-sidebar-sublink{$ms_sb_pm_folders_active}" href="{$ms_sb_pm_url}?action=folders">{$lang->ms_sidebar_edit_folders}</a>
+		</div>
+	</details>
+
+	{$ms_sb_modcp_section}
+
+	<a class="ms-sidebar-link" href="{$ms_sb_logout_url}"><i class="bi bi-box-arrow-right"></i><span>{$lang->ms_sidebar_logout}</span></a>
+</nav>

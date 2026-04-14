@@ -302,7 +302,7 @@ function msdefault_profile_stat_modals()
         // Determine the action area
         if ($mybb->user['uid'] > 0 && $mybb->user['uid'] == $repUid) {
             // Viewing own profile — can't rate yourself
-            $cantRate = isset($lang->add_yours) ? $lang->add_yours : "You cannot add to your own reputation.";
+            $cantRate = isset($lang->add_yours) ? $lang->add_yours : $lang->ms_rep_cant_own;
             $modalBody .= '<div class="text-muted small mt-3 mb-3"><i class="bi bi-info-circle me-1"></i>' . $cantRate . '</div>';
         } elseif ($mybb->user['uid'] > 0 && $mybb->usergroup['cangivereputations'] == 1
             && ($mybb->settings['posrep'] || $mybb->settings['neurep'] || $mybb->settings['negrep'])) {
@@ -340,7 +340,7 @@ function msdefault_profile_stat_modals()
             if ($mybb->settings['neurep'])
             {
                 $sel = ($existing_rep && (int)$existing_rep['reputation'] === 0) ? ' selected' : '';
-                $options .= '<option value="0" class="text-muted"' . $sel . '>0 (Neutral)</option>';
+                $options .= '<option value="0" class="text-muted"' . $sel . '>' . $lang->ms_rep_neutral . '</option>';
             }
 
             // Negative options
@@ -354,8 +354,8 @@ function msdefault_profile_stat_modals()
             }
 
             $existingComments = $existing_rep ? htmlspecialchars_uni($existing_rep['comments']) : '';
-            $voteTitle   = $existing_rep ? 'Update Reputation' : 'Add Reputation';
-            $voteBtnLbl  = $existing_rep ? 'Update Vote' : 'Add Vote';
+            $voteTitle   = $existing_rep ? $lang->ms_rep_update : $lang->ms_rep_add;
+            $voteBtnLbl  = $existing_rep ? $lang->ms_rep_update_vote : $lang->ms_rep_add_vote;
             $postCode    = $mybb->post_code;
 
             // Set template variables
