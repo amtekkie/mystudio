@@ -25,6 +25,10 @@ $plugins->add_hook('member_profile_end', 'msdefault_profile_stat_modals');
 // Index page — board-stats sidebar (runs just before the index template is eval'd)
 $plugins->add_hook('index_end', 'msdefault_index_sidebar');
 
+// Quick-reply SCEditor — inject codebuttons for showthread & PM read
+$plugins->add_hook('showthread_start', 'msdefault_quickreply_codebuttons_showthread');
+$plugins->add_hook('private_read',     'msdefault_quickreply_codebuttons_pm');
+
 // Run language + template variable setup immediately (hooks.php is loaded at
 // global_intermediate, so global_start has already fired — we must call directly)
 msdefault_load_language();
@@ -389,5 +393,48 @@ function msdefault_profile_stat_modals()
         $ms_ref_label = $refLabel;
         $ms_ref_count = $refCount;
         eval("\$GLOBALS['stat_referrals_modal'] = \"" . $templates->get("member_profile_stat_referrals_modal") . "\";");
+    }
+}
+
+/**
+ * Populate $codebuttons for the showthread quick-reply form.
+ * Core MyBB does not call build_mycode_inserter() here, so the SCEditor
+ * never initialises.  We set the global early (showthread_start) so it is
+ * available when the showthread_quickreply template is eval'd.
+ */
+function msdefault_quickreply_codebuttons_showthread()
+{
+    global $mybb, $forum, $forumpermissions;
+
+    if (
+        $mybb->settings['bbcodeinserter'] != 0
+        && isset($forum['allowmycode']) && $forum['allowmycode'] != 0
+        && (!$mybb->user['uid'] || $mybb->user['showcodebuttons'] != 0)
+    ) {
+        $GLOBALS['codebuttons'] = build_mycode_inserter(
+            'message',
+            isset($forum['allowsmilies']) ? $forum['allowsmilies'] : 1
+        );
+    }
+}
+
+/**
+ * Populate $codebuttons for the PM read quick-reply form.
+ * The "send" action already calls build_mycode_inserter(), but the "read"
+ * action (which renders private_quickreply) does not.
+ */
+function msdefault_quickreply_codebuttons_pm()
+{
+    global $mybb;
+
+    if (
+        $mybb->settings['bbcodeinserter'] != 0
+        && $mybb->settings['pmsallowmycode'] != 0
+        && $mybb->user['showcodebuttons'] != 0
+    ) {
+        $GLOBALS['codebuttons'] = build_mycode_inserter(
+            'message',
+            $mybb->settings['pmsallowsmilies']
+        );
     }
 }
