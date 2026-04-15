@@ -53,6 +53,7 @@ function mystudio_meta()
         }
     }
 
+    $sub_menu['75'] = array("id" => "library",       "title" => "<i class=\"bi bi-box-seam\"></i> Module Library",  "link" => "index.php?module=mystudio-library");
     $sub_menu['80'] = array("id" => "settings",      "title" => "<i class=\"bi bi-gear\"></i> Studio Settings", "link" => "index.php?module=mystudio-settings");
 
     $sub_menu = $plugins->run_hooks("admin_mystudio_menu", $sub_menu);
@@ -82,6 +83,9 @@ function mystudio_action_handler($action)
         'pages_delete'  => array('active' => 'pages',         'file' => 'mystudio.php'),
         'pages_components' => array('active' => 'pages',      'file' => 'mystudio.php'),
         'pages_api'     => array('active' => 'pages',         'file' => 'mystudio.php'),
+        'library'       => array('active' => 'library',        'file' => 'mystudio.php'),
+        'install_module' => array('active' => 'library',       'file' => 'mystudio.php'),
+        'uninstall_module' => array('active' => 'library',     'file' => 'mystudio.php'),
     );
 
     $actions = $plugins->run_hooks("admin_mystudio_action_handler", $actions);

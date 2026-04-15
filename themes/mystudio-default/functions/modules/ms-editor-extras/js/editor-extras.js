@@ -212,17 +212,18 @@ function syncEditorTheme(editor) {
 	var body = editor.getBody();
 	if (!body) return;
 
+	// Inline styles as a fast first-pass
 	if (isDark) {
-		body.style.backgroundColor = '#212529';
-		body.style.color = '#dee2e6';
-		body.style.caretColor = '#dee2e6';
+		body.style.backgroundColor = '#0f172a';
+		body.style.color = '#e2e8f0';
+		body.style.caretColor = '#e2e8f0';
 	} else {
 		body.style.backgroundColor = '#fff';
 		body.style.color = '#333';
 		body.style.caretColor = '#333';
 	}
 
-	// Inject <style> inside iframe for code blocks (existing + future)
+	// Inject <style> inside iframe to override SCEditor defaults reliably
 	var doc = body.ownerDocument;
 	var styleId = 'ee-theme-overrides';
 	var styleEl = doc.getElementById(styleId);
@@ -232,12 +233,14 @@ function syncEditorTheme(editor) {
 		doc.head.appendChild(styleEl);
 	}
 	if (isDark) {
-		styleEl.textContent = 'code { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }'
+		styleEl.textContent = 'body { background: #0f172a !important; color: #e2e8f0 !important; caret-color: #e2e8f0 !important; }'
+			+ ' code { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }'
 			+ ' blockquote { background: rgba(45,212,191,0.08) !important; border-left: 4px solid rgba(45,212,191,0.5) !important; }'
 			+ ' blockquote blockquote { background: rgba(45,212,191,0.05) !important; border-left-color: rgba(45,212,191,0.3) !important; }'
 			+ ' blockquote cite { color: #2dd4bf !important; border-bottom-color: #30363d !important; }';
 	} else {
-		styleEl.textContent = 'code { background: #f6f8fa !important; color: #1f2328 !important; border-color: #d1d9e0 !important; }'
+		styleEl.textContent = 'body { background: #fff !important; color: #333 !important; caret-color: #333 !important; }'
+			+ ' code { background: #f6f8fa !important; color: #1f2328 !important; border-color: #d1d9e0 !important; }'
 			+ ' blockquote { background: rgba(13,148,136,0.06) !important; border-left: 4px solid rgba(13,148,136,0.5) !important; }'
 			+ ' blockquote cite { color: rgba(13,148,136,1) !important; }';
 	}
