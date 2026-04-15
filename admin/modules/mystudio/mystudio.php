@@ -1625,6 +1625,395 @@ if ($action === 'api_toggle_plugin') {
 }
 
 /* ====================================================================
+   Module Library — Browse & Install modules from GitHub repository
+   ==================================================================== */
+
+if ($action === 'install_module') {
+    verify_post_check($mybb->get_input('my_post_key'));
+
+    $activeSlug = $ms->getActiveThemeSlug();
+    if (!$activeSlug) {
+        flash_message('No active theme found. Activate a theme first.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    $moduleId = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('module_id'));
+    $repoUrl  = trim($mybb->get_input('repo_url'));
+    $modulePath = trim($mybb->get_input('module_path'));
+
+    if (empty($moduleId) || empty($repoUrl) || empty($modulePath)) {
+        flash_message('Invalid module data.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    // Parse owner/repo from GitHub URL
+    $repoParts = array();
+    if (preg_match('#github\.com/([^/]+)/([^/]+?)(?:\.git)?$#i', $repoUrl, $repoParts)) {
+        $owner = $repoParts[1];
+        $repo  = $repoParts[2];
+    } else {
+        flash_message('Invalid GitHub repository URL.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    $targetDir = MYBB_ROOT . 'themes/' . $activeSlug . '/functions/modules/' . $moduleId;
+
+    // Don't overwrite existing module
+    if (is_dir($targetDir)) {
+        flash_message('Module "' . htmlspecialchars_uni($moduleId) . '" is already installed. Uninstall it first to reinstall.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    // Fetch file list from GitHub API
+    $apiUrl = 'https://api.github.com/repos/' . urlencode($owner) . '/' . urlencode($repo) . '/contents/' . $modulePath;
+    $files  = ms_library_github_fetch($apiUrl);
+
+    if ($files === false) {
+        flash_message('Failed to fetch module file list from GitHub. Check the repository URL and try again.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    // Download all files recursively
+    if (!@mkdir($targetDir, 0755, true)) {
+        flash_message('Failed to create module directory. Check file permissions.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    $success = ms_library_download_directory($files, $targetDir, $owner, $repo);
+
+    if ($success) {
+        flash_message('Module "' . htmlspecialchars_uni($moduleId) . '" installed successfully.', 'success');
+    } else {
+        // Cleanup on failure
+        ms_library_rmdir($targetDir);
+        flash_message('Failed to download module files. Please try again.', 'error');
+    }
+
+    admin_redirect("index.php?module=mystudio-library");
+}
+
+if ($action === 'uninstall_module') {
+    verify_post_check($mybb->get_input('my_post_key'));
+
+    $activeSlug = $ms->getActiveThemeSlug();
+    if (!$activeSlug) {
+        flash_message('No active theme found.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    $moduleId = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('module_id'));
+    if (empty($moduleId)) {
+        flash_message('Invalid module.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    $targetDir = MYBB_ROOT . 'themes/' . $activeSlug . '/functions/modules/' . $moduleId;
+
+    if (!is_dir($targetDir)) {
+        flash_message('Module is not installed.', 'error');
+        admin_redirect("index.php?module=mystudio-library");
+    }
+
+    ms_library_rmdir($targetDir);
+    flash_message('Module "' . htmlspecialchars_uni($moduleId) . '" has been uninstalled.', 'success');
+    admin_redirect("index.php?module=mystudio-library");
+}
+
+if ($action === 'library') {
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("Module Library");
+    $page->output_header("MyStudio - Module Library");
+
+    $activeSlug = $ms->getActiveThemeSlug();
+
+    // Hardcoded library repo
+    $libraryRepo = 'https://github.com/amtekkie/mystudio-modules';
+    $owner = 'amtekkie';
+    $repo  = 'mystudio-modules';
+    $registryModules = array();
+    $fetchError = '';
+
+    // Fetch registry.json from GitHub raw
+    $registryUrl = 'https://raw.githubusercontent.com/' . urlencode($owner) . '/' . urlencode($repo) . '/main/registry.json';
+    $registryRaw = ms_library_http_get($registryUrl);
+
+    if ($registryRaw === false) {
+        $fetchError = 'Could not fetch registry from GitHub. Ensure registry.json exists on the <code>main</code> branch.';
+    } else {
+        $registryData = @json_decode($registryRaw, true);
+        if (!is_array($registryData) || !isset($registryData['modules'])) {
+            $fetchError = 'Invalid registry.json format. Expected a JSON object with a "modules" array.';
+        } else {
+            $registryModules = $registryData['modules'];
+        }
+    }
+
+    // Get installed modules for comparison
+    $installedModules = array();
+    if ($activeSlug) {
+        $installed = $ms->listModules($activeSlug);
+        foreach ($installed as $m) {
+            $installedModules[$m['id']] = $m;
+        }
+    }
+
+    if ($fetchError) {
+        echo '<div style="margin-bottom:16px;padding:12px 16px;border:1px solid #e74c3c;border-radius:6px;background:#fdf0ef;color:#c0392b;font-size:13px">'
+           . '<i class="bi bi-exclamation-triangle"></i> ' . $fetchError . '</div>';
+    }
+
+    // Display modules
+    if (!empty($registryModules)) {
+        $post_key = $mybb->post_code;
+
+        $table = new Table;
+        $table->construct_header("Module", array('width' => '30%'));
+        $table->construct_header("Description");
+        $table->construct_header("Version", array('width' => '8%', 'class' => 'align_center'));
+        $table->construct_header("Author", array('width' => '12%', 'class' => 'align_center'));
+        $table->construct_header("Action", array('width' => '14%', 'class' => 'align_center'));
+
+        foreach ($registryModules as $mod) {
+            $modId   = isset($mod['id']) ? $mod['id'] : '';
+            $modName = isset($mod['name']) ? htmlspecialchars_uni($mod['name']) : $modId;
+            $modDesc = isset($mod['description']) ? htmlspecialchars_uni($mod['description']) : '';
+            $modVer  = isset($mod['version']) ? htmlspecialchars_uni($mod['version']) : '-';
+            $modAuth = isset($mod['author']) ? htmlspecialchars_uni($mod['author']) : '-';
+            $modAuthUrl = isset($mod['author_url']) ? $mod['author_url'] : '';
+            $modPath = isset($mod['path']) ? $mod['path'] : 'modules/' . $modId;
+            $modCompat = isset($mod['compatibility']) ? htmlspecialchars_uni($mod['compatibility']) : '';
+
+            if (empty($modId)) continue;
+
+            // Name cell
+            $nameCell = '<strong>' . $modName . '</strong>';
+            if ($modCompat) {
+                $nameCell .= ' <small style="color:#888">(' . $modCompat . ')</small>';
+            }
+
+            $table->construct_cell($nameCell);
+            $table->construct_cell('<span style="font-size:12.5px;color:#555">' . $modDesc . '</span>');
+            $table->construct_cell($modVer, array('class' => 'align_center'));
+
+            // Author cell
+            if ($modAuthUrl) {
+                $authorCell = '<a href="' . htmlspecialchars_uni($modAuthUrl) . '" target="_blank" rel="noopener">' . $modAuth . '</a>';
+            } else {
+                $authorCell = $modAuth;
+            }
+            $table->construct_cell($authorCell, array('class' => 'align_center'));
+
+            // Action cell
+            $isInstalled = isset($installedModules[$modId]);
+            if ($isInstalled) {
+                $installedVer = $installedModules[$modId]['version'];
+                $hasUpdate = version_compare($modVer, $installedVer, '>');
+
+                if ($hasUpdate) {
+                    // Show update button — uninstall first, then reinstall
+                    $actionCell = '<span style="color:#27ae60;font-size:12px"><i class="bi bi-check-circle"></i> v' . htmlspecialchars_uni($installedVer) . '</span><br />'
+                                . '<form method="post" action="index.php?module=mystudio-manage&amp;action=uninstall_module" style="display:inline;margin-top:4px">'
+                                . '<input type="hidden" name="my_post_key" value="' . $post_key . '" />'
+                                . '<input type="hidden" name="module_id" value="' . htmlspecialchars_uni($modId) . '" />'
+                                . '<button type="submit" class="submit_button" style="font-size:11px;padding:3px 10px" '
+                                . 'onclick="return confirm(\'Uninstall to update? You can then reinstall the latest version.\')"><i class="bi bi-arrow-repeat"></i> Update</button>'
+                                . '</form>';
+                } else {
+                    $actionCell = '<span style="color:#27ae60;font-size:12px"><i class="bi bi-check-circle"></i> Installed</span><br />'
+                                . '<form method="post" action="index.php?module=mystudio-manage&amp;action=uninstall_module" style="display:inline;margin-top:4px">'
+                                . '<input type="hidden" name="my_post_key" value="' . $post_key . '" />'
+                                . '<input type="hidden" name="module_id" value="' . htmlspecialchars_uni($modId) . '" />'
+                                . '<button type="submit" class="submit_button" style="font-size:11px;padding:3px 10px;background:#e74c3c;border-color:#c0392b" '
+                                . 'onclick="return confirm(\'Uninstall this module? Its files will be deleted.\')"><i class="bi bi-trash"></i> Uninstall</button>'
+                                . '</form>';
+                }
+            } else {
+                $actionCell = '<form method="post" action="index.php?module=mystudio-manage&amp;action=install_module">'
+                            . '<input type="hidden" name="my_post_key" value="' . $post_key . '" />'
+                            . '<input type="hidden" name="module_id" value="' . htmlspecialchars_uni($modId) . '" />'
+                            . '<input type="hidden" name="repo_url" value="' . htmlspecialchars_uni($libraryRepo) . '" />'
+                            . '<input type="hidden" name="module_path" value="' . htmlspecialchars_uni($modPath) . '" />'
+                            . '<button type="submit" class="submit_button" style="font-size:11px;padding:3px 10px"><i class="bi bi-download"></i> Install</button>'
+                            . '</form>';
+            }
+
+            $table->construct_cell($actionCell, array('class' => 'align_center'));
+            $table->construct_row();
+        }
+
+        $table->output("Available Modules" . (!empty($owner) ? ' <small style="font-weight:normal;color:#888">from ' . htmlspecialchars_uni($owner . '/' . $repo) . '</small>' : ''));
+    } elseif (!empty($libraryRepo) && empty($fetchError)) {
+        echo '<p style="padding:16px;color:#888;text-align:center">No modules found in the library.</p>';
+    }
+
+    // Show installed modules not in registry
+    if ($activeSlug && !empty($installedModules)) {
+        $localOnly = array();
+        $registryIds = array();
+        foreach ($registryModules as $mod) {
+            if (isset($mod['id'])) $registryIds[] = $mod['id'];
+        }
+        foreach ($installedModules as $id => $m) {
+            if (!in_array($id, $registryIds)) {
+                $localOnly[$id] = $m;
+            }
+        }
+
+        if (!empty($localOnly)) {
+            $table2 = new Table;
+            $table2->construct_header("Module", array('width' => '30%'));
+            $table2->construct_header("Description");
+            $table2->construct_header("Version", array('width' => '8%', 'class' => 'align_center'));
+
+            foreach ($localOnly as $id => $m) {
+                $table2->construct_cell('<strong>' . htmlspecialchars_uni($m['name']) . '</strong>');
+                $table2->construct_cell('<span style="font-size:12.5px;color:#555">' . htmlspecialchars_uni($m['description']) . '</span>');
+                $table2->construct_cell(htmlspecialchars_uni($m['version']), array('class' => 'align_center'));
+                $table2->construct_row();
+            }
+
+            $table2->output("Locally Installed Modules <small style=\"font-weight:normal;color:#888\">(not in library)</small>");
+        }
+    }
+
+    $page->output_footer();
+    exit;
+}
+
+/* ====================================================================
+   Module Library — Helper Functions
+   ==================================================================== */
+
+/**
+ * Make an HTTP GET request (supports cURL and file_get_contents fallback).
+ *
+ * @param  string       $url
+ * @return string|false Response body or false on failure
+ */
+function ms_library_http_get($url)
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_USERAGENT      => 'MyStudio/2.1',
+            CURLOPT_HTTPHEADER     => array('Accept: application/vnd.github.v3+json'),
+            CURLOPT_SSL_VERIFYPEER => true,
+        ));
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            return $response;
+        }
+        return false;
+    }
+
+    // Fallback to file_get_contents
+    $context = stream_context_create(array(
+        'http' => array(
+            'method'  => 'GET',
+            'header'  => "User-Agent: MyStudio/2.1\r\nAccept: application/vnd.github.v3+json\r\n",
+            'timeout' => 15,
+        ),
+        'ssl' => array(
+            'verify_peer' => true,
+        ),
+    ));
+
+    $response = @file_get_contents($url, false, $context);
+    return $response !== false ? $response : false;
+}
+
+/**
+ * Fetch a GitHub API endpoint returning JSON.
+ *
+ * @param  string      $apiUrl
+ * @return array|false Decoded JSON array or false
+ */
+function ms_library_github_fetch($apiUrl)
+{
+    $raw = ms_library_http_get($apiUrl);
+    if ($raw === false) return false;
+    $data = @json_decode($raw, true);
+    return is_array($data) ? $data : false;
+}
+
+/**
+ * Recursively download a GitHub directory to a local path.
+ *
+ * @param  array  $items    Array of GitHub API content items
+ * @param  string $localDir Local target directory
+ * @param  string $owner    GitHub repo owner
+ * @param  string $repo     GitHub repo name
+ * @return bool
+ */
+function ms_library_download_directory($items, $localDir, $owner, $repo)
+{
+    foreach ($items as $item) {
+        $type = isset($item['type']) ? $item['type'] : '';
+        $name = isset($item['name']) ? $item['name'] : '';
+        $downloadUrl = isset($item['download_url']) ? $item['download_url'] : '';
+        $apiPath = isset($item['path']) ? $item['path'] : '';
+
+        // Security: prevent directory traversal
+        if (strpos($name, '..') !== false || strpos($name, '/') !== false || strpos($name, '\\') !== false) {
+            continue;
+        }
+
+        if ($type === 'file' && $downloadUrl) {
+            $content = ms_library_http_get($downloadUrl);
+            if ($content === false) return false;
+
+            $localPath = $localDir . '/' . $name;
+            if (@file_put_contents($localPath, $content) === false) {
+                return false;
+            }
+        } elseif ($type === 'dir') {
+            $subDir = $localDir . '/' . $name;
+            if (!is_dir($subDir) && !@mkdir($subDir, 0755, true)) {
+                return false;
+            }
+
+            // Fetch subdirectory contents
+            $subApiUrl = 'https://api.github.com/repos/' . urlencode($owner) . '/' . urlencode($repo) . '/contents/' . $apiPath;
+            $subItems = ms_library_github_fetch($subApiUrl);
+            if ($subItems === false) return false;
+
+            if (!ms_library_download_directory($subItems, $subDir, $owner, $repo)) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * Recursively remove a directory.
+ *
+ * @param string $dir
+ */
+function ms_library_rmdir($dir)
+{
+    if (!is_dir($dir)) return;
+    $entries = scandir($dir);
+    foreach ($entries as $entry) {
+        if ($entry === '.' || $entry === '..') continue;
+        $path = $dir . '/' . $entry;
+        if (is_dir($path)) {
+            ms_library_rmdir($path);
+        } else {
+            @unlink($path);
+        }
+    }
+    @rmdir($dir);
+}
+
+/* ====================================================================
    Extension Settings Page (individual extension options via side nav)
    ==================================================================== */
 
