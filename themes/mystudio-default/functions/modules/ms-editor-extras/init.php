@@ -110,6 +110,9 @@ function ms_ee_xmlhttp()
 {
     global $mybb, $db, $lang, $charset;
 
+    // Load language file needed by upload_attachment() for error strings
+    $lang->load("messages");
+
     $action = $mybb->get_input('action');
 
     // --- Image Upload ---
@@ -155,8 +158,9 @@ function ms_ee_xmlhttp()
         $file = $_FILES['upload'];
         $attachment = upload_attachment($file, false);
 
-        if (!empty($attachment['error'])) {
-            echo json_encode(array('error' => $attachment['error']));
+        if (!empty($attachment['error']) || empty($attachment['aid'])) {
+            $error = !empty($attachment['error']) ? $attachment['error'] : 'Upload failed';
+            echo json_encode(array('error' => $error));
         } else {
             $url = $mybb->settings['bburl'] . '/attachment.php?aid=' . (int)$attachment['aid'];
             $thumb_url = '';
@@ -280,8 +284,9 @@ function ms_ee_xmlhttp()
 
         @unlink($tmp);
 
-        if (isset($attachment['error'])) {
-            echo json_encode(array('error' => $attachment['error']));
+        if (isset($attachment['error']) || empty($attachment['aid'])) {
+            $error = isset($attachment['error']) ? $attachment['error'] : 'Upload failed';
+            echo json_encode(array('error' => $error));
         } else {
             $url = $mybb->settings['bburl'] . '/attachment.php?aid=' . (int)$attachment['aid'];
             $thumb_url = '';
