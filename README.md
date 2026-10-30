@@ -26,7 +26,7 @@ It comes with a built-in Monaco code editor (the same engine behind VS Code), a 
 - PHP 8.0 or later
 - MySQL 5.7+ or MariaDB 10.3+
 - Apache 2.4+ with `mod_rewrite`, or Nginx
-- PHP extensions: `zip`, `fileinfo`, `json`, `curl`
+- PHP extensions: `fileinfo`, `json`, `curl` (`zip` is optional: without it MyStudio uses its built-in ZIP handler for theme import and export)
 - Writable directories: `themes/`, `uploads/`, `cache/`, `jscripts/`
 
 ## Getting Started

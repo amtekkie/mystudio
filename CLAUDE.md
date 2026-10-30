@@ -40,7 +40,7 @@ MyStudio, themes or modules. Code wins over docs; fix the skill file in the same
 ## Dev environment
 
 - Site: `http://forumeze.local` · PHP CLI: `/c/laragon/bin/php/php-8.3.33-Win32-vs16-x64/php.exe`
-  (add `-d extension_dir=<php>/ext -d extension=zip` for ZIP) · MySQL CLI:
+  (zip ext is off by default; MyStudio falls back to `zip.php` — add `-d extension_dir=<php>/ext -d extension=zip` to test the ZipArchive path) · MySQL CLI:
   `/c/laragon/bin/mysql/mysql-8.4.3-winx64/bin/mysql.exe`.
 - CLI bootstrap: `define('IN_MYBB',1); chdir(root); require 'inc/init.php';` then
   `require MYBB_ROOT.'inc/plugins/mystudio/core.php'; (new MyStudio)->syncToDatabase($slug);`

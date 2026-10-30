@@ -42,6 +42,7 @@ This release is about trust. We audited the whole plugin, theme and module code 
 [*]Inline moderation checkboxes no longer leave an empty column for regular members.
 [*]The likes feature works even when the portal is switched off.
 [*]Profile "Remove avatar" works again.
+[*]Theme import and export no longer need PHP's zip extension: MyStudio falls back to a built-in ZIP handler.
 [/list]
 
 [b]Documentation[/b]
@@ -107,15 +108,12 @@ Prefer your own editor? Turn on auto-sync and the forum reloads itself a moment 
 ├── init.php
 └── css/my-module.css[/code]
 
-[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/announcement-bar-module.png[/img]
-[size=small][i]The example module from the guide: under 100 lines, settings page included[/i][/size][/align]
-
 [hr]
 
 [size=large][b]Requirements[/b][/size]
 [list]
 [*]MyBB 1.8.38 or newer
-[*]PHP 8.0+ with zip, fileinfo, json and curl
+[*]PHP 8.0+ with fileinfo, json and curl (the zip extension is now optional)
 [*]MySQL 5.7+ or MariaDB 10.3+
 [*]Apache 2.4+ or Nginx
 [/list]

@@ -45,7 +45,7 @@ Layout table + top rules are in `CLAUDE.md`. Detail files (read only when needed
   are refused (editor) or skipped with an error (sync).
 - Editor save: `writeThemeFile(...,true)` → `syncSingleFile` — UPDATE-only for `css/*.css`,
   `templates/**/*.html`; deploys `js/`. New files need full sync.
-- Import/export: `importFromZip` — limits (5000 entries, uncompressed ≤ 10× upload limit),
+- Import/export use `newZip()`: `ZipArchive` if loaded, else pure-PHP `MsZipArchive` (`zip.php`; store/deflate via zlib, no ZIP64/encryption; same method subset). Define `MS_FORCE_PHP_ZIP` to test the fallback. `importFromZip` — limits (5000 entries, uncompressed ≤ 10× upload limit),
   ZIP-slip checks, `findDisallowedThemeFiles` (outside `functions/`+`lang/` only
   `ALLOWED_EDIT_EXTENSIONS` minus `ini` + `ALLOWED_ASSET_EXTENSIONS`; no dotfiles/links), refuses a
   slug owned by a differently named theme, stages to `themes/.{slug}.importing` then swaps →

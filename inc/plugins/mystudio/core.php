@@ -264,11 +264,6 @@ class MyStudio
             return false;
         }
 
-        if (!class_exists('ZipArchive')) {
-            $this->errors[] = 'PHP ZipArchive extension is required but not installed.';
-            return false;
-        }
-
         // ── Extract to temp ──
         $tmpDir = sys_get_temp_dir() . '/mystudio_' . uniqid();
         if (!@mkdir($tmpDir, 0755, true)) {
@@ -276,9 +271,9 @@ class MyStudio
             return false;
         }
 
-        $zip = new ZipArchive();
+        $zip = $this->newZip();
         if ($zip->open($file['tmp_name']) !== true) {
-            $this->errors[] = 'Cannot open ZIP archive.';
+            $this->errors[] = 'Cannot open ZIP archive.' . (!empty($zip->error) ? ' ' . htmlspecialchars_uni($zip->error) : '');
             $this->rrmdir($tmpDir);
             return false;
         }
@@ -326,7 +321,12 @@ class MyStudio
             }
         }
 
-        $zip->extractTo($tmpDir);
+        if ($zip->extractTo($tmpDir) === false) {
+            $this->errors[] = 'Could not extract the ZIP archive.' . (!empty($zip->error) ? ' ' . htmlspecialchars_uni($zip->error) : '');
+            $zip->close();
+            $this->rrmdir($tmpDir);
+            return false;
+        }
         $zip->close();
 
         // ── Locate theme root ──
@@ -451,19 +451,14 @@ class MyStudio
         }
 
         // ── Create ZIP ──
-        if (!class_exists('ZipArchive')) {
-            $this->errors[] = 'PHP ZipArchive extension is required.';
-            return false;
-        }
-
         $this->tempDir = sys_get_temp_dir() . '/mystudio_' . uniqid();
         @mkdir($this->tempDir, 0755, true);
 
         $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $theme['name']);
         $zipPath  = $this->tempDir . '/' . $safeName . '.zip';
 
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
+        $zip = $this->newZip();
+        if ($zip->open($zipPath, $zip instanceof ZipArchive ? ZipArchive::CREATE : MsZipArchive::CREATE) !== true) {
             $this->errors[] = 'Failed to create ZIP archive.';
             return false;
         }
@@ -489,9 +484,27 @@ class MyStudio
         if (file_exists($optionsFile)) {
             $zip->addFile($optionsFile, $safeName . '/functions/options.php');
         }
-        $zip->close();
+        if ($zip->close() === false) {
+            $this->errors[] = 'Failed to write the ZIP archive.';
+            return false;
+        }
 
         return $zipPath;
+    }
+
+    /**
+     * ZIP handler for import/export: PHP's ZipArchive when the zip extension is
+     * installed, otherwise MyStudio's pure-PHP MsZipArchive (same subset of methods).
+     *
+     * @return ZipArchive|MsZipArchive
+     */
+    private function newZip()
+    {
+        if (class_exists('ZipArchive') && !defined('MS_FORCE_PHP_ZIP')) {
+            return new ZipArchive();
+        }
+        require_once MYBB_ROOT . self::PLUGIN_DIR . '/zip.php';
+        return new MsZipArchive();
     }
 
     /**
@@ -1361,7 +1374,8 @@ class MyStudio
         return true;
     }
 
-    private function addDirToZip(ZipArchive $zip, $dir, $prefix)
+    /** @param ZipArchive|MsZipArchive $zip */
+    private function addDirToZip($zip, $dir, $prefix)
     {
         $zip->addEmptyDir($prefix);
         foreach (scandir($dir) as $entry) {

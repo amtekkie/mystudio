@@ -1246,6 +1246,11 @@ HTML;
    ==================================================================== */
 
 if ($action === 'export') {
+    // The clicked "Download ZIP" button posts export_tid[{tid}]; plain tid kept for older forms
+    $exportTid = $mybb->get_input('export_tid', MyBB::INPUT_ARRAY);
+    if ($exportTid) {
+        $mybb->input['tid'] = (int) key($exportTid);
+    }
     if ($mybb->request_method === 'post' && !empty($mybb->input['tid'])) {
         verify_post_check($mybb->get_input('my_post_key'));
 
@@ -1332,7 +1337,8 @@ if ($action === 'import_export') {
             $status = $t['has_disk'] ? 'On Disk' : 'DB Only';
             $table->construct_cell($status, array('class' => 'align_center'));
 
-            $table->construct_cell('<button type="submit" name="tid" value="' . $t['tid'] . '" class="submit_button">Download ZIP</button>', array('class' => 'align_center'));
+            // Stock MyBB submit input (ACP CSS styles input.submit_button only); the tid rides in the name
+            $table->construct_cell($exportForm->generate_submit_button('Download ZIP', array('name' => 'export_tid[' . (int) $t['tid'] . ']')), array('class' => 'align_center'));
             $table->construct_row();
         }
     }

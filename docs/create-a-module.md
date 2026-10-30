@@ -176,9 +176,7 @@ You don't link it anywhere. Every `.css` file in the module's `css/` folder (and
 
 2. Find **Announcement Bar** and click **Activate**.
 3. A new **Announcement Bar** entry appears in the MyStudio sidebar. Open it to change the message and colour.
-4. Open your forum. The bar is at the top of every page:
-
-   ![The finished announcement bar](screenshots/announcement-bar-module.png)
+4. Open your forum. The bar is at the top of every page.
 
 New modules always start switched off, so a half-finished module can never go live by accident.
 

@@ -13,7 +13,7 @@ This page gets MyStudio running on your forum in about ten minutes. You don't ne
 | Requirement | Version |
 |-------------|---------|
 | MyBB | 1.8.38 or newer |
-| PHP | 8.0 or newer, with the `zip`, `fileinfo`, `json` and `curl` extensions |
+| PHP | 8.0 or newer, with the `fileinfo`, `json` and `curl` extensions. The `zip` extension is optional: MyStudio has a built-in ZIP handler for theme import and export. |
 | Database | MySQL 5.7+ or MariaDB 10.3+ |
 | Web server | Apache 2.4+ (with `mod_rewrite`) or Nginx |
 
