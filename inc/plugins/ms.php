@@ -8,7 +8,7 @@
  * Installation:
  *   1. Upload inc/plugins/ms.php                → MYBB_ROOT/inc/plugins/ms.php
  *   2. Upload inc/plugins/mystudio/              → MYBB_ROOT/inc/plugins/mystudio/
- *   3. Upload admin/modules/style/mystudio.php   → MYBB_ROOT/admin/modules/style/mystudio.php
+ *   3. Upload admin/modules/mystudio/            → MYBB_ROOT/admin/modules/mystudio/
  *   4. Upload jscripts/mystudio/                 → MYBB_ROOT/jscripts/mystudio/
  *   5. Activate in ACP → Configuration → Plugins
  *   6. Navigate to ACP → Templates & Style → MyStudio
@@ -47,7 +47,7 @@ function ms_info()
 
     // Link the title to the MyStudio page if the plugin is active
     if (isset($mybb->settings['ms_enabled']) && $mybb->settings['ms_enabled']) {
-        $name = '<a href="index.php?module=mystudio-manage" style="text-decoration:none;color:inherit;font-weight:bold">MyStudio</a>';
+        $name = '<a href="index.php?module=mystudio-settings" style="text-decoration:none;color:inherit;font-weight:bold">MyStudio</a>';
     }
 
     return array(
@@ -153,51 +153,39 @@ function ms_is_installed()
 
 function ms_uninstall()
 {
-    global $db;
+    global $db, $cache;
 
-    $db->delete_query('settings',      "name LIKE 'ms_%'");
+    // "_" is a LIKE wildcard — escape it so other plugins' "ms…" settings survive
+    $db->delete_query('settings',      "name LIKE 'ms\\_%'");
     $db->delete_query('settinggroups', "name='mystudio'");
     rebuild_settings();
 
+    // Forget which non-core modules were activated
+    $cache->delete('ms_modules');
+
     // Page Manager tables are handled by the ms_pagebuilder plugin
 
-    // Delete all modular theme folders except mystudio-default
-    $themesDir = MYBB_ROOT . 'themes';
-    if (is_dir($themesDir)) {
-        foreach (scandir($themesDir) as $entry) {
-            if ($entry === '.' || $entry === '..' || $entry === 'mystudio-default') {
-                continue;
-            }
-            $path = $themesDir . '/' . $entry;
-            if (is_dir($path) && file_exists($path . '/theme.json')) {
-                ms_rrmdir($path);
-            }
-        }
-    }
+    // Theme folders are left on disk: they're the source of truth (and may be the
+    // only copy of a theme's JS, images and saved options). Delete them by hand if unwanted.
 }
 
-/**
- * Recursively delete a directory and its contents.
- * Used by ms_uninstall() to clean up theme folders.
- */
-function ms_rrmdir($dir)
+/** ACP permission keys for the MyStudio module (must match module_meta.php). */
+function ms_admin_permission_keys()
 {
-    if (!is_dir($dir)) return;
-    foreach (scandir($dir) as $item) {
-        if ($item === '.' || $item === '..') continue;
-        $path = $dir . '/' . $item;
-        if (is_dir($path)) {
-            ms_rrmdir($path);
-        } else {
-            @unlink($path);
-        }
-    }
-    @rmdir($dir);
+    return array('manage', 'import_export', 'settings', 'pages', 'modules', 'plugin_settings');
 }
 
 function ms_activate()
 {
     global $db;
+
+    // Grant the MyStudio ACP pages to the Administrators group defaults (-4); without
+    // this only super admins can open MyStudio. Individual admins can still be restricted.
+    if (function_exists('change_admin_permission')) {
+        foreach (ms_admin_permission_keys() as $key) {
+            change_admin_permission('mystudio', $key, 1);
+        }
+    }
 
     // Migration: remove settings group from Configuration if it exists (moved to MyStudio Settings page)
     $query = $db->simple_select('settinggroups', 'gid', "name='mystudio'");
@@ -264,7 +252,7 @@ function ms_load_admin_mini_plugins()
     $slug = $msCore->getActiveThemeSlug();
     if (!$slug) return;
 
-    $modules = $msCore->listModules($slug);
+    $modules = $msCore->listActiveModules($slug);
 
     foreach ($modules as $p) {
         if ($p['has_init']) {
@@ -280,7 +268,7 @@ function ms_load_admin_mini_plugins()
 /**
  * Called on global_intermediate (after theme & language are loaded).
  *
- * 1. Loads language strings from themes/{slug}/lang/{language}/*.lang.php
+ * 1. Loads language strings from inc/plugins/mystudio/themes/{slug}/lang/{language}/*.lang.php
  * 2. Loads theme option values from themes/{slug}/default.json
  *
  * Language strings are merged into MyBB's $lang object.
@@ -304,6 +292,7 @@ function ms_load_theme_extras()
 
     $themeDir = MYBB_ROOT . 'themes/' . $slug;
     if (!is_dir($themeDir)) return;
+    $codeDir  = MYBB_ROOT . 'inc/plugins/mystudio/themes/' . $slug;
 
     /* ── 1. Load language files ── */
     $langName = $mybb->settings['bblanguage'] ?? 'english';
@@ -313,15 +302,15 @@ function ms_load_theme_extras()
 
     // Try full language name first, then short code fallback
     $shortCodes = array('english' => 'en', 'german' => 'de', 'french' => 'fr', 'spanish' => 'es');
-    $langDir = $themeDir . '/lang/' . $langName;
+    $langDir = $codeDir . '/lang/' . $langName;
     if (!is_dir($langDir) && isset($shortCodes[strtolower($langName)])) {
-        $langDir = $themeDir . '/lang/' . $shortCodes[strtolower($langName)];
+        $langDir = $codeDir . '/lang/' . $shortCodes[strtolower($langName)];
     }
     if (!is_dir($langDir)) {
         // Final fallback: try english, then en
-        $langDir = $themeDir . '/lang/english';
+        $langDir = $codeDir . '/lang/english';
         if (!is_dir($langDir)) {
-            $langDir = $themeDir . '/lang/en';
+            $langDir = $codeDir . '/lang/en';
         }
     }
 
@@ -340,13 +329,13 @@ function ms_load_theme_extras()
         }
     }
 
-    /* ── 2. Load theme option values ── */
-    $optionsFile = $themeDir . '/default.json';
-    if (file_exists($optionsFile)) {
-        $values = @json_decode(file_get_contents($optionsFile), true);
-        if (is_array($values) && !empty($values)) {
-            $mybb->ms_theme_options = $values;
-        }
+    /* ── 2. Load theme option values (saved values over schema defaults) ── */
+    require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
+    $msCore = new MyStudio();
+    // Keep saved keys that have no schema entry (themes without options.php)
+    $values = array_merge((array) $msCore->getThemeOptionValues($slug), $msCore->getMergedThemeOptions($slug));
+    if (is_array($values) && !empty($values)) {
+        $mybb->ms_theme_options = $values;
     }
 
     // Ensure it's always an array so templates don't error
@@ -355,14 +344,12 @@ function ms_load_theme_extras()
     }
 
     /* -- 3. Load theme hooks file -- */
-    $hooksFile = $themeDir . '/functions/hooks.php';
+    $hooksFile = $codeDir . '/hooks.php';
     if (file_exists($hooksFile)) {
         include_once $hooksFile;
     }
 
     /* -- 4. Load built-in modules -- */
-    require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
-    $msCore = new MyStudio();
     $msCore->loadModules($slug);
 
     // Store slug for asset injection later
@@ -418,6 +405,30 @@ function ms_inject_mini_plugin_assets(&$contents)
  * GET  xmlhttp.php?action=ms_dev_sync_check   → returns { changed: bool, hash: string }
  * POST xmlhttp.php?action=ms_dev_sync_run     → performs sync, returns { success: bool, ... }
  */
+/**
+ * The theme an xmlhttp request should use: the member's chosen style when it's a
+ * MyStudio theme on disk, otherwise the board default (matches what the page showed).
+ *
+ * @param  MyStudio $msCore
+ * @return string|false
+ */
+function ms_xmlhttp_theme_slug($msCore)
+{
+    global $mybb, $db;
+
+    $style = isset($mybb->user['style']) ? (int) $mybb->user['style'] : 0;
+    if ($style > 0) {
+        $name = $db->fetch_field($db->simple_select('themes', 'name', "tid='{$style}'"), 'name');
+        if ($name) {
+            $slug = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(trim($name))), '-');
+            if ($slug !== '' && is_file(MYBB_ROOT . 'themes/' . $slug . '/theme.json')) {
+                return $slug;
+            }
+        }
+    }
+    return $msCore->getActiveThemeSlug();
+}
+
 function ms_xmlhttp_action()
 {
     global $mybb, $plugins;
@@ -428,27 +439,41 @@ function ms_xmlhttp_action()
 
     /* ── Load module xmlhttp handlers ──
      * Modules are normally loaded on global_intermediate which xmlhttp.php
-     * doesn't fire. We load them here and then re-run the xmlhttp hook so any
-     * newly-registered handlers execute. A static guard prevents infinite
-     * recursion since this function is itself an xmlhttp hook handler.
+     * doesn't fire. We load them here and then run only the xmlhttp handlers
+     * they just registered (re-running the whole hook would fire other
+     * plugins' handlers twice). A static guard prevents recursion.
      */
     static $miniLoaded = false;
     if (!$miniLoaded) {
         $miniLoaded = true;
         require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
         $msCore = new MyStudio();
-        $slug = $msCore->getActiveThemeSlug();
+        $slug = ms_xmlhttp_theme_slug($msCore);
         if ($slug) {
+            $before = isset($plugins->hooks['xmlhttp']) ? $plugins->hooks['xmlhttp'] : array();
+
             // Load built-in posting-extras (quick-search handler)
-            $pexFile = MYBB_ROOT . 'themes/' . $slug . '/functions/posting-extras.php';
+            $pexFile = $msCore->getThemeCodeDir($slug) . '/posting-extras.php';
             if (file_exists($pexFile)) {
                 include_once $pexFile;
             }
 
             $msCore->loadModules($slug);
-            // Re-run xmlhttp hooks so module handlers can fire.
-            // The static guard above prevents this function from looping.
-            $plugins->run_hooks('xmlhttp');
+
+            $after = isset($plugins->hooks['xmlhttp']) ? $plugins->hooks['xmlhttp'] : array();
+            ksort($after);
+            foreach ($after as $priority => $hooks) {
+                foreach ((array) $hooks as $key => $hook) {
+                    if (isset($before[$priority][$key])) continue;
+                    if (!empty($hook['file'])) require_once $hook['file'];
+                    $none = '';
+                    if (array_key_exists('class_method', $hook)) {
+                        call_user_func_array($hook['class_method'], array(&$none));
+                    } else {
+                        $hook['function']($none);
+                    }
+                }
+            }
         }
     }
 

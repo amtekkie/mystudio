@@ -35,6 +35,124 @@ class MyStudio
     const THEMES_DIR = 'themes';
 
     /**
+     * Plugin-owned code (relative to MYBB_ROOT). Themes hold only templates,
+     * CSS, JS, images and JSON; all PHP lives under the plugin/admin dirs:
+     *   inc/plugins/mystudio/modules/{id}/        module runtime (init.php, assets, default.json)
+     *   inc/plugins/mystudio/themes/{slug}/       theme hooks.php + lang/
+     *   {admin}/modules/mystudio/modules/{id}/    module options.php (option schema)
+     *   {admin}/modules/mystudio/themes/{slug}/   theme options.php (option schema)
+     */
+    const PLUGIN_DIR = 'inc/plugins/mystudio';
+
+    /**
+     * Absolute path to the MyBB admin directory (with trailing slash).
+     *
+     * @return string
+     */
+    public function getAdminPath()
+    {
+        if (defined('MYBB_ADMIN_DIR')) {
+            return MYBB_ADMIN_DIR;
+        }
+        global $config;
+        $adminDir = !empty($config['admin_dir']) ? $config['admin_dir'] : 'admin';
+        return MYBB_ROOT . $adminDir . '/';
+    }
+
+    /** Absolute path to the modules directory. */
+    public function getModulesDir()
+    {
+        return MYBB_ROOT . self::PLUGIN_DIR . '/modules';
+    }
+
+    /** Absolute path to a theme's PHP code directory (hooks.php, lang/). */
+    public function getThemeCodeDir($slug)
+    {
+        return MYBB_ROOT . self::PLUGIN_DIR . '/themes/' . $slug;
+    }
+
+    /** Absolute path to a module's admin directory (options.php). */
+    public function getModuleAdminDir($moduleId)
+    {
+        return $this->getAdminPath() . 'modules/mystudio/modules/' . $moduleId;
+    }
+
+    /** Absolute path to a theme's admin directory (options.php). */
+    public function getThemeAdminDir($slug)
+    {
+        return $this->getAdminPath() . 'modules/mystudio/themes/' . $slug;
+    }
+
+    /**
+     * Move PHP out of an imported theme directory into the plugin/admin dirs.
+     * Accepts the legacy package layout (functions/, functions/modules/, lang/).
+     *
+     * @param string $themeDir Absolute path to themes/{slug}
+     * @param string $slug
+     */
+    private function relocateThemeCode($themeDir, $slug)
+    {
+        $funcDir = $themeDir . '/functions';
+        $codeDir = $this->getThemeCodeDir($slug);
+
+        if (is_dir($funcDir . '/modules')) {
+            foreach (scandir($funcDir . '/modules') as $id) {
+                if ($id === '.' || $id === '..' || $id[0] === '.') continue;
+                $src = $funcDir . '/modules/' . $id;
+                if (!is_dir($src) || !preg_match('/^[a-z0-9\-_]+$/', $id)) continue;
+                // A theme package must never replace a core module
+                if (in_array($id, self::CORE_MODULES, true)) {
+                    $this->errors[] = 'Skipped bundled module "' . htmlspecialchars_uni($id) . '": it would replace a core MyStudio module.';
+                    continue;
+                }
+                $dst = $this->getModulesDir() . '/' . $id;
+                // Keep the forum's saved settings when updating an installed module
+                $savedValues = file_exists($dst . '/default.json') ? file_get_contents($dst . '/default.json') : null;
+                $this->rrmdir($dst);
+                $this->rcopy($src, $dst);
+                if ($savedValues !== null) {
+                    file_put_contents($dst . '/default.json', $savedValues);
+                }
+                $this->moveModuleOptionsToAdmin($id);
+            }
+            $this->rrmdir($funcDir . '/modules');
+        }
+
+        if (file_exists($funcDir . '/options.php')) {
+            $adminDir = $this->getThemeAdminDir($slug);
+            @mkdir($adminDir, 0755, true);
+            @rename($funcDir . '/options.php', $adminDir . '/options.php');
+        }
+
+        if (is_dir($funcDir) || is_dir($themeDir . '/lang')) {
+            $this->rrmdir($codeDir);
+            if (is_dir($funcDir)) {
+                $this->rcopy($funcDir, $codeDir);
+                $this->rrmdir($funcDir);
+            }
+            if (is_dir($themeDir . '/lang')) {
+                @mkdir($codeDir, 0755, true);
+                $this->rcopy($themeDir . '/lang', $codeDir . '/lang');
+                $this->rrmdir($themeDir . '/lang');
+            }
+        }
+    }
+
+    /**
+     * Move a module's options.php (option schema) into the admin dir.
+     *
+     * @param string $moduleId
+     */
+    public function moveModuleOptionsToAdmin($moduleId)
+    {
+        $src = $this->getModulesDir() . '/' . $moduleId . '/options.php';
+        if (!file_exists($src)) return;
+        $adminDir = $this->getModuleAdminDir($moduleId);
+        @mkdir($adminDir, 0755, true);
+        @rename($src, $adminDir . '/options.php');
+    }
+
+    /**
      * Allowed file extensions for editing/creating via the editor.
      * Executable extensions (php, phtml, phar, etc.) are blocked to prevent RCE.
      */
@@ -43,6 +161,60 @@ class MyStudio
         'xml', 'svg', 'ini', 'yml', 'yaml', 'less', 'scss',
         'map', 'csv', 'log', 'tpl', 'mustache', 'hbs',
     );
+
+    /** Binary asset types a theme may ship besides the editable text types. */
+    const ALLOWED_ASSET_EXTENSIONS = array(
+        'png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'ico', 'bmp',
+        'woff', 'woff2', 'ttf', 'otf', 'eot',
+        'mp3', 'mp4', 'webm', 'ogg', 'wav', 'pdf',
+    );
+
+    /**
+     * List files in an unpacked theme that must not end up in web-reachable themes/{slug}/:
+     * anything that isn't a known text/asset type, and dotfiles (.htaccess, .user.ini …).
+     * functions/ and lang/ are skipped — relocateThemeCode() moves them out of themes/.
+     *
+     * @param  string $themeRoot
+     * @return string[] Relative paths of offending files
+     */
+    private function findDisallowedThemeFiles($themeRoot)
+    {
+        $bad = array();
+        // .ini is editable in the editor but never shipped: a stray php.ini can change PHP behaviour
+        $allowed = array_diff(array_merge(self::ALLOWED_EDIT_EXTENSIONS, self::ALLOWED_ASSET_EXTENSIONS), array('ini'));
+        $it = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($themeRoot, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::SELF_FIRST
+        );
+        foreach ($it as $file) {
+            $rel = str_replace('\\', '/', substr($file->getPathname(), strlen($themeRoot) + 1));
+            $top = strtok($rel, '/');
+            if ($top === 'functions' || $top === 'lang') continue;
+            if ($file->isLink() || basename($rel)[0] === '.') {
+                $bad[] = $rel;
+                continue;
+            }
+            if ($file->isFile() && !in_array(strtolower($file->getExtension()), $allowed, true)) {
+                $bad[] = $rel;
+            }
+        }
+        return $bad;
+    }
+
+    /**
+     * MyBB eval()s templates, so content must pass the same check_template()
+     * MyBB applies to ACP template edits — otherwise {${...}} runs PHP.
+     *
+     * @param  string $content
+     * @return bool   True if the template is unsafe
+     */
+    private function isUnsafeTemplate($content)
+    {
+        if (!function_exists('check_template')) {
+            require_once $this->getAdminPath() . 'inc/functions.php';
+        }
+        return check_template($content);
+    }
 
     /**
      * Check if a file extension is safe for editor operations.
@@ -92,11 +264,6 @@ class MyStudio
             return false;
         }
 
-        if (!class_exists('ZipArchive')) {
-            $this->errors[] = 'PHP ZipArchive extension is required but not installed.';
-            return false;
-        }
-
         // ── Extract to temp ──
         $tmpDir = sys_get_temp_dir() . '/mystudio_' . uniqid();
         if (!@mkdir($tmpDir, 0755, true)) {
@@ -104,19 +271,36 @@ class MyStudio
             return false;
         }
 
-        $zip = new ZipArchive();
+        $zip = $this->newZip();
         if ($zip->open($file['tmp_name']) !== true) {
-            $this->errors[] = 'Cannot open ZIP archive.';
+            $this->errors[] = 'Cannot open ZIP archive.' . (!empty($zip->error) ? ' ' . htmlspecialchars_uni($zip->error) : '');
             $this->rrmdir($tmpDir);
             return false;
         }
 
+        // Zip-bomb guard: cap entry count and total uncompressed size
+        if ($zip->numFiles > 5000) {
+            $this->errors[] = 'ZIP archive contains too many files (max 5000).';
+            $zip->close();
+            $this->rrmdir($tmpDir);
+            return false;
+        }
+        $totalSize = 0;
+
         // Validate ZIP entries for path traversal (ZIP Slip prevention)
         for ($i = 0; $i < $zip->numFiles; $i++) {
             $entryName = $zip->getNameIndex($i);
+            $stat = $zip->statIndex($i);
+            $totalSize += $stat ? (int) $stat['size'] : 0;
+            if ($totalSize > $maxBytes * 10) {
+                $this->errors[] = 'ZIP archive expands to more than ' . (int) ($maxBytes * 10 / 1048576) . ' MB.';
+                $zip->close();
+                $this->rrmdir($tmpDir);
+                return false;
+            }
             // Reject entries with path traversal sequences
             if (strpos($entryName, '..') !== false || strpos($entryName, '\\') !== false) {
-                $this->errors[] = 'ZIP archive contains unsafe path entry: ' . $entryName;
+                $this->errors[] = 'ZIP archive contains unsafe path entry: ' . htmlspecialchars_uni($entryName);
                 $zip->close();
                 $this->rrmdir($tmpDir);
                 return false;
@@ -129,15 +313,20 @@ class MyStudio
                 return false;
             }
             // Reject absolute paths
-            if ($entryName[0] === '/') {
-                $this->errors[] = 'ZIP archive contains absolute path entry: ' . $entryName;
+            if ($entryName === '' || $entryName[0] === '/' || strpos($entryName, ':') !== false) {
+                $this->errors[] = 'ZIP archive contains absolute path entry: ' . htmlspecialchars_uni($entryName);
                 $zip->close();
                 $this->rrmdir($tmpDir);
                 return false;
             }
         }
 
-        $zip->extractTo($tmpDir);
+        if ($zip->extractTo($tmpDir) === false) {
+            $this->errors[] = 'Could not extract the ZIP archive.' . (!empty($zip->error) ? ' ' . htmlspecialchars_uni($zip->error) : '');
+            $zip->close();
+            $this->rrmdir($tmpDir);
+            return false;
+        }
         $zip->close();
 
         // ── Locate theme root ──
@@ -155,24 +344,78 @@ class MyStudio
             return false;
         }
 
-        // ── Read theme.json for name/slug ──
-        $cfg  = json_decode(file_get_contents($themeRoot . '/theme.json'), true);
-        $slug = $this->makeSlug($cfg['name']);
-
-        // ── Copy to persistent location ──
-        $destDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        if (is_dir($destDir)) {
-            $this->rrmdir($destDir); // update in place
-        }
-        @mkdir(MYBB_ROOT . self::THEMES_DIR, 0755, true);
-
-        if (!$this->rcopy($themeRoot, $destDir)) {
-            $this->errors[] = 'Failed to copy theme files to ' . self::THEMES_DIR . '/' . $slug . '/';
+        // ── Only theme assets may land in the web-reachable themes/ dir ──
+        // PHP is allowed solely in functions/ and lang/, which relocateThemeCode() moves out.
+        $badFiles = $this->findDisallowedThemeFiles($themeRoot);
+        if ($badFiles) {
+            $this->errors[] = 'The theme contains files that are not allowed in a theme folder (only functions/ and lang/ may hold PHP): '
+                . htmlspecialchars_uni(implode(', ', array_slice($badFiles, 0, 10))) . (count($badFiles) > 10 ? ', …' : '');
             $this->rrmdir($tmpDir);
             return false;
         }
 
+        // ── Packages that bring PHP (functions/, lang/, bundled modules) install code that
+        // runs on every page, so importing one is equivalent to server access: super admins only.
+        global $mybb;
+        if ((is_dir($themeRoot . '/functions') || is_dir($themeRoot . '/lang'))
+            && !is_super_admin((int) $mybb->user['uid'])) {
+            $this->errors[] = 'This theme package contains PHP code (functions/ or lang/), which would run on your server. '
+                . 'Only a super administrator can import it. Review the code first, or import a package without PHP.';
+            $this->rrmdir($tmpDir);
+            return false;
+        }
+
+        // ── Read theme.json for name/slug ──
+        $cfg  = json_decode(file_get_contents($themeRoot . '/theme.json'), true);
+        $slug = $this->makeSlug($cfg['name']);
+        if ($slug === '') {
+            $this->errors[] = 'theme.json has no usable "name".';
+            $this->rrmdir($tmpDir);
+            return false;
+        }
+
+        // ── Copy to persistent location ──
+        $destDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
+        if (is_dir($destDir)) {
+            // Updating in place is fine for the same theme; never clobber a different one whose name slugs alike
+            $existingCfg = @json_decode(@file_get_contents($destDir . '/theme.json'), true);
+            if (!empty($existingCfg['name']) && $existingCfg['name'] !== $cfg['name']) {
+                $this->errors[] = 'Folder ' . self::THEMES_DIR . '/' . $slug . '/ already belongs to the theme "'
+                    . htmlspecialchars_uni($existingCfg['name']) . '". Rename the imported theme.';
+                $this->rrmdir($tmpDir);
+                return false;
+            }
+        }
+        @mkdir(MYBB_ROOT . self::THEMES_DIR, 0755, true);
+
+        // Stage next to the destination, then swap, so a failed copy never loses the old theme
+        $stageDir  = MYBB_ROOT . self::THEMES_DIR . '/.' . $slug . '.importing';
+        $backupDir = MYBB_ROOT . self::THEMES_DIR . '/.' . $slug . '.previous';
+        $this->rrmdir($stageDir);
+        $this->rrmdir($backupDir);
+        if (!$this->rcopy($themeRoot, $stageDir)) {
+            $this->errors[] = 'Failed to copy theme files to ' . self::THEMES_DIR . '/' . $slug . '/';
+            $this->rrmdir($stageDir);
+            $this->rrmdir($tmpDir);
+            return false;
+        }
         $this->rrmdir($tmpDir);
+
+        if (is_dir($destDir) && !@rename($destDir, $backupDir)) {
+            $this->errors[] = 'Could not replace ' . self::THEMES_DIR . '/' . $slug . '/ (is a file in it open?).';
+            $this->rrmdir($stageDir);
+            return false;
+        }
+        if (!@rename($stageDir, $destDir)) {
+            if (is_dir($backupDir)) @rename($backupDir, $destDir);
+            $this->errors[] = 'Failed to move the imported theme into ' . self::THEMES_DIR . '/' . $slug . '/';
+            $this->rrmdir($stageDir);
+            return false;
+        }
+        $this->rrmdir($backupDir);
+
+        // ── Move any PHP (functions/, lang/) out of the theme dir ──
+        $this->relocateThemeCode($destDir, $slug);
 
         // ── Sync to DB ──
         $tid = $this->syncToDatabase($slug, $parentTid);
@@ -219,27 +462,60 @@ class MyStudio
         }
 
         // ── Create ZIP ──
-        if (!class_exists('ZipArchive')) {
-            $this->errors[] = 'PHP ZipArchive extension is required.';
-            return false;
-        }
-
         $this->tempDir = sys_get_temp_dir() . '/mystudio_' . uniqid();
         @mkdir($this->tempDir, 0755, true);
 
         $safeName = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $theme['name']);
         $zipPath  = $this->tempDir . '/' . $safeName . '.zip';
 
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath, ZipArchive::CREATE) !== true) {
+        $zip = $this->newZip();
+        if ($zip->open($zipPath, $zip instanceof ZipArchive ? ZipArchive::CREATE : MsZipArchive::CREATE) !== true) {
             $this->errors[] = 'Failed to create ZIP archive.';
             return false;
         }
 
         $this->addDirToZip($zip, $themeDir, $safeName);
-        $zip->close();
+
+        // Re-pack theme PHP in the portable package layout (functions/, lang/)
+        $codeDir = $this->getThemeCodeDir($slug);
+        if (is_dir($codeDir)) {
+            foreach (scandir($codeDir) as $entry) {
+                if ($entry === '.' || $entry === '..') continue;
+                $path = $codeDir . '/' . $entry;
+                if ($entry === 'lang' && is_dir($path)) {
+                    $this->addDirToZip($zip, $path, $safeName . '/lang');
+                } elseif (is_dir($path)) {
+                    $this->addDirToZip($zip, $path, $safeName . '/functions/' . $entry);
+                } else {
+                    $zip->addFile($path, $safeName . '/functions/' . $entry);
+                }
+            }
+        }
+        $optionsFile = $this->getThemeAdminDir($slug) . '/options.php';
+        if (file_exists($optionsFile)) {
+            $zip->addFile($optionsFile, $safeName . '/functions/options.php');
+        }
+        if ($zip->close() === false) {
+            $this->errors[] = 'Failed to write the ZIP archive.';
+            return false;
+        }
 
         return $zipPath;
+    }
+
+    /**
+     * ZIP handler for import/export: PHP's ZipArchive when the zip extension is
+     * installed, otherwise MyStudio's pure-PHP MsZipArchive (same subset of methods).
+     *
+     * @return ZipArchive|MsZipArchive
+     */
+    private function newZip()
+    {
+        if (class_exists('ZipArchive') && !defined('MS_FORCE_PHP_ZIP')) {
+            return new ZipArchive();
+        }
+        require_once MYBB_ROOT . self::PLUGIN_DIR . '/zip.php';
+        return new MsZipArchive();
     }
 
     /**
@@ -280,6 +556,11 @@ class MyStudio
         );
         $order = 1;
         while ($ss = $db->fetch_array($query)) {
+            // DB names become file names: never let one escape css/ or become e.g. evil.php
+            if (!$this->isSafeFileName($ss['name']) || substr(strtolower($ss['name']), -4) !== '.css') {
+                $this->errors[] = 'Skipped stylesheet "' . htmlspecialchars_uni($ss['name']) . '": not a plain .css file name.';
+                continue;
+            }
             file_put_contents($themeDir . '/css/' . $ss['name'], $ss['stylesheet']);
             $ssMeta[] = array(
                 'name'       => $ss['name'],
@@ -310,7 +591,12 @@ class MyStudio
         // Group by MyBB template groups
         $folderMap = $this->getTemplateFolderMap(array_keys($templates));
         foreach ($templates as $name => $content) {
+            if (!$this->isSafeFileName($name)) {
+                $this->errors[] = 'Skipped template "' . htmlspecialchars_uni($name) . '": its title is not a safe file name.';
+                continue;
+            }
             $folder = isset($folderMap[$name]) ? $folderMap[$name] : 'ungrouped';
+            if (!$this->isSafeFileName($folder)) $folder = 'ungrouped';
             $dir = $themeDir . '/templates/' . $folder;
             if (!is_dir($dir)) {
                 mkdir($dir, 0755, true);
@@ -376,6 +662,10 @@ class MyStudio
     {
         global $db;
 
+        if (!is_string($slug) || !preg_match('/^[A-Za-z0-9][A-Za-z0-9_\-]*$/', $slug)) {
+            $this->errors[] = 'Invalid theme folder name.';
+            return false;
+        }
         $themeDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
 
         if (!is_dir($themeDir) || !file_exists($themeDir . '/theme.json')) {
@@ -494,6 +784,12 @@ class MyStudio
 
         // Templates on disk — insert or update
         foreach ($diskTemplates as $name => $content) {
+            if ($this->isUnsafeTemplate($content)) {
+                // Leave the DB copy untouched (and don't delete it below)
+                $this->errors[] = 'Template "' . htmlspecialchars_uni($name) . '" failed the MyBB template security check and was not synced.';
+                unset($dbTemplates[$name]);
+                continue;
+            }
             if (isset($dbTemplates[$name])) {
                 // Exists in DB — update only if content changed
                 if ($dbTemplates[$name]['template'] !== $content) {
@@ -726,21 +1022,26 @@ class MyStudio
         $themeName    = htmlspecialchars($cfg['name'], ENT_XML1, 'UTF-8');
         $themeVersion = isset($cfg['version']) ? htmlspecialchars($cfg['version'], ENT_XML1, 'UTF-8') : '1839';
 
+        // theme.json comes from (possibly third-party) ZIPs and these values are echoed
+        // unescaped into templates ({$theme['editortheme']}, {$theme['imgdir']}), so whitelist them
         $props = isset($cfg['properties']) ? $cfg['properties'] : array();
-        $editortheme = isset($props['editortheme']) ? $props['editortheme'] : 'default.css';
-        $tablespace  = isset($props['tablespace'])  ? $props['tablespace']  : '0';
-        $borderwidth = isset($props['borderwidth']) ? $props['borderwidth'] : '0';
-        $color       = isset($props['color'])       ? $props['color']       : '';
+        $editortheme = isset($props['editortheme']) && preg_match('/^[A-Za-z0-9_\-.]+\.css$/', $props['editortheme'])
+            ? $props['editortheme'] : 'default.css';
+        $tablespace  = (string) (isset($props['tablespace'])  ? (int) $props['tablespace']  : 0);
+        $borderwidth = (string) (isset($props['borderwidth']) ? (int) $props['borderwidth'] : 0);
+        $color       = isset($props['color']) && preg_match('/^[A-Za-z0-9_\- #]*$/', $props['color']) ? $props['color'] : '';
 
         // imgdir — use theme.json value, or auto-detect, or MyBB default
         $slug = $this->makeSlug($cfg['name']);
-        if (isset($props['imgdir']) && $props['imgdir'] !== '') {
+        if (isset($props['imgdir']) && preg_match('#^[A-Za-z0-9_\-./]+$#', $props['imgdir'])
+            && !preg_match('#(^|/)\.\.(/|$)#', $props['imgdir'])) {
             $imgdir = $props['imgdir'];
         } elseif (is_dir($themeDir . '/images')) {
             $imgdir = self::THEMES_DIR . '/' . $slug . '/images';
         } else {
             $imgdir = 'images';
         }
+        $imgdir = $this->escapeCdata($imgdir);
 
         // disporder
         $stylesheets = isset($cfg['stylesheets']) ? $cfg['stylesheets'] : array();
@@ -769,10 +1070,16 @@ class MyStudio
         $cssDir = $themeDir . '/css';
         if (is_dir($cssDir)) {
             foreach ($stylesheets as $ss) {
-                $name       = $ss['name'];
-                $attachedto = isset($ss['attachedto']) ? $ss['attachedto'] : '';
+                $name       = isset($ss['name']) ? (string) $ss['name'] : '';
+                $attachedto = isset($ss['attachedto']) ? (string) $ss['attachedto'] : '';
+                // A plain "x.css" file name only: "../../inc/config.php" would otherwise be
+                // read and published as a public stylesheet
+                if (!$this->isSafeFileName($name) || substr(strtolower($name), -4) !== '.css') {
+                    $this->errors[] = 'Skipped stylesheet "' . htmlspecialchars_uni($name) . '": names must be plain .css file names inside css/.';
+                    continue;
+                }
                 $cssPath    = $cssDir . '/' . $name;
-                if (!file_exists($cssPath)) continue;
+                if (!is_file($cssPath)) continue;
 
                 $cssContent = file_get_contents($cssPath);
                 $cssContent = $this->escapeCdata($cssContent);
@@ -810,15 +1117,7 @@ class MyStudio
 
     private function importThemeXml($xml, $parentTid = 1, $extraOptions = array())
     {
-        // Resolve admin directory path
-        $adminPath = '';
-        if (defined('MYBB_ADMIN_DIR')) {
-            $adminPath = MYBB_ADMIN_DIR;
-        } else {
-            global $config;
-            $adminDir = !empty($config['admin_dir']) ? $config['admin_dir'] : 'admin';
-            $adminPath = MYBB_ROOT . $adminDir . '/';
-        }
+        $adminPath = $this->getAdminPath();
 
         // Load admin functions needed by import_theme_xml (check_template, etc.)
         if (!function_exists('check_template')) {
@@ -849,10 +1148,25 @@ class MyStudio
         // Merge any caller-supplied overrides (e.g. no_templates, templateset)
         $options = array_merge($options, $extraOptions);
 
+        // import_theme_xml() prefers $mybb->input['name'] over the XML's name — hide any
+        // request "name" param so it can't rename or merge the theme.
+        global $mybb;
+        $inputName = isset($mybb->input['name']) ? $mybb->input['name'] : null;
+        unset($mybb->input['name']);
         $tid = import_theme_xml($xml, $options);
+        if ($inputName !== null) {
+            $mybb->input['name'] = $inputName;
+        }
 
-        if (!$tid) {
-            $this->errors[] = 'MyBB import_theme_xml() returned no theme ID. The XML may be malformed.';
+        // Failure codes are negative (truthy) ints, not false
+        if ((int) $tid < 1) {
+            $reasons = array(
+                -1 => 'The generated theme XML is malformed.',
+                -2 => 'The theme version is incompatible.',
+                -3 => 'A theme with this name already exists.',
+                -4 => 'A template failed the MyBB template security check.',
+            );
+            $this->errors[] = 'MyBB could not import the theme: ' . (isset($reasons[(int) $tid]) ? $reasons[(int) $tid] : 'no theme ID returned.');
             return false;
         }
 
@@ -913,8 +1227,13 @@ class MyStudio
         $props = my_unserialize($theme['properties']);
         if (isset($props['templateset'])) {
             $sid = (int) $props['templateset'];
-            $db->delete_query('templates', "sid='{$sid}'");
-            $db->delete_query('templatesets', "sid='{$sid}'");
+            // ACP-created child themes inherit the parent's template set; only drop it if unshared
+            $shared = (int) $db->fetch_field($db->simple_select('themes', 'COUNT(*) AS c',
+                "tid != '{$tid}' AND properties LIKE '%\"templateset\";i:{$sid};%'"), 'c');
+            if ($sid > 0 && !$shared) {
+                $db->delete_query('templates', "sid='{$sid}'");
+                $db->delete_query('templatesets', "sid='{$sid}'");
+            }
         }
         $db->delete_query('themestylesheets', "tid='{$tid}'");
         $db->delete_query('themes', "tid='{$tid}'");
@@ -947,10 +1266,22 @@ class MyStudio
             if ($entry === '.' || $entry === '..') continue;
             $src = $jsDir . '/' . $entry;
             if (is_file($src) && pathinfo($entry, PATHINFO_EXTENSION) === 'js') {
+                // Theme JS shares jscripts/ with MyBB — never overwrite a core script
+                if (in_array(strtolower($entry), self::CORE_JSCRIPTS, true)) {
+                    $this->errors[] = 'Skipped js/' . htmlspecialchars_uni($entry) . ': it would overwrite a MyBB core script. Rename the file.';
+                    continue;
+                }
                 copy($src, $destDir . '/' . $entry);
             }
         }
     }
+
+    /** MyBB 1.8 core files in jscripts/ that theme JS must never replace. */
+    const CORE_JSCRIPTS = array(
+        'bbcodes_sceditor.js', 'captcha.js', 'general.js', 'inline_edit.js', 'inline_moderation.js',
+        'inline_reports.js', 'jquery.js', 'jquery.plugins.js', 'jquery.plugins.min.js', 'post.js',
+        'question.js', 'rating.js', 'regvalidator.js', 'report.js', 'thread.js', 'usercp.js',
+    );
 
     private function findThemeRoot($dir)
     {
@@ -1063,6 +1394,7 @@ class MyStudio
             if ($entry === '.' || $entry === '..') continue;
             $s = $src . '/' . $entry;
             $d = $dst . '/' . $entry;
+            if (is_link($s)) continue; // don't follow links out of the source tree
             if (is_dir($s)) {
                 if (!$this->rcopy($s, $d)) return false;
             } else {
@@ -1072,11 +1404,13 @@ class MyStudio
         return true;
     }
 
-    private function addDirToZip(ZipArchive $zip, $dir, $prefix)
+    /** @param ZipArchive|MsZipArchive $zip */
+    private function addDirToZip($zip, $dir, $prefix)
     {
         $zip->addEmptyDir($prefix);
         foreach (scandir($dir) as $entry) {
-            if ($entry === '.' || $entry === '..') continue;
+            // Skip dotfiles (.git, .env, .ms_last_sync …) and links — they don't belong in a package
+            if ($entry[0] === '.' || is_link($dir . '/' . $entry)) continue;
             $path    = $dir . '/' . $entry;
             $zipPath = $prefix . '/' . $entry;
             if (is_dir($path)) {
@@ -1089,11 +1423,22 @@ class MyStudio
 
     public function rrmdir($dir)
     {
+        if (is_link($dir)) {
+            // Remove the link itself — never recurse into its target
+            @unlink($dir) || @rmdir($dir);
+            return;
+        }
         if (!is_dir($dir)) return;
         foreach (scandir($dir) as $entry) {
             if ($entry === '.' || $entry === '..') continue;
             $path = $dir . '/' . $entry;
-            is_dir($path) ? $this->rrmdir($path) : @unlink($path);
+            if (is_link($path)) {
+                @unlink($path) || @rmdir($path);
+            } elseif (is_dir($path)) {
+                $this->rrmdir($path);
+            } else {
+                @unlink($path);
+            }
         }
         @rmdir($dir);
     }
@@ -1128,11 +1473,12 @@ class MyStudio
             "sid='" . (int) $sid . "' AND title='{$esc}'");
         $row = $db->fetch_array($query);
 
-        if ($row) {
+        if ($row && !$this->isUnsafeTemplate($content)) {
+            global $mybb;
             $db->update_query('templates', array(
                 'template' => $db->escape_string($content),
                 'dateline' => TIME_NOW,
-                'version'  => '1839'
+                'version'  => (int) $mybb->version_code
             ), "tid='" . (int) $row['tid'] . "'");
         }
     }
@@ -1158,10 +1504,7 @@ class MyStudio
 
         // Use MyBB admin function if available, otherwise skip
         if (!function_exists('update_theme_stylesheet_list')) {
-            $adminDir = defined('MYBB_ADMIN_DIR')
-                ? MYBB_ADMIN_DIR
-                : (MYBB_ROOT . 'admin/');
-            $funcsFile = $adminDir . 'inc/functions_themes.php';
+            $funcsFile = $this->getAdminPath() . 'inc/functions_themes.php';
             if (file_exists($funcsFile)) {
                 @require_once $funcsFile;
             }
@@ -1179,9 +1522,53 @@ class MyStudio
      */
     public function getFileTree($slug)
     {
-        $themeDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        if (!is_dir($themeDir)) return false;
+        $themeDir = $this->themeBaseDir($slug);
+        if (!$themeDir) return false;
         return $this->buildFileTreeNode($themeDir, $slug);
+    }
+
+    /**
+     * Resolve a theme folder for editor file ops. The slug must be a plain folder name
+     * holding a theme.json — an empty slug would otherwise resolve to themes/ itself.
+     *
+     * @return string|false realpath of themes/{slug}
+     */
+    private function themeBaseDir($slug)
+    {
+        if (!is_string($slug) || !preg_match('/^[A-Za-z0-9][A-Za-z0-9_\-]*$/', $slug)) return false;
+        $dir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
+        if (!is_file($dir . '/theme.json')) return false;
+        return realpath($dir);
+    }
+
+    /**
+     * Lexically validate a theme-relative path before it touches the filesystem
+     * (so mkdir never runs on an escaping path). Rejects absolute paths, drive
+     * letters/ADS (":"), "." / ".." segments and hidden (dot) segments.
+     *
+     * @return string|false Normalised path with forward slashes
+     */
+    private function cleanRelPath($rel)
+    {
+        $rel = trim(str_replace('\\', '/', (string) $rel), '/');
+        if ($rel === '' || strpos($rel, ':') !== false || strpos($rel, "\0") !== false) return false;
+        foreach (explode('/', $rel) as $seg) {
+            if ($seg === '' || $seg[0] === '.' || rtrim($seg, '. ') !== $seg) return false;
+        }
+        return $rel;
+    }
+
+    /** A single file name with no path parts: letters, digits, "_", "-", "." and not a dotfile. */
+    private function isSafeFileName($name)
+    {
+        return is_string($name) && $name !== '' && $name[0] !== '.' && strlen($name) <= 120
+            && preg_match('/^[A-Za-z0-9_\-.]+$/', $name) && rtrim($name, '.') === $name;
+    }
+
+    /** True if $path is $base or inside it (separator-aware, so themes/a never matches themes/ab). */
+    private function isInside($path, $base)
+    {
+        return $path === $base || strpos($path, rtrim($base, '\\/') . DIRECTORY_SEPARATOR) === 0;
     }
 
     /**
@@ -1191,11 +1578,12 @@ class MyStudio
      */
     public function readThemeFile($slug, $relativePath)
     {
-        $themeDir = realpath(MYBB_ROOT . self::THEMES_DIR . '/' . $slug);
-        if (!$themeDir) return false;
+        $themeDir = $this->themeBaseDir($slug);
+        $rel = $this->cleanRelPath($relativePath);
+        if (!$themeDir || $rel === false) return false;
 
-        $filePath = realpath($themeDir . '/' . $relativePath);
-        if (!$filePath || strpos($filePath, $themeDir) !== 0) return false;
+        $filePath = realpath($themeDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel));
+        if (!$filePath || !$this->isInside($filePath, $themeDir)) return false;
         if (!is_file($filePath)) return false;
 
         return array(
@@ -1214,27 +1602,34 @@ class MyStudio
     public function writeThemeFile($slug, $relativePath, $content, $syncToDB = true)
     {
         // Block executable file extensions
-        if (!$this->isSafeExtension($relativePath)) return false;
+        if (!$this->isSafeExtension($relativePath)) {
+            $this->errors[] = 'This file type cannot be edited.';
+            return false;
+        }
 
-        $baseDir  = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        $realBase = realpath($baseDir);
-        if (!$realBase) return false;
+        $realBase = $this->themeBaseDir($slug);
+        $relNorm  = $this->cleanRelPath($relativePath);
+        if (!$realBase || $relNorm === false) {
+            $this->errors[] = 'Invalid theme or path.';
+            return false;
+        }
 
-        // Normalise separator
-        $relNorm  = str_replace('\\', '/', $relativePath);
+        // Templates are eval()'d by MyBB — refuse PHP-capable syntax before it reaches disk
+        if (strpos($relNorm, 'templates/') === 0 && $this->isUnsafeTemplate($content)) {
+            $this->errors[] = 'This template failed the MyBB template security check (it contains PHP-capable syntax such as {${…}}).';
+            return false;
+        }
+
         $fullPath = $realBase . DIRECTORY_SEPARATOR
                   . str_replace('/', DIRECTORY_SEPARATOR, $relNorm);
 
-        // Ensure parent directory exists
+        // Ensure parent directory exists (path was checked lexically above)
         $dir = dirname($fullPath);
         if (!is_dir($dir)) @mkdir($dir, 0755, true);
 
         // Verify target is inside the theme directory
         $realDir = realpath($dir);
-        if (!$realDir || strpos($realDir, $realBase) !== 0) return false;
-
-        // Reject hidden files
-        if (basename($relativePath)[0] === '.') return false;
+        if (!$realDir || !$this->isInside($realDir, $realBase)) return false;
 
         $result = file_put_contents($fullPath, $content);
         if ($result === false) return false;
@@ -1336,16 +1731,19 @@ class MyStudio
             return false;
         }
 
-        $baseDir  = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        $realBase = realpath($baseDir);
+        $realBase = $this->themeBaseDir($slug);
         if (!$realBase) {
             $this->errors[] = 'Theme directory not found.';
             return false;
         }
 
-        $relNorm  = str_replace('\\', '/', $relativePath);
-        if (basename($relNorm)[0] === '.') {
-            $this->errors[] = 'Hidden files are not allowed.';
+        $relNorm = $this->cleanRelPath($relativePath);
+        if ($relNorm === false) {
+            $this->errors[] = 'Invalid path (hidden files, ".." and absolute paths are not allowed).';
+            return false;
+        }
+        if (strpos($relNorm, 'templates/') === 0 && $this->isUnsafeTemplate($content)) {
+            $this->errors[] = 'This template failed the MyBB template security check.';
             return false;
         }
 
@@ -1361,7 +1759,7 @@ class MyStudio
         if (!is_dir($dir)) @mkdir($dir, 0755, true);
 
         $realDir = realpath($dir);
-        if (!$realDir || strpos($realDir, $realBase) !== 0) {
+        if (!$realDir || !$this->isInside($realDir, $realBase)) {
             $this->errors[] = 'Invalid path.';
             return false;
         }
@@ -1379,14 +1777,17 @@ class MyStudio
      */
     public function createThemeFolder($slug, $relativePath)
     {
-        $baseDir  = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        $realBase = realpath($baseDir);
+        $realBase = $this->themeBaseDir($slug);
         if (!$realBase) {
             $this->errors[] = 'Theme directory not found.';
             return false;
         }
 
-        $relNorm  = str_replace('\\', '/', $relativePath);
+        $relNorm = $this->cleanRelPath($relativePath);
+        if ($relNorm === false) {
+            $this->errors[] = 'Invalid path (hidden folders, ".." and absolute paths are not allowed).';
+            return false;
+        }
         $fullPath = $realBase . DIRECTORY_SEPARATOR
                   . str_replace('/', DIRECTORY_SEPARATOR, $relNorm);
 
@@ -1399,7 +1800,7 @@ class MyStudio
         $parent = dirname($fullPath);
         if (!is_dir($parent)) @mkdir($parent, 0755, true);
         $realParent = realpath($parent);
-        if (!$realParent || strpos($realParent, $realBase) !== 0) {
+        if (!$realParent || !$this->isInside($realParent, $realBase)) {
             $this->errors[] = 'Invalid path.';
             return false;
         }
@@ -1416,15 +1817,14 @@ class MyStudio
      */
     public function deleteThemeFile($slug, $relativePath)
     {
-        $baseDir  = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        $realBase = realpath($baseDir);
-        if (!$realBase) return false;
+        $realBase = $this->themeBaseDir($slug);
+        $relNorm  = $this->cleanRelPath($relativePath);
+        if (!$realBase || $relNorm === false) return false;
 
-        $relNorm  = str_replace('\\', '/', $relativePath);
         $fullPath = realpath($realBase . DIRECTORY_SEPARATOR
                   . str_replace('/', DIRECTORY_SEPARATOR, $relNorm));
 
-        if (!$fullPath || strpos($fullPath, $realBase) !== 0) return false;
+        if (!$fullPath || !$this->isInside($fullPath, $realBase)) return false;
         if (!is_file($fullPath)) return false;
 
         return @unlink($fullPath);
@@ -1439,15 +1839,14 @@ class MyStudio
      */
     public function deleteThemeFolder($slug, $relativePath)
     {
-        $baseDir  = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        $realBase = realpath($baseDir);
-        if (!$realBase) return false;
+        $realBase = $this->themeBaseDir($slug);
+        $relNorm  = $this->cleanRelPath($relativePath);
+        if (!$realBase || $relNorm === false) return false;
 
-        $relNorm  = str_replace('\\', '/', $relativePath);
         $fullPath = realpath($realBase . DIRECTORY_SEPARATOR
                   . str_replace('/', DIRECTORY_SEPARATOR, $relNorm));
 
-        if (!$fullPath || strpos($fullPath, $realBase) !== 0) return false;
+        if (!$fullPath || !$this->isInside($fullPath, $realBase)) return false;
         if ($fullPath === $realBase) return false; // Don't delete theme root
         if (!is_dir($fullPath)) return false;
 
@@ -1465,26 +1864,37 @@ class MyStudio
      */
     public function renameThemePath($slug, $oldPath, $newPath)
     {
-        // Block renaming to executable file extension
-        $newExt = pathinfo($newPath, PATHINFO_EXTENSION);
-        if ($newExt !== '' && !$this->isSafeExtension($newPath)) return false;
-
-        $baseDir  = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        $realBase = realpath($baseDir);
-        if (!$realBase) return false;
+        $realBase = $this->themeBaseDir($slug);
+        $oldRel   = $this->cleanRelPath($oldPath);
+        $newRel   = $this->cleanRelPath($newPath);
+        if (!$realBase || $oldRel === false || $newRel === false) {
+            $this->errors[] = 'Invalid path (hidden files, ".." and absolute paths are not allowed).';
+            return false;
+        }
 
         $oldFull = realpath($realBase . DIRECTORY_SEPARATOR
-                 . str_replace('/', DIRECTORY_SEPARATOR, $oldPath));
-        if (!$oldFull || strpos($oldFull, $realBase) !== 0) return false;
+                 . str_replace('/', DIRECTORY_SEPARATOR, $oldRel));
+        if (!$oldFull || !$this->isInside($oldFull, $realBase) || $oldFull === $realBase) return false;
+
+        // Files must keep a safe extension (an extensionless or "x.php." target is refused)
+        if (is_file($oldFull) && !$this->isSafeExtension($newRel)) {
+            $this->errors[] = 'This file type is not allowed.';
+            return false;
+        }
 
         $newFull = $realBase . DIRECTORY_SEPARATOR
-                 . str_replace('/', DIRECTORY_SEPARATOR, $newPath);
+                 . str_replace('/', DIRECTORY_SEPARATOR, $newRel);
+        // rename() silently replaces an existing file on Windows
+        if (file_exists($newFull)) {
+            $this->errors[] = 'A file or folder with that name already exists.';
+            return false;
+        }
 
         // Ensure new parent exists
         $newDir = dirname($newFull);
         if (!is_dir($newDir)) @mkdir($newDir, 0755, true);
         $realNewDir = realpath($newDir);
-        if (!$realNewDir || strpos($realNewDir, $realBase) !== 0) return false;
+        if (!$realNewDir || !$this->isInside($realNewDir, $realBase)) return false;
 
         return @rename($oldFull, $newFull);
     }
@@ -1497,8 +1907,8 @@ class MyStudio
      */
     public function getFlatFileList($slug)
     {
-        $themeDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug;
-        if (!is_dir($themeDir)) return false;
+        $themeDir = $this->themeBaseDir($slug);
+        if (!$themeDir) return false;
 
         $files = array();
         $this->collectFiles($themeDir, '', $files);
@@ -1524,7 +1934,7 @@ class MyStudio
     }
 
     /**
-     * Read the theme options definition from functions/options.php.
+     * Read the theme options definition from {admin}/modules/mystudio/themes/{slug}/options.php.
      *
      * The file must return an associative array of option definitions:
      *   return array(
@@ -1543,7 +1953,7 @@ class MyStudio
      */
     public function getThemeOptions($slug)
     {
-        $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions/options.php';
+        $file = $this->getThemeAdminDir($slug) . '/options.php';
         if (!file_exists($file)) return false;
 
         $options = @include $file;
@@ -1552,14 +1962,14 @@ class MyStudio
     }
 
     /**
-     * Check if a theme has a functions/ directory with any PHP files.
+     * Check if a theme has a PHP code directory (inc/plugins/mystudio/themes/{slug}) with any PHP files.
      *
      * @param  string $slug
      * @return bool
      */
     public function themeHasFunctions($slug)
     {
-        $dir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions';
+        $dir = $this->getThemeCodeDir($slug);
         if (!is_dir($dir)) return false;
 
         foreach (scandir($dir) as $e) {
@@ -1631,7 +2041,7 @@ class MyStudio
     /**
      * Load language files from the active theme's lang/ directory.
      *
-     * Expected structure: themes/{slug}/lang/{language}/*.lang.php
+     * Expected structure: inc/plugins/mystudio/themes/{slug}/lang/{language}/*.lang.php
      * Each file sets variables on the $l array (same convention as MyBB lang files):
      *   $l['my_theme_welcome'] = 'Welcome!';
      *
@@ -1641,12 +2051,12 @@ class MyStudio
      */
     public function loadThemeLang($slug, $langName)
     {
-        $langDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/lang/' . $langName;
+        $langDir = $this->getThemeCodeDir($slug) . '/lang/' . $langName;
         $strings = array();
 
         // Fallback to english if the requested language folder doesn't exist
         if (!is_dir($langDir)) {
-            $langDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/lang/english';
+            $langDir = $this->getThemeCodeDir($slug) . '/lang/english';
         }
 
         if (!is_dir($langDir)) return $strings;
@@ -1739,7 +2149,7 @@ class MyStudio
     }
 
     /**
-     * Discover mini plugins inside a theme's functions/plugins/ directory.
+     * Discover mini plugins (alias of listModules).
      *
      * Each mini plugin lives in its own sub-folder and must contain at
      * minimum a plugin.json manifest:
@@ -1767,14 +2177,19 @@ class MyStudio
 
     /**
      * List all built-in modules for a theme.
-     * Scans themes/{slug}/functions/modules/ for subdirectories with a plugin.json.
+     * Scans inc/plugins/mystudio/modules/ for subdirectories with a plugin.json.
      *
      * @param  string $slug  Theme slug
      * @return array         Array of module info arrays
      */
     public function listModules($slug)
     {
-        $modulesDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions/modules';
+        // Scanned once per request (loadModules + getModuleAssets both need it)
+        if (self::$moduleListCache !== null) {
+            return self::$moduleListCache;
+        }
+
+        $modulesDir = $this->getModulesDir();
         $result = array();
         if (!is_dir($modulesDir)) return $result;
 
@@ -1796,15 +2211,107 @@ class MyStudio
                 'version'     => isset($manifest['version']) ? $manifest['version'] : '1.0.0',
                 'author'      => isset($manifest['author']) ? $manifest['author'] : '',
                 'has_init'    => file_exists($dir . '/init.php'),
-                'has_options' => file_exists($dir . '/options.php'),
+                'has_options' => file_exists($this->getModuleAdminDir($entry) . '/options.php')
+                               || file_exists($dir . '/options.php'),
                 'has_admin'   => file_exists($dir . '/admin.php'),
                 'has_js'      => is_dir($dir . '/js'),
                 'has_css'     => is_dir($dir . '/css'),
                 'dir'         => $dir,
+                'core'        => $this->isCoreModule($entry),
+                'enabled'     => $this->isModuleEnabled($entry),
             );
         }
 
+        self::$moduleListCache = $result;
         return $result;
+    }
+
+    /** @var array|null Per-request cache for listModules(); reset when module state changes */
+    private static $moduleListCache = null;
+
+    /**
+     * Modules that ship with MyStudio. They are always enabled and cannot be
+     * switched off. Any other module is off until an admin activates it.
+     */
+    const CORE_MODULES = array(
+        'ms-editor-extras',
+        'ms-forum-display-extras',
+        'ms-forum-icons',
+        'ms-pagebuilder',
+        'ms-profile-extras',
+    );
+
+    /** Datacache key holding the list of activated (non-core) module ids. */
+    const MODULE_STATE_CACHE = 'ms_modules';
+
+    /**
+     * @param  string $moduleId
+     * @return bool
+     */
+    public function isCoreModule($moduleId)
+    {
+        return in_array($moduleId, self::CORE_MODULES, true);
+    }
+
+    /**
+     * Ids of non-core modules an admin has activated.
+     *
+     * @return array
+     */
+    public function getActivatedModuleIds()
+    {
+        global $cache;
+
+        $data = $cache->read(self::MODULE_STATE_CACHE);
+        return (is_array($data) && isset($data['enabled']) && is_array($data['enabled']))
+            ? $data['enabled'] : array();
+    }
+
+    /**
+     * Core modules are always enabled; others only once activated.
+     *
+     * @param  string $moduleId
+     * @return bool
+     */
+    public function isModuleEnabled($moduleId)
+    {
+        return $this->isCoreModule($moduleId)
+            || in_array($moduleId, $this->getActivatedModuleIds(), true);
+    }
+
+    /**
+     * Activate or deactivate a non-core module.
+     *
+     * @param  string $moduleId
+     * @param  bool   $enable
+     * @return bool   false for core modules (they cannot be toggled)
+     */
+    public function setModuleEnabled($moduleId, $enable)
+    {
+        global $cache;
+
+        if ($this->isCoreModule($moduleId)) return false;
+
+        $ids = array_diff($this->getActivatedModuleIds(), array($moduleId));
+        if ($enable) {
+            $ids[] = $moduleId;
+        }
+        $cache->update(self::MODULE_STATE_CACHE, array('enabled' => array_values($ids)));
+        self::$moduleListCache = null;
+        return true;
+    }
+
+    /**
+     * Enabled modules only (what actually loads at runtime).
+     *
+     * @param  string $slug
+     * @return array
+     */
+    public function listActiveModules($slug)
+    {
+        return array_values(array_filter($this->listModules($slug), function ($m) {
+            return $m['enabled'];
+        }));
     }
 
     /**
@@ -1816,8 +2323,7 @@ class MyStudio
      */
     public function getMiniPluginOptionValues($slug, $pluginId)
     {
-        $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-              . '/functions/modules/' . $pluginId . '/default.json';
+        $file = $this->getModulesDir() . '/' . $pluginId . '/default.json';
         if (!file_exists($file)) return array();
         $data = @json_decode(file_get_contents($file), true);
         return is_array($data) ? $data : array();
@@ -1833,8 +2339,7 @@ class MyStudio
      */
     public function saveMiniPluginOptionValues($slug, $pluginId, $values)
     {
-        $dir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-             . '/functions/modules/' . $pluginId;
+        $dir = $this->getModulesDir() . '/' . $pluginId;
         if (!is_dir($dir)) return false;
         $file = $dir . '/default.json';
         return file_put_contents($file, json_encode($values, JSON_PRETTY_PRINT)) !== false;
@@ -1849,8 +2354,12 @@ class MyStudio
      */
     public function getMiniPluginOptions($slug, $pluginId)
     {
-        $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-              . '/functions/modules/' . $pluginId . '/options.php';
+        // Schema lives in the admin dir; fall back to the module dir for
+        // modules that have not been relocated yet.
+        $file = $this->getModuleAdminDir($pluginId) . '/options.php';
+        if (!file_exists($file)) {
+            $file = $this->getModulesDir() . '/' . $pluginId . '/options.php';
+        }
         if (!file_exists($file)) return false;
         $options = @include $file;
         if (!is_array($options) || empty($options)) return false;
@@ -1888,7 +2397,7 @@ class MyStudio
      */
     public function loadModules($slug)
     {
-        $modules = $this->listModules($slug);
+        $modules = $this->listActiveModules($slug);
 
         foreach ($modules as $p) {
             if ($p['has_init']) {
@@ -1910,11 +2419,14 @@ class MyStudio
      */
     public function getModuleAssets($slug)
     {
-        $modules = $this->listModules($slug);
+        $modules = $this->listActiveModules($slug);
         $assets  = array('js' => array(), 'css' => array());
 
+        // Absolute URLs so assets also load on rewritten/sub-path pages (e.g. Page Builder URLs)
+        global $mybb;
+        $root = rtrim($mybb->settings['bburl'], '/') . '/';
         foreach ($modules as $p) {
-            $webBase = self::THEMES_DIR . '/' . $slug . '/functions/modules/' . $p['id'];
+            $webBase = $root . self::PLUGIN_DIR . '/modules/' . $p['id'];
 
             if ($p['has_css']) {
                 $cssDir = $p['dir'] . '/css';

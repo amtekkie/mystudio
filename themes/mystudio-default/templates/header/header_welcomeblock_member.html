@@ -1,12 +1,12 @@
 <div class="dropdown ms-user-dropdown">
 	<a href="#" class="d-flex align-items-center gap-2 text-decoration-none" role="button" data-bs-toggle="dropdown" aria-expanded="false" id="msUserDropdown">
-		<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle ms-nav-avatar" alt="Avatar">
+		<img src="{$ms_user_avatar}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle ms-nav-avatar" alt="Avatar">
 		<i class="bi bi-chevron-down ms-dd-caret"></i>
 	</a>
 	<ul class="dropdown-menu dropdown-menu-end ms-user-menu" aria-labelledby="msUserDropdown">
 		<li class="dropdown-header ms-user-header">
 			<a href="#" data-bs-toggle="modal" data-bs-target="#ms_avatar_modal" style="position:relative;display:inline-block;cursor:pointer" title="{$lang->change_avatar}">
-				<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;border:2px solid var(--tekbb-accent)" alt="">
+				<img src="{$ms_user_avatar}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" class="rounded-circle" style="width:48px;height:48px;object-fit:cover;border:2px solid var(--tekbb-accent)" alt="">
 				<span style="position:absolute;bottom:0;right:0;background:var(--tekbb-accent);color:#fff;border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;border:2px solid var(--bs-dropdown-bg, #fff)"><i class="bi bi-camera-fill"></i></span>
 			</a>
 			<div class="mt-1 fw-semibold"><a href="{$mybb->settings['bburl']}/member.php?action=profile&amp;uid={$mybb->user['uid']}" class="text-decoration-none" style="color:var(--tekbb-accent)">{$mybb->user['username']}</a></div>
@@ -34,7 +34,7 @@
 		</div>
 		<div class="modal-body">
 			<div class="text-center mb-3">
-				<img src="{$mybb->user['avatar']}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" id="ms_avatar_preview" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;border:3px solid var(--tekbb-accent)" alt="Current Avatar" />
+				<img src="{$ms_user_avatar}" onerror="if(this.src!='images/default_avatar.png')this.src='images/default_avatar.png';" id="ms_avatar_preview" class="rounded-circle" style="width:100px;height:100px;object-fit:cover;border:3px solid var(--tekbb-accent)" alt="Current Avatar" />
 			</div>
 			<div class="mb-3">
 				<label class="form-label small fw-semibold"><i class="bi bi-upload me-1"></i> {$lang->avatar_upload}</label>
@@ -47,7 +47,7 @@
 			</div>
 		</div>
 		<div class="modal-footer d-flex justify-content-between">
-			<a href="{$mybb->settings['bburl']}/usercp.php?action=avatar&amp;remove=1&amp;my_post_key={$mybb->post_code}" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> {$lang->remove_avatar}</a>
+			<button type="submit" name="remove" value="1" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i> {$lang->remove_avatar}</button>
 			<input type="submit" name="submit" class="btn btn-sm btn-primary" value="{$lang->change_avatar}" />
 		</div>
 	</form>
@@ -55,6 +55,7 @@
 </div>
 </div>
 
+<script src="{$mybb->settings['bburl']}/themes/mystudio-default/js/ms-pm-poller.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
 	var fi = document.getElementById('ms_avatar_file');

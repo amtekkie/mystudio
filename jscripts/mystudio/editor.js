@@ -429,7 +429,7 @@
                 var icon = ICON_MAP[child.ext] || ICON_MAP._default;
                 el.innerHTML =
                     '<div class="ms-tree-item ms-tree-file-item" ' +
-                    'data-path="' + escapeAttr(childPath) + '" data-type="file" data-ext="' + (child.ext || '') + '">' +
+                    'data-path="' + escapeAttr(childPath) + '" data-type="file" data-ext="' + escapeAttr(child.ext || '') + '">' +
                     '  <span class="ms-tree-icon">' + icon + '</span>' +
                     '  <span class="ms-tree-name">' + escapeHtml(child.name) + '</span>' +
                     '  <span class="ms-tree-dirty" style="display:none">\u25CF</span>' +
@@ -676,7 +676,7 @@
             } else {
                 statusEl.textContent = 'Save failed';
                 statusEl.className   = 'ms-status-error';
-                showNotification(data.error || 'Save failed', 'error');
+                showNotification(apiError(data, 'Save failed'), 'error');
             }
         })
         .catch(function (err) {
@@ -822,8 +822,15 @@
         return div.innerHTML;
     }
 
+    /** Error text from an api_* JSON response: 'error' string, else the first of 'errors'. */
+    function apiError(data, fallback) {
+        if (data && data.error) return data.error;
+        if (data && data.errors && data.errors.length) return data.errors.join(' ');
+        return fallback;
+    }
+
     function escapeAttr(str) {
-        return str.replace(/&/g, '&amp;')
+        return String(str).replace(/&/g, '&amp;')
                   .replace(/"/g, '&quot;')
                   .replace(/'/g, '&#39;')
                   .replace(/</g, '&lt;')
@@ -948,7 +955,7 @@
                     // Auto-open the new file
                     setTimeout(function () { openFile(path); }, 500);
                 } else {
-                    showNotification((data.errors && data.errors[0]) || 'Failed to create file', 'error');
+                    showNotification(apiError(data, 'Failed to create file'), 'error');
                 }
             })
             .catch(function (err) { showNotification('Error: ' + err.message, 'error'); });
@@ -971,7 +978,7 @@
                     showNotification('Folder created: ' + name.trim(), 'success');
                     loadThemeTree(state.currentSlug);
                 } else {
-                    showNotification((data.errors && data.errors[0]) || 'Failed to create folder', 'error');
+                    showNotification(apiError(data, 'Failed to create folder'), 'error');
                 }
             })
             .catch(function (err) { showNotification('Error: ' + err.message, 'error'); });
@@ -1003,7 +1010,7 @@
                     }
                     loadThemeTree(state.currentSlug);
                 } else {
-                    showNotification('Rename failed', 'error');
+                    showNotification(apiError(data, 'Rename failed'), 'error');
                 }
             })
             .catch(function (err) { showNotification('Error: ' + err.message, 'error'); });
@@ -1037,7 +1044,7 @@
                     }
                     loadThemeTree(state.currentSlug);
                 } else {
-                    showNotification('Delete failed', 'error');
+                    showNotification(apiError(data, 'Delete failed'), 'error');
                 }
             })
             .catch(function (err) { showNotification('Error: ' + err.message, 'error'); });

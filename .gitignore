@@ -21,9 +21,15 @@
 # Exclude runtime artifacts inside themes
 themes/**/.ms_last_sync
 
-# Agent knowledge base & session logs (Claude Code working memory)
-!.agent/
-!.agent/**
+# Claude Code project context (CLAUDE.md + on-demand skills)
+!CLAUDE.md
+!.claude/
+!.claude/skills/
+!.claude/skills/**
+
+# Documentation (guides, screenshots, release notes)
+!docs/
+!docs/**
 
 # Allow gitignore and README
 !.gitignore

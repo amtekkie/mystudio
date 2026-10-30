@@ -23,6 +23,9 @@ $ms = new MyStudio();
 // Load Bootstrap Icons on all MyStudio pages
 $page->extra_header .= '<link rel="stylesheet" href="../themes/mystudio-default/vendor/bootstrap-icons.min.css" />';
 
+// The sidebar menu starts directly with Studio Settings — hide the core "MyStudio" box title
+$page->extra_header .= '<style>#left_menu .left_menu_box:first-child > .title{display:none}</style>';
+
 /* ====================================================================
    Toolbar Builder Renderer (graphical drag & drop for toolbar config)
    ==================================================================== */
@@ -263,8 +266,17 @@ if (empty($action)) {
     }
 }
 if (empty($action)) {
-    $action = 'manage';
+    $action = 'settings';
 }
+
+// admin/index.php only checked the permission of the module-param action; an explicit
+// &action= can name another one (e.g. module=mystudio-manage&action=pages_api), so
+// check the permission of the action that will actually run. Unknown actions → 'manage'.
+$msActionMap = mystudio_action_map();
+check_admin_permissions(array(
+    'module' => 'mystudio',
+    'action' => isset($msActionMap[$action]) ? $msActionMap[$action]['active'] : 'manage',
+));
 
 /* ====================================================================
    Shared Styles (kept minimal â€” prefer MyBB native components)
@@ -436,6 +448,27 @@ function ms_render_option_row($form, $form_container, $key, $def, $values, $mybb
         case 'color':
             $input = '<input type="color" name="opt_' . htmlspecialchars_uni($key) . '" value="' . htmlspecialchars_uni($val) . '" />';
             break;
+        case 'color_presets':
+            // Preset swatches fill the colour picker; the picker and the hex box allow any colour.
+            // Only the picker is submitted — the hex box just mirrors it.
+            $safeKey = htmlspecialchars_uni($key);
+            $inputId = 'opt_' . $safeKey;
+            $hexId   = $inputId . '_hex';
+            $safeVal = htmlspecialchars_uni($val);
+            $setJs   = "document.getElementById('" . $inputId . "').value=this.dataset.hex;document.getElementById('" . $hexId . "').value=this.dataset.hex;";
+            $input = '';
+            foreach ((isset($def['options']) ? $def['options'] : array()) as $hex => $label) {
+                $safeHex = htmlspecialchars_uni($hex);
+                $input .= '<button type="button" title="' . htmlspecialchars_uni($label) . ' (' . $safeHex . ')" data-hex="' . $safeHex . '" '
+                        . 'onclick="' . $setJs . '" '
+                        . 'style="width:28px;height:28px;margin:0 4px 4px 0;border:1px solid #999;background:' . $safeHex . ';cursor:pointer"></button>';
+            }
+            $input .= '<br />Custom colour: <input type="color" name="' . $inputId . '" id="' . $inputId . '" value="' . $safeVal . '" '
+                    . 'oninput="document.getElementById(\'' . $hexId . '\').value=this.value" /> '
+                    . '<input type="text" id="' . $hexId . '" value="' . $safeVal . '" maxlength="7" size="8" placeholder="#rrggbb" '
+                    . 'oninput="if(/^#[0-9a-fA-F]{6}$/.test(this.value))document.getElementById(\'' . $inputId . '\').value=this.value.toLowerCase()" />'
+                    . '<br /><small>Click a preset, use the colour picker, or type a hex value.</small>';
+            break;
         case 'icon_chooser':
             $safeKey = htmlspecialchars_uni($key);
             $safeVal = $val ? htmlspecialchars_uni($val) : '';
@@ -468,8 +501,8 @@ function ms_render_option_row($form, $form_container, $key, $def, $values, $mybb
                         . '<input type="checkbox" name="opt_' . htmlspecialchars_uni($key) . '_remove" value="1" /> '
                         . '<span style="font-size:12px;color:#c0392b">Remove current image</span></label><br />';
             }
-            $input .= '<input type="file" name="opt_' . htmlspecialchars_uni($key) . '_file" accept="image/*,.ico" />';
-            $input .= '<br /><small style="color:#888">Max 5MB. Allowed: PNG, JPG, GIF, SVG, WebP, ICO</small>';
+            $input .= '<input type="file" name="opt_' . htmlspecialchars_uni($key) . '_file" accept=".png,.jpg,.jpeg,.gif,.webp,.ico" />';
+            $input .= '<br /><small style="color:#888">Max 5MB. Allowed: PNG, JPG, GIF, WebP, ICO</small>';
             if (!empty($def['has_dimensions'])) {
                 $wVal = isset($values[$key . '_width'])  ? $values[$key . '_width']  : (isset($def['default_width'])  ? $def['default_width']  : '');
                 $hVal = isset($values[$key . '_height']) ? $values[$key . '_height'] : (isset($def['default_height']) ? $def['default_height'] : '');
@@ -504,17 +537,30 @@ if ($action === 'pages_api') {
         $clean_slug = preg_replace('/[^a-zA-Z0-9\-_\/]/', '', $mybb->get_input('slug'));
         $clean_groups = preg_replace('/[^0-9,]/', '', $mybb->get_input('allowed_groups'));
 
-        // Data for insert_query/update_query â€” do NOT pre-escape (these functions escape internally)
+        // Page content is eval()'d by the ms-pagebuilder renderer, so it must pass the same
+        // security check MyBB applies to templates. (Title/meta are only escaped, never eval'd.)
+        if (!function_exists('check_template')) {
+            require_once $ms->getAdminPath() . 'inc/functions.php';
+        }
+        // Also check with the <if>/<else>/</if> tags removed, since resolving them joins text
+        // (the renderer re-checks the final string before eval() as well).
+        $pbContent = $mybb->get_input('content');
+        if (check_template($pbContent) || check_template(preg_replace('#<if\s.*?\sthen>|<else>|</if>#is', '', $pbContent))) {
+            echo json_encode(array('error' => 'The page content failed the MyBB template security check: only plain {$variable} references are allowed (no ${...}, function calls or $config access).'));
+            exit;
+        }
+
+        // insert_query/update_query do NOT escape in this MyBB build — escape every string
         $data = array(
-            'title'            => $mybb->get_input('title'),
-            'slug'             => $clean_slug,
-            'content'          => $mybb->get_input('content'),
+            'title'            => $db->escape_string($mybb->get_input('title')),
+            'slug'             => $db->escape_string($clean_slug),
+            'content'          => $db->escape_string($mybb->get_input('content')),
             'status'           => in_array($mybb->get_input('status'), array('draft','published')) ? $mybb->get_input('status') : 'draft',
-            'meta_title'       => $mybb->get_input('meta_title'),
-            'meta_description' => $mybb->get_input('meta_description'),
-            'allowed_groups'   => $clean_groups,
-            'custom_css'       => $mybb->get_input('custom_css'),
-            'custom_js'        => $mybb->get_input('custom_js'),
+            'meta_title'       => $db->escape_string($mybb->get_input('meta_title')),
+            'meta_description' => $db->escape_string($mybb->get_input('meta_description')),
+            'allowed_groups'   => $db->escape_string($clean_groups),
+            'custom_css'       => $db->escape_string($mybb->get_input('custom_css')),
+            'custom_js'        => $db->escape_string($mybb->get_input('custom_js')),
             'updated_at'       => TIME_NOW,
         );
 
@@ -668,7 +714,7 @@ if ($action === 'pages_add' || $action === 'pages_edit') {
         $usergroups[] = $row;
     }
 
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
     $page->add_breadcrumb_item("Page Manager", "index.php?module=mystudio-pages");
     $page->add_breadcrumb_item($action === 'pages_edit' ? "Edit Page" : "Add Page");
 
@@ -786,7 +832,7 @@ HTML;
    ==================================================================== */
 
 if ($action === 'pages') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
     $page->add_breadcrumb_item("Page Manager");
 
     $page->output_header("MyStudio - Page Manager");
@@ -920,9 +966,38 @@ document.getElementById("ms_front_page_form").addEventListener("submit", functio
     exit;
 }
 
+/**
+ * Sanitise a theme slug and require an installed disk theme (themes/{slug}/theme.json).
+ *
+ * @param  string $raw
+ * @return string Clean slug, or '' when no such theme exists
+ */
+function ms_valid_theme_slug($raw)
+{
+    $slug = preg_replace('/[^a-z0-9\-]/', '', (string)$raw);
+    if ($slug === '' || !is_file(MYBB_ROOT . 'themes/' . $slug . '/theme.json')) {
+        return '';
+    }
+    return $slug;
+}
+
+/** Editor API: the request's theme slug, or a JSON error + exit when it is not a disk theme. */
+function ms_api_theme_slug()
+{
+    global $mybb;
+
+    $slug = ms_valid_theme_slug($mybb->get_input('slug'));
+    if ($slug === '') {
+        header('Content-Type: application/json');
+        echo json_encode(array('success' => false, 'error' => 'Theme not found on disk.', 'errors' => array('Theme not found on disk.')));
+        exit;
+    }
+    return $slug;
+}
+
 if ($action === 'api_filetree') {
     header('Content-Type: application/json');
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug = ms_api_theme_slug();
     $tree = $ms->getFileTree($slug);
     if ($tree === false) {
         echo json_encode(array('error' => 'Theme not found on disk.'));
@@ -934,7 +1009,7 @@ if ($action === 'api_filetree') {
 
 if ($action === 'api_readfile') {
     header('Content-Type: application/json');
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug = ms_api_theme_slug();
     $path = $mybb->get_input('path');
     $data = $ms->readThemeFile($slug, $path);
     if ($data === false) {
@@ -948,17 +1023,17 @@ if ($action === 'api_readfile') {
 if ($action === 'api_savefile') {
     header('Content-Type: application/json');
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug    = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug    = ms_api_theme_slug();
     $path    = $mybb->get_input('path');
     $content = $mybb->get_input('content');
     $ok = $ms->writeThemeFile($slug, $path, $content, true);
-    echo json_encode(array('success' => $ok, 'time' => date('H:i:s'), 'errors' => $ms->getErrors()));
+    echo json_encode(array('success' => $ok, 'time' => date('H:i:s'), 'error' => implode(' ', $ms->getErrors()), 'errors' => $ms->getErrors()));
     exit;
 }
 
 if ($action === 'api_filelist') {
     header('Content-Type: application/json');
-    $slug  = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug  = ms_api_theme_slug();
     $files = $ms->getFlatFileList($slug);
     echo json_encode(array('files' => $files !== false ? $files : array()));
     exit;
@@ -967,62 +1042,63 @@ if ($action === 'api_filelist') {
 if ($action === 'api_createfile') {
     header('Content-Type: application/json');
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug = ms_api_theme_slug();
     $path = $mybb->get_input('path');
     $ok   = $ms->createThemeFile($slug, $path);
-    echo json_encode(array('success' => $ok, 'errors' => $ms->getErrors()));
+    echo json_encode(array('success' => $ok, 'error' => implode(' ', $ms->getErrors()), 'errors' => $ms->getErrors()));
     exit;
 }
 
 if ($action === 'api_createfolder') {
     header('Content-Type: application/json');
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug = ms_api_theme_slug();
     $path = $mybb->get_input('path');
     $ok   = $ms->createThemeFolder($slug, $path);
-    echo json_encode(array('success' => $ok, 'errors' => $ms->getErrors()));
+    echo json_encode(array('success' => $ok, 'error' => implode(' ', $ms->getErrors()), 'errors' => $ms->getErrors()));
     exit;
 }
 
 if ($action === 'api_deletefile') {
     header('Content-Type: application/json');
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug = ms_api_theme_slug();
     $path = $mybb->get_input('path');
     $ok   = $ms->deleteThemeFile($slug, $path);
-    echo json_encode(array('success' => $ok, 'errors' => $ms->getErrors()));
+    echo json_encode(array('success' => $ok, 'error' => implode(' ', $ms->getErrors()), 'errors' => $ms->getErrors()));
     exit;
 }
 
 if ($action === 'api_deletefolder') {
     header('Content-Type: application/json');
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug = ms_api_theme_slug();
     $path = $mybb->get_input('path');
     $ok   = $ms->deleteThemeFolder($slug, $path);
-    echo json_encode(array('success' => $ok, 'errors' => $ms->getErrors()));
+    echo json_encode(array('success' => $ok, 'error' => implode(' ', $ms->getErrors()), 'errors' => $ms->getErrors()));
     exit;
 }
 
 if ($action === 'api_rename') {
     header('Content-Type: application/json');
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug    = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug    = ms_api_theme_slug();
     $oldPath = $mybb->get_input('old_path');
     $newPath = $mybb->get_input('new_path');
     $ok = $ms->renameThemePath($slug, $oldPath, $newPath);
-    echo json_encode(array('success' => $ok, 'errors' => $ms->getErrors()));
+    echo json_encode(array('success' => $ok, 'error' => implode(' ', $ms->getErrors()), 'errors' => $ms->getErrors()));
     exit;
 }
 
 if ($action === 'api_sync') {
     header('Content-Type: application/json');
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $mybb->get_input('slug'));
+    $slug = ms_api_theme_slug();
     $tid  = $ms->syncToDatabase($slug);
     echo json_encode(array(
         'success' => $tid !== false,
         'tid'     => $tid,
+        'error'   => implode(' ', $ms->getErrors()),
         'errors'  => $ms->getErrors()
     ));
     exit;
@@ -1046,7 +1122,7 @@ if ($action === 'editor') {
         admin_redirect("index.php?module=mystudio-manage");
     }
 
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
     $page->add_breadcrumb_item("Editor: " . htmlspecialchars_uni($slug));
 
     // Monaco loader CDN
@@ -1170,6 +1246,11 @@ HTML;
    ==================================================================== */
 
 if ($action === 'export') {
+    // The clicked "Download ZIP" button posts export_tid[{tid}]; plain tid kept for older forms
+    $exportTid = $mybb->get_input('export_tid', MyBB::INPUT_ARRAY);
+    if ($exportTid) {
+        $mybb->input['tid'] = (int) key($exportTid);
+    }
     if ($mybb->request_method === 'post' && !empty($mybb->input['tid'])) {
         verify_post_check($mybb->get_input('my_post_key'));
 
@@ -1225,7 +1306,7 @@ if ($action === 'import') {
    ==================================================================== */
 
 if ($action === 'import_export') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
     $page->add_breadcrumb_item("Import / Export");
 
     $page->output_header("MyStudio - Import / Export");
@@ -1256,7 +1337,8 @@ if ($action === 'import_export') {
             $status = $t['has_disk'] ? 'On Disk' : 'DB Only';
             $table->construct_cell($status, array('class' => 'align_center'));
 
-            $table->construct_cell('<button type="submit" name="tid" value="' . $t['tid'] . '" class="submit_button">Download ZIP</button>', array('class' => 'align_center'));
+            // Stock MyBB submit input (ACP CSS styles input.submit_button only); the tid rides in the name
+            $table->construct_cell($exportForm->generate_submit_button('Download ZIP', array('name' => 'export_tid[' . (int) $t['tid'] . ']')), array('class' => 'align_center'));
             $table->construct_row();
         }
     }
@@ -1272,7 +1354,7 @@ if ($action === 'import_export') {
     $form_container = new FormContainer("Import Theme from ZIP");
     $form_container->output_row(
         "Theme ZIP File",
-        "Upload a <code>.zip</code> theme package containing <code>theme.json</code> and <code>templates/</code>.",
+        "Upload a <code>.zip</code> theme package containing <code>theme.json</code> and <code>templates/</code>. Packages that include PHP code (<code>functions/</code> or <code>lang/</code>) run on your server, so only super administrators can import them.",
         $importForm->generate_file_upload_box('theme_zip')
     );
 
@@ -1366,7 +1448,11 @@ if ($action === 'delete_theme') {
 
 if ($action === 'sync_theme') {
     verify_post_check($mybb->get_input('my_post_key'));
-    $slug = $mybb->get_input('slug');
+    $slug = ms_valid_theme_slug($mybb->get_input('slug'));
+    if ($slug === '') {
+        flash_message('Theme not found on disk.', 'error');
+        admin_redirect("index.php?module=mystudio-manage");
+    }
     $tid  = $ms->syncToDatabase($slug);
     if ($tid) {
         flash_message('Theme synced to database (TID: ' . $tid . ').', 'success');
@@ -1404,6 +1490,46 @@ if ($action === 'convert') {
    Upload Theme Asset (logo, favicon, etc.)
    ==================================================================== */
 
+/**
+ * Validate an uploaded theme image: extension allow-list, detected MIME type must match
+ * the extension, max 5 MB. No SVG — it can carry script on the forum's origin.
+ *
+ * @param  array  $file  One $_FILES entry (already UPLOAD_ERR_OK)
+ * @param  string $ext   Lower-cased extension
+ * @return string        '' when valid, otherwise the error message
+ */
+function ms_validate_image_upload($file, $ext)
+{
+    $allowedMimes = array(
+        'png'  => array('image/png'),
+        'jpg'  => array('image/jpeg'),
+        'jpeg' => array('image/jpeg'),
+        'gif'  => array('image/gif'),
+        'webp' => array('image/webp'),
+        'ico'  => array('image/x-icon', 'image/vnd.microsoft.icon'),
+    );
+    if (!isset($allowedMimes[$ext])) {
+        return 'Invalid file type. Allowed: ' . implode(', ', array_keys($allowedMimes));
+    }
+
+    // Validate MIME type matches extension (prevent disguised uploads)
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    if ($finfo === false) {
+        return 'Server error: could not initialize file type detection.';
+    }
+    $detectedMime = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    if ($detectedMime === false || !in_array($detectedMime, $allowedMimes[$ext], true)) {
+        return 'File MIME type does not match extension.';
+    }
+
+    if ($file['size'] > 5 * 1024 * 1024) {
+        return 'File too large. Max 5MB.';
+    }
+
+    return '';
+}
+
 if ($action === 'api_upload_asset') {
     header('Content-Type: application/json');
 
@@ -1417,8 +1543,12 @@ if ($action === 'api_upload_asset') {
         exit;
     }
 
-    // Sanitise slug
-    $slug = preg_replace('/[^a-z0-9\-]/', '', $slug);
+    // Sanitise slug — must be an installed disk theme
+    $slug = ms_valid_theme_slug($slug);
+    if ($slug === '') {
+        echo json_encode(array('error' => 'Theme not found on disk.'));
+        exit;
+    }
     $uploadDir = MYBB_ROOT . 'themes/' . $slug . '/images/uploads';
     if (!is_dir($uploadDir)) {
         if (!@mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
@@ -1443,38 +1573,9 @@ if ($action === 'api_upload_asset') {
     $file = $_FILES['file'];
     $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
 
-    // Allowed image extensions
-    $allowed = array('png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico');
-    if (!in_array($ext, $allowed)) {
-        echo json_encode(array('error' => 'Invalid file type. Allowed: ' . implode(', ', $allowed)));
-        exit;
-    }
-
-    // Validate MIME type matches extension (prevent disguised uploads)
-    $allowedMimes = array(
-        'png'  => array('image/png'),
-        'jpg'  => array('image/jpeg'),
-        'jpeg' => array('image/jpeg'),
-        'gif'  => array('image/gif'),
-        'svg'  => array('image/svg+xml', 'text/xml', 'application/xml'),
-        'webp' => array('image/webp'),
-        'ico'  => array('image/x-icon', 'image/vnd.microsoft.icon'),
-    );
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    if ($finfo === false) {
-        echo json_encode(array('error' => 'Server error: could not initialize file type detection.'));
-        exit;
-    }
-    $detectedMime = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-    if ($detectedMime === false || (isset($allowedMimes[$ext]) && !in_array($detectedMime, $allowedMimes[$ext]))) {
-        echo json_encode(array('error' => 'File MIME type does not match extension.'));
-        exit;
-    }
-
-    // Max 5MB
-    if ($file['size'] > 5 * 1024 * 1024) {
-        echo json_encode(array('error' => 'File too large. Max 5MB.'));
+    $uploadError = ms_validate_image_upload($file, $ext);
+    if ($uploadError !== '') {
+        echo json_encode(array('error' => $uploadError));
         exit;
     }
 
@@ -1497,86 +1598,123 @@ if ($action === 'api_upload_asset') {
    Save Theme Options (POST handler â€” shared by Global MyStudio Options & Header & Footer)
    ==================================================================== */
 
-if ($action === 'api_saveoptions') {
-    verify_post_check($mybb->get_input('my_post_key'));
+/**
+ * Save the active theme's option values from the posted form.
+ * Only options whose 'page' matches $pageFilter are read from input; the rest
+ * keep their stored values.
+ *
+ * @param  MyStudio $ms
+ * @param  string   $slug
+ * @param  string   $pageFilter
+ * @return bool     false when the theme has no option schema
+ */
+function ms_save_theme_options($ms, $slug, $pageFilter)
+{
+    global $mybb;
 
-    $slug = $mybb->get_input('slug');
-    $pageFilter = $mybb->get_input('page_filter');
-    $redirectTo = $mybb->get_input('redirect_to');
+    $slug    = preg_replace('/[^a-z0-9\-]/', '', $slug);
     $options = $ms->getThemeOptions($slug);
+    if (!$options) return false;
 
-    if ($options) {
-        $existing = $ms->getThemeOptionValues($slug);
-        $values = array();
+    $existing = $ms->getThemeOptionValues($slug);
+    $values = array();
 
-        foreach ($options as $key => $def) {
-            // Only process options belonging to the submitted page
-            $optPage = isset($def['page']) ? $def['page'] : '';
-            if ($pageFilter && $optPage !== $pageFilter) {
-                // Preserve existing value for options on other pages
-                if (isset($existing[$key])) {
-                    $values[$key] = $existing[$key];
-                    // Preserve dimension fields too
-                    if (!empty($def['has_dimensions'])) {
-                        $values[$key . '_width']  = isset($existing[$key . '_width'])  ? $existing[$key . '_width']  : '';
-                        $values[$key . '_height'] = isset($existing[$key . '_height']) ? $existing[$key . '_height'] : '';
-                    }
+    foreach ($options as $key => $def) {
+        // Only process options belonging to the submitted page
+        $optPage = isset($def['page']) ? $def['page'] : '';
+        if ($pageFilter && $optPage !== $pageFilter) {
+            // Preserve existing value for options on other pages
+            if (isset($existing[$key])) {
+                $values[$key] = $existing[$key];
+                // Preserve dimension fields too
+                if (!empty($def['has_dimensions'])) {
+                    $values[$key . '_width']  = isset($existing[$key . '_width'])  ? $existing[$key . '_width']  : '';
+                    $values[$key . '_height'] = isset($existing[$key . '_height']) ? $existing[$key . '_height'] : '';
                 }
-                continue;
             }
-            $type = isset($def['type']) ? $def['type'] : 'text';
+            continue;
+        }
+        $type = isset($def['type']) ? $def['type'] : 'text';
 
-            if ($type === 'image') {
-                // Handle file upload for image fields
-                $fileKey = 'opt_' . $key . '_file';
-                if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
-                    $file = $_FILES[$fileKey];
-                    $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                    $allowed = array('png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'ico');
+        if ($type === 'image') {
+            // Handle file upload for image fields
+            $fileKey = 'opt_' . $key . '_file';
+            if (isset($_FILES[$fileKey]) && $_FILES[$fileKey]['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES[$fileKey];
+                $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $uploadError = ms_validate_image_upload($file, $ext);
 
-                    if (in_array($ext, $allowed) && $file['size'] <= 5 * 1024 * 1024) {
-                        $safeSlug = preg_replace('/[^a-z0-9\-]/', '', $slug);
-                        $uploadDir = MYBB_ROOT . 'themes/' . $safeSlug . '/images/uploads';
-                        if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
+                if ($uploadError === '') {
+                    $safeSlug = preg_replace('/[^a-z0-9\-]/', '', $slug);
+                    $uploadDir = MYBB_ROOT . 'themes/' . $safeSlug . '/images/uploads';
+                    if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
 
-                        $safeName = preg_replace('/[^a-z0-9\-_]/', '', $key) . '.' . $ext;
-                        $destPath = $uploadDir . '/' . $safeName;
+                    $safeName = preg_replace('/[^a-z0-9\-_]/', '', $key) . '.' . $ext;
+                    $destPath = $uploadDir . '/' . $safeName;
 
-                        if (move_uploaded_file($file['tmp_name'], $destPath)) {
-                            $values[$key] = 'themes/' . $safeSlug . '/images/uploads/' . $safeName;
-                        } else {
-                            $values[$key] = isset($existing[$key]) ? $existing[$key] : '';
-                        }
+                    if (move_uploaded_file($file['tmp_name'], $destPath)) {
+                        $values[$key] = 'themes/' . $safeSlug . '/images/uploads/' . $safeName;
                     } else {
                         $values[$key] = isset($existing[$key]) ? $existing[$key] : '';
                     }
                 } else {
-                    // Check if "remove" was requested
-                    $removeKey = 'opt_' . $key . '_remove';
-                    if ($mybb->get_input($removeKey)) {
-                        $values[$key] = '';
-                    } else {
-                        $values[$key] = isset($existing[$key]) ? $existing[$key] : '';
-                    }
-                }
-
-                // Save dimension fields if they exist in the option definition
-                if (!empty($def['has_dimensions'])) {
-                    $values[$key . '_width']  = $mybb->get_input('opt_' . $key . '_width');
-                    $values[$key . '_height'] = $mybb->get_input('opt_' . $key . '_height');
+                    // Reported by the caller (a flash_message here would be overwritten)
+                    $GLOBALS['ms_upload_errors'][] = $uploadError;
+                    $values[$key] = isset($existing[$key]) ? $existing[$key] : '';
                 }
             } else {
-                $values[$key] = $mybb->get_input('opt_' . $key);
+                // Check if "remove" was requested
+                $removeKey = 'opt_' . $key . '_remove';
+                if ($mybb->get_input($removeKey)) {
+                    $values[$key] = '';
+                } else {
+                    $values[$key] = isset($existing[$key]) ? $existing[$key] : '';
+                }
             }
-        }
 
-        $ms->saveThemeOptionValues($slug, $values);
-        flash_message('Theme options saved.', 'success');
-    } else {
-        flash_message('No options found for this theme.', 'error');
+            // Save dimension fields if they exist in the option definition
+            if (!empty($def['has_dimensions'])) {
+                $values[$key . '_width']  = $mybb->get_input('opt_' . $key . '_width');
+                $values[$key . '_height'] = $mybb->get_input('opt_' . $key . '_height');
+            }
+        } else {
+            $values[$key] = $mybb->get_input('opt_' . $key);
+        }
     }
-    $redirect = $redirectTo ? $redirectTo : "index.php?module=mystudio-settings";
-    admin_redirect($redirect);
+
+
+    // Colours must be #rrggbb — anything else keeps the previous value
+    foreach ($options as $key => $def) {
+        $type = isset($def['type']) ? $def['type'] : '';
+        if (($type === 'color' || $type === 'color_presets') && isset($values[$key])
+            && !preg_match('/^#[0-9a-f]{6}$/i', $values[$key])) {
+            $values[$key] = isset($existing[$key]) ? $existing[$key] : (isset($def['default']) ? $def['default'] : '');
+        }
+    }
+
+    $ms->saveThemeOptionValues($slug, $values);
+    return true;
+}
+
+/**
+ * Is $pluginId an active module (core or activated) for the theme?
+ *
+ * @param  MyStudio $ms
+ * @param  string   $slug
+ * @param  string   $pluginId
+ * @return array|null Module info from listActiveModules(), or null
+ */
+function ms_find_active_module($ms, $slug, $pluginId)
+{
+    if (!$slug || $pluginId === '') {
+        return null;
+    }
+    foreach ($ms->listActiveModules($slug) as $m) {
+        if ($m['id'] === $pluginId) {
+            return $m;
+        }
+    }
+    return null;
 }
 
 /* ====================================================================
@@ -1585,9 +1723,17 @@ if ($action === 'api_saveoptions') {
 
 if ($action === 'api_save_plugin_options') {
     verify_post_check($mybb->get_input('my_post_key'));
+    // Posted via module=mystudio-manage — the action-level check at the top of this file
+    // maps it to 'plugin_settings'; repeated here so the guard sits with the handler.
+    check_admin_permissions(array('module' => 'mystudio', 'action' => 'plugin_settings'));
 
     $activeSlug = $ms->getActiveThemeSlug();
     $pluginId   = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('plugin_id'));
+
+    if (!ms_find_active_module($ms, $activeSlug, $pluginId)) {
+        flash_message('This module is not active.', 'error');
+        admin_redirect("index.php?module=mystudio-modules");
+    }
 
     if ($activeSlug && $pluginId) {
         $options = $ms->getMiniPluginOptions($activeSlug, $pluginId);
@@ -1606,412 +1752,26 @@ if ($action === 'api_save_plugin_options') {
 }
 
 /* ====================================================================
-   Toggle Extension (POST handler)
+   Activate / Deactivate Module (core modules cannot be toggled)
    ==================================================================== */
 
 if ($action === 'api_toggle_plugin') {
     verify_post_check($mybb->get_input('my_post_key'));
 
-    $activeSlug = $ms->getActiveThemeSlug();
-    $pluginId   = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('plugin_id'));
-    $enable     = $mybb->get_input('enable', MyBB::INPUT_INT);
+    $pluginId = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('plugin_id'));
+    $enable   = $mybb->get_input('enable', MyBB::INPUT_INT);
 
-    if ($activeSlug && $pluginId) {
-        $states = $ms->getMiniPluginStates($activeSlug);
-        $states[$pluginId] = (bool) $enable;
-        $ms->saveMiniPluginStates($activeSlug, $states);
-        flash_message($enable ? 'Extension enabled.' : 'Extension disabled.', 'success');
-    }
-    admin_redirect("index.php?module=mystudio-plugins");
-}
-
-/* ====================================================================
-   Module Library — Browse & Install modules from GitHub repository
-   ==================================================================== */
-
-if ($action === 'install_module') {
-    verify_post_check($mybb->get_input('my_post_key'));
-
-    $activeSlug = $ms->getActiveThemeSlug();
-    if (!$activeSlug) {
-        flash_message('No active theme found. Activate a theme first.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
+    $known = array();
+    foreach ($ms->listModules($ms->getActiveThemeSlug()) as $m) {
+        $known[$m['id']] = true;
     }
 
-    $moduleId = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('module_id'));
-    $repoUrl  = trim($mybb->get_input('repo_url'));
-    $modulePath = trim($mybb->get_input('module_path'));
-
-    if (empty($moduleId) || empty($repoUrl) || empty($modulePath)) {
-        flash_message('Invalid module data.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
-    }
-
-    // Parse owner/repo from GitHub URL
-    $repoParts = array();
-    if (preg_match('#github\.com/([^/]+)/([^/]+?)(?:\.git)?$#i', $repoUrl, $repoParts)) {
-        $owner = $repoParts[1];
-        $repo  = $repoParts[2];
+    if ($pluginId && isset($known[$pluginId]) && $ms->setModuleEnabled($pluginId, (bool) $enable)) {
+        flash_message($enable ? 'Module activated.' : 'Module deactivated.', 'success');
     } else {
-        flash_message('Invalid GitHub repository URL.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
+        flash_message('This module cannot be changed.', 'error');
     }
-
-    $targetDir = MYBB_ROOT . 'themes/' . $activeSlug . '/functions/modules/' . $moduleId;
-
-    // Don't overwrite existing module
-    if (is_dir($targetDir)) {
-        flash_message('Module "' . htmlspecialchars_uni($moduleId) . '" is already installed. Uninstall it first to reinstall.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
-    }
-
-    // Fetch file list from GitHub API
-    $apiUrl = 'https://api.github.com/repos/' . urlencode($owner) . '/' . urlencode($repo) . '/contents/' . $modulePath;
-    $files  = ms_library_github_fetch($apiUrl);
-
-    if ($files === false) {
-        flash_message('Failed to fetch module file list from GitHub. Check the repository URL and try again.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
-    }
-
-    // Download all files recursively
-    if (!@mkdir($targetDir, 0755, true)) {
-        flash_message('Failed to create module directory. Check file permissions.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
-    }
-
-    $success = ms_library_download_directory($files, $targetDir, $owner, $repo);
-
-    if ($success) {
-        flash_message('Module "' . htmlspecialchars_uni($moduleId) . '" installed successfully.', 'success');
-    } else {
-        // Cleanup on failure
-        ms_library_rmdir($targetDir);
-        flash_message('Failed to download module files. Please try again.', 'error');
-    }
-
-    admin_redirect("index.php?module=mystudio-library");
-}
-
-if ($action === 'uninstall_module') {
-    verify_post_check($mybb->get_input('my_post_key'));
-
-    $activeSlug = $ms->getActiveThemeSlug();
-    if (!$activeSlug) {
-        flash_message('No active theme found.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
-    }
-
-    $moduleId = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('module_id'));
-    if (empty($moduleId)) {
-        flash_message('Invalid module.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
-    }
-
-    $targetDir = MYBB_ROOT . 'themes/' . $activeSlug . '/functions/modules/' . $moduleId;
-
-    if (!is_dir($targetDir)) {
-        flash_message('Module is not installed.', 'error');
-        admin_redirect("index.php?module=mystudio-library");
-    }
-
-    ms_library_rmdir($targetDir);
-    flash_message('Module "' . htmlspecialchars_uni($moduleId) . '" has been uninstalled.', 'success');
-    admin_redirect("index.php?module=mystudio-library");
-}
-
-if ($action === 'library') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
-    $page->add_breadcrumb_item("Module Library");
-    $page->output_header("MyStudio - Module Library");
-
-    $activeSlug = $ms->getActiveThemeSlug();
-
-    // Hardcoded library repo
-    $libraryRepo = 'https://github.com/amtekkie/mystudio-modules';
-    $owner = 'amtekkie';
-    $repo  = 'mystudio-modules';
-    $registryModules = array();
-    $fetchError = '';
-
-    // Fetch registry.json from GitHub raw
-    $registryUrl = 'https://raw.githubusercontent.com/' . urlencode($owner) . '/' . urlencode($repo) . '/main/registry.json';
-    $registryRaw = ms_library_http_get($registryUrl);
-
-    if ($registryRaw === false) {
-        $fetchError = 'Could not fetch registry from GitHub. Ensure registry.json exists on the <code>main</code> branch.';
-    } else {
-        $registryData = @json_decode($registryRaw, true);
-        if (!is_array($registryData) || !isset($registryData['modules'])) {
-            $fetchError = 'Invalid registry.json format. Expected a JSON object with a "modules" array.';
-        } else {
-            $registryModules = $registryData['modules'];
-        }
-    }
-
-    // Get installed modules for comparison
-    $installedModules = array();
-    if ($activeSlug) {
-        $installed = $ms->listModules($activeSlug);
-        foreach ($installed as $m) {
-            $installedModules[$m['id']] = $m;
-        }
-    }
-
-    if ($fetchError) {
-        echo '<div style="margin-bottom:16px;padding:12px 16px;border:1px solid #e74c3c;border-radius:6px;background:#fdf0ef;color:#c0392b;font-size:13px">'
-           . '<i class="bi bi-exclamation-triangle"></i> ' . $fetchError . '</div>';
-    }
-
-    // Display modules
-    if (!empty($registryModules)) {
-        $post_key = $mybb->post_code;
-
-        $table = new Table;
-        $table->construct_header("Module", array('width' => '30%'));
-        $table->construct_header("Description");
-        $table->construct_header("Version", array('width' => '8%', 'class' => 'align_center'));
-        $table->construct_header("Author", array('width' => '12%', 'class' => 'align_center'));
-        $table->construct_header("Action", array('width' => '14%', 'class' => 'align_center'));
-
-        foreach ($registryModules as $mod) {
-            $modId   = isset($mod['id']) ? $mod['id'] : '';
-            $modName = isset($mod['name']) ? htmlspecialchars_uni($mod['name']) : $modId;
-            $modDesc = isset($mod['description']) ? htmlspecialchars_uni($mod['description']) : '';
-            $modVer  = isset($mod['version']) ? htmlspecialchars_uni($mod['version']) : '-';
-            $modAuth = isset($mod['author']) ? htmlspecialchars_uni($mod['author']) : '-';
-            $modAuthUrl = isset($mod['author_url']) ? $mod['author_url'] : '';
-            $modPath = isset($mod['path']) ? $mod['path'] : 'modules/' . $modId;
-            $modCompat = isset($mod['compatibility']) ? htmlspecialchars_uni($mod['compatibility']) : '';
-
-            if (empty($modId)) continue;
-
-            // Name cell
-            $nameCell = '<strong>' . $modName . '</strong>';
-            if ($modCompat) {
-                $nameCell .= ' <small style="color:#888">(' . $modCompat . ')</small>';
-            }
-
-            $table->construct_cell($nameCell);
-            $table->construct_cell('<span style="font-size:12.5px;color:#555">' . $modDesc . '</span>');
-            $table->construct_cell($modVer, array('class' => 'align_center'));
-
-            // Author cell
-            if ($modAuthUrl) {
-                $authorCell = '<a href="' . htmlspecialchars_uni($modAuthUrl) . '" target="_blank" rel="noopener">' . $modAuth . '</a>';
-            } else {
-                $authorCell = $modAuth;
-            }
-            $table->construct_cell($authorCell, array('class' => 'align_center'));
-
-            // Action cell
-            $isInstalled = isset($installedModules[$modId]);
-            if ($isInstalled) {
-                $installedVer = $installedModules[$modId]['version'];
-                $hasUpdate = version_compare($modVer, $installedVer, '>');
-
-                if ($hasUpdate) {
-                    // Show update button — uninstall first, then reinstall
-                    $actionCell = '<span style="color:#27ae60;font-size:12px"><i class="bi bi-check-circle"></i> v' . htmlspecialchars_uni($installedVer) . '</span><br />'
-                                . '<form method="post" action="index.php?module=mystudio-manage&amp;action=uninstall_module" style="display:inline;margin-top:4px">'
-                                . '<input type="hidden" name="my_post_key" value="' . $post_key . '" />'
-                                . '<input type="hidden" name="module_id" value="' . htmlspecialchars_uni($modId) . '" />'
-                                . '<button type="submit" class="submit_button" style="font-size:11px;padding:3px 10px" '
-                                . 'onclick="return confirm(\'Uninstall to update? You can then reinstall the latest version.\')"><i class="bi bi-arrow-repeat"></i> Update</button>'
-                                . '</form>';
-                } else {
-                    $actionCell = '<span style="color:#27ae60;font-size:12px"><i class="bi bi-check-circle"></i> Installed</span><br />'
-                                . '<form method="post" action="index.php?module=mystudio-manage&amp;action=uninstall_module" style="display:inline;margin-top:4px">'
-                                . '<input type="hidden" name="my_post_key" value="' . $post_key . '" />'
-                                . '<input type="hidden" name="module_id" value="' . htmlspecialchars_uni($modId) . '" />'
-                                . '<button type="submit" class="submit_button" style="font-size:11px;padding:3px 10px;background:#e74c3c;border-color:#c0392b" '
-                                . 'onclick="return confirm(\'Uninstall this module? Its files will be deleted.\')"><i class="bi bi-trash"></i> Uninstall</button>'
-                                . '</form>';
-                }
-            } else {
-                $actionCell = '<form method="post" action="index.php?module=mystudio-manage&amp;action=install_module">'
-                            . '<input type="hidden" name="my_post_key" value="' . $post_key . '" />'
-                            . '<input type="hidden" name="module_id" value="' . htmlspecialchars_uni($modId) . '" />'
-                            . '<input type="hidden" name="repo_url" value="' . htmlspecialchars_uni($libraryRepo) . '" />'
-                            . '<input type="hidden" name="module_path" value="' . htmlspecialchars_uni($modPath) . '" />'
-                            . '<button type="submit" class="submit_button" style="font-size:11px;padding:3px 10px"><i class="bi bi-download"></i> Install</button>'
-                            . '</form>';
-            }
-
-            $table->construct_cell($actionCell, array('class' => 'align_center'));
-            $table->construct_row();
-        }
-
-        $table->output("Available Modules" . (!empty($owner) ? ' <small style="font-weight:normal;color:#888">from ' . htmlspecialchars_uni($owner . '/' . $repo) . '</small>' : ''));
-    } elseif (!empty($libraryRepo) && empty($fetchError)) {
-        echo '<p style="padding:16px;color:#888;text-align:center">No modules found in the library.</p>';
-    }
-
-    // Show installed modules not in registry
-    if ($activeSlug && !empty($installedModules)) {
-        $localOnly = array();
-        $registryIds = array();
-        foreach ($registryModules as $mod) {
-            if (isset($mod['id'])) $registryIds[] = $mod['id'];
-        }
-        foreach ($installedModules as $id => $m) {
-            if (!in_array($id, $registryIds)) {
-                $localOnly[$id] = $m;
-            }
-        }
-
-        if (!empty($localOnly)) {
-            $table2 = new Table;
-            $table2->construct_header("Module", array('width' => '30%'));
-            $table2->construct_header("Description");
-            $table2->construct_header("Version", array('width' => '8%', 'class' => 'align_center'));
-
-            foreach ($localOnly as $id => $m) {
-                $table2->construct_cell('<strong>' . htmlspecialchars_uni($m['name']) . '</strong>');
-                $table2->construct_cell('<span style="font-size:12.5px;color:#555">' . htmlspecialchars_uni($m['description']) . '</span>');
-                $table2->construct_cell(htmlspecialchars_uni($m['version']), array('class' => 'align_center'));
-                $table2->construct_row();
-            }
-
-            $table2->output("Locally Installed Modules <small style=\"font-weight:normal;color:#888\">(not in library)</small>");
-        }
-    }
-
-    $page->output_footer();
-    exit;
-}
-
-/* ====================================================================
-   Module Library — Helper Functions
-   ==================================================================== */
-
-/**
- * Make an HTTP GET request (supports cURL and file_get_contents fallback).
- *
- * @param  string       $url
- * @return string|false Response body or false on failure
- */
-function ms_library_http_get($url)
-{
-    if (function_exists('curl_init')) {
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
-            CURLOPT_URL            => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_FOLLOWLOCATION => true,
-            CURLOPT_TIMEOUT        => 15,
-            CURLOPT_USERAGENT      => 'MyStudio/2.1',
-            CURLOPT_HTTPHEADER     => array('Accept: application/vnd.github.v3+json'),
-            CURLOPT_SSL_VERIFYPEER => true,
-        ));
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        if ($httpCode >= 200 && $httpCode < 300) {
-            return $response;
-        }
-        return false;
-    }
-
-    // Fallback to file_get_contents
-    $context = stream_context_create(array(
-        'http' => array(
-            'method'  => 'GET',
-            'header'  => "User-Agent: MyStudio/2.1\r\nAccept: application/vnd.github.v3+json\r\n",
-            'timeout' => 15,
-        ),
-        'ssl' => array(
-            'verify_peer' => true,
-        ),
-    ));
-
-    $response = @file_get_contents($url, false, $context);
-    return $response !== false ? $response : false;
-}
-
-/**
- * Fetch a GitHub API endpoint returning JSON.
- *
- * @param  string      $apiUrl
- * @return array|false Decoded JSON array or false
- */
-function ms_library_github_fetch($apiUrl)
-{
-    $raw = ms_library_http_get($apiUrl);
-    if ($raw === false) return false;
-    $data = @json_decode($raw, true);
-    return is_array($data) ? $data : false;
-}
-
-/**
- * Recursively download a GitHub directory to a local path.
- *
- * @param  array  $items    Array of GitHub API content items
- * @param  string $localDir Local target directory
- * @param  string $owner    GitHub repo owner
- * @param  string $repo     GitHub repo name
- * @return bool
- */
-function ms_library_download_directory($items, $localDir, $owner, $repo)
-{
-    foreach ($items as $item) {
-        $type = isset($item['type']) ? $item['type'] : '';
-        $name = isset($item['name']) ? $item['name'] : '';
-        $downloadUrl = isset($item['download_url']) ? $item['download_url'] : '';
-        $apiPath = isset($item['path']) ? $item['path'] : '';
-
-        // Security: prevent directory traversal
-        if (strpos($name, '..') !== false || strpos($name, '/') !== false || strpos($name, '\\') !== false) {
-            continue;
-        }
-
-        if ($type === 'file' && $downloadUrl) {
-            $content = ms_library_http_get($downloadUrl);
-            if ($content === false) return false;
-
-            $localPath = $localDir . '/' . $name;
-            if (@file_put_contents($localPath, $content) === false) {
-                return false;
-            }
-        } elseif ($type === 'dir') {
-            $subDir = $localDir . '/' . $name;
-            if (!is_dir($subDir) && !@mkdir($subDir, 0755, true)) {
-                return false;
-            }
-
-            // Fetch subdirectory contents
-            $subApiUrl = 'https://api.github.com/repos/' . urlencode($owner) . '/' . urlencode($repo) . '/contents/' . $apiPath;
-            $subItems = ms_library_github_fetch($subApiUrl);
-            if ($subItems === false) return false;
-
-            if (!ms_library_download_directory($subItems, $subDir, $owner, $repo)) {
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
-/**
- * Recursively remove a directory.
- *
- * @param string $dir
- */
-function ms_library_rmdir($dir)
-{
-    if (!is_dir($dir)) return;
-    $entries = scandir($dir);
-    foreach ($entries as $entry) {
-        if ($entry === '.' || $entry === '..') continue;
-        $path = $dir . '/' . $entry;
-        if (is_dir($path)) {
-            ms_library_rmdir($path);
-        } else {
-            @unlink($path);
-        }
-    }
-    @rmdir($dir);
+    admin_redirect("index.php?module=mystudio-modules");
 }
 
 /* ====================================================================
@@ -2019,29 +1779,26 @@ function ms_library_rmdir($dir)
    ==================================================================== */
 
 if ($action === 'plugin_settings') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
 
     $activeSlug = $ms->getActiveThemeSlug();
     $selectedPlugin = preg_replace('/[^a-z0-9\-_]/', '', $mybb->get_input('plugin'));
 
     if (!$activeSlug || empty($selectedPlugin)) {
         flash_message('Invalid extension.', 'error');
-        admin_redirect("index.php?module=mystudio-plugins");
+        admin_redirect("index.php?module=mystudio-modules");
     }
 
-    $allPlugins = $ms->listMiniPlugins($activeSlug);
-    $pluginInfo = null;
-    foreach ($allPlugins as $p) {
-        if ($p['id'] === $selectedPlugin) {
-            $pluginInfo = $p;
-            break;
-        }
-    }
+    // Only active modules (core or activated) have a settings page
+    $pluginInfo = ms_find_active_module($ms, $activeSlug, $selectedPlugin);
 
     if (!$pluginInfo) {
-        flash_message('Extension not found.', 'error');
-        admin_redirect("index.php?module=mystudio-plugins");
+        flash_message('Extension not found or not active.', 'error');
+        admin_redirect("index.php?module=mystudio-modules");
     }
+
+    // Permission was checked as 'plugin_settings'; highlight this module in the sidebar
+    $page->active_action = 'plugin_' . $selectedPlugin;
 
     $page->add_breadcrumb_item(htmlspecialchars_uni($pluginInfo['name']));
     $page->output_header("MyStudio - " . htmlspecialchars_uni($pluginInfo['name']));
@@ -2158,285 +1915,87 @@ if ($action === 'plugin_settings') {
 }
 
 /* ====================================================================
-   Extensions Page
+   Modules Page — core modules are always on; others start off
    ==================================================================== */
 
-if ($action === 'plugins') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
-    $page->add_breadcrumb_item("Manage Extensions");
+if ($action === 'modules' || $action === 'plugins') {
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
+    $page->add_breadcrumb_item("Modules");
 
-    $activeSlug = $ms->getActiveThemeSlug();
+    $page->output_header("MyStudio - Modules");
 
-    // Main extensions list
-    $page->output_header("MyStudio - Manage Extensions");
-
-    if (!$activeSlug) {
-        echo '<p>No active theme found. Activate a theme on the Manage page first.</p>';
-        $page->output_footer();
-        exit;
-    }
-
-    $allPlugins = $ms->listMiniPlugins($activeSlug);
-    $states     = $ms->getMiniPluginStates($activeSlug);
+    $allModules = $ms->listModules($ms->getActiveThemeSlug());
     $post_key   = $mybb->post_code;
 
-    if (empty($allPlugins)) {
+    $groups = array(
+        'Core Modules'       => array(),
+        'Additional Modules' => array(),
+    );
+    foreach ($allModules as $m) {
+        $groups[$m['core'] ? 'Core Modules' : 'Additional Modules'][] = $m;
+    }
+
+    foreach ($groups as $title => $modules) {
         $table = new Table;
-        $table->construct_header("Extension");
-        $table->construct_header("Controls", array('class' => 'align_center', 'width' => 200));
-        $table->construct_cell('No extensions found for the active theme.', array('colspan' => 2));
-        $table->construct_row();
-        $table->output("Theme Extensions: " . htmlspecialchars_uni($activeSlug));
-        $page->output_footer();
-        exit;
-    }
+        $table->construct_header("Module");
+        $table->construct_header("Status", array('class' => 'align_center', 'width' => 150));
+        $table->construct_header("Controls", array('colspan' => 2, 'class' => 'align_center', 'width' => 300));
 
-    // Split into active/inactive like MyBB does
-    $activePlugins = array();
-    $inactivePlugins = array();
-    foreach ($allPlugins as $p) {
-        $isEnabled = !isset($states[$p['id']]) || $states[$p['id']];
-        if ($isEnabled) {
-            $activePlugins[] = $p;
-        } else {
-            $inactivePlugins[] = $p;
+        if (empty($modules)) {
+            $empty = ($title === 'Core Modules')
+                ? 'No core modules found.'
+                : 'No additional modules found. Add a module folder to <code>inc/plugins/mystudio/modules/</code> and activate it here.';
+            $table->construct_cell($empty, array('colspan' => 4));
+            $table->construct_row();
         }
-    }
 
-    // Active extensions table
-    $table = new Table;
-    $table->construct_header("Extension");
-    $table->construct_header("Controls", array('colspan' => 2, 'class' => 'align_center', 'width' => 300));
-
-    if (empty($activePlugins)) {
-        $table->construct_cell('No active extensions.', array('colspan' => 3));
-        $table->construct_row();
-    } else {
-        foreach ($activePlugins as $p) {
-            $pluginId = htmlspecialchars_uni($p['id']);
-            $nameCell = '<strong>' . htmlspecialchars_uni($p['name']) . '</strong> (' . htmlspecialchars_uni($p['version']) . ')';
-            if ($p['description']) {
-                $nameCell .= '<br /><small>' . htmlspecialchars_uni($p['description']) . '</small>';
+        foreach ($modules as $m) {
+            $moduleId = htmlspecialchars_uni($m['id']);
+            $nameCell = '<strong>' . htmlspecialchars_uni($m['name']) . '</strong> (' . htmlspecialchars_uni($m['version']) . ')';
+            if ($m['description']) {
+                $nameCell .= '<br /><small>' . htmlspecialchars_uni($m['description']) . '</small>';
             }
-            if ($p['author']) {
-                $nameCell .= '<br /><i><small>Created by ' . htmlspecialchars_uni($p['author']) . '</small></i>';
+            if ($m['author']) {
+                $nameCell .= '<br /><i><small>Created by ' . htmlspecialchars_uni($m['author']) . '</small></i>';
             }
             $table->construct_cell($nameCell);
 
-            $table->construct_cell('<a href="index.php?module=mystudio-manage&amp;action=api_toggle_plugin&amp;plugin_id=' . $pluginId . '&amp;enable=0&amp;my_post_key=' . $post_key . '">Deactivate</a>', array('class' => 'align_center', 'width' => 150));
+            if ($m['core']) {
+                $table->construct_cell('Always on', array('class' => 'align_center'));
+                $table->construct_cell('&nbsp;', array('class' => 'align_center', 'width' => 150));
+            } else {
+                $table->construct_cell($m['enabled'] ? 'Active' : 'Inactive', array('class' => 'align_center'));
+                $toggle = $m['enabled'] ? array(0, 'Deactivate') : array(1, 'Activate');
+                $table->construct_cell('<a href="index.php?module=mystudio-api_toggle_plugin&amp;plugin_id=' . $moduleId . '&amp;enable=' . $toggle[0] . '&amp;my_post_key=' . $post_key . '">' . $toggle[1] . '</a>', array('class' => 'align_center', 'width' => 150));
+            }
 
-            if ($p['has_options'] || $p['has_admin']) {
-                $table->construct_cell('<a href="index.php?module=mystudio-plugin_settings&amp;plugin=' . $pluginId . '">Settings</a>', array('class' => 'align_center', 'width' => 150));
+            if ($m['enabled'] && ($m['has_options'] || $m['has_admin'])) {
+                $table->construct_cell('<a href="index.php?module=mystudio-plugin_settings&amp;plugin=' . $moduleId . '">Settings</a>', array('class' => 'align_center', 'width' => 150));
             } else {
                 $table->construct_cell('&nbsp;', array('class' => 'align_center', 'width' => 150));
             }
 
             $table->construct_row();
         }
+
+        $table->output($title);
     }
-
-    $table->output("Active Extensions");
-
-    // Inactive extensions table
-    $table = new Table;
-    $table->construct_header("Extension");
-    $table->construct_header("Controls", array('colspan' => 2, 'class' => 'align_center', 'width' => 300));
-
-    if (empty($inactivePlugins)) {
-        $table->construct_cell('No inactive extensions.', array('colspan' => 3));
-        $table->construct_row();
-    } else {
-        foreach ($inactivePlugins as $p) {
-            $pluginId = htmlspecialchars_uni($p['id']);
-            $nameCell = '<strong>' . htmlspecialchars_uni($p['name']) . '</strong> (' . htmlspecialchars_uni($p['version']) . ')';
-            if ($p['description']) {
-                $nameCell .= '<br /><small>' . htmlspecialchars_uni($p['description']) . '</small>';
-            }
-            if ($p['author']) {
-                $nameCell .= '<br /><i><small>Created by ' . htmlspecialchars_uni($p['author']) . '</small></i>';
-            }
-            $table->construct_cell($nameCell);
-
-            $table->construct_cell('<a href="index.php?module=mystudio-manage&amp;action=api_toggle_plugin&amp;plugin_id=' . $pluginId . '&amp;enable=1&amp;my_post_key=' . $post_key . '">Activate</a>', array('class' => 'align_center', 'width' => 150));
-
-            if ($p['has_options'] || $p['has_admin']) {
-                $table->construct_cell('<a href="index.php?module=mystudio-plugin_settings&amp;plugin=' . $pluginId . '">Settings</a>', array('class' => 'align_center', 'width' => 150));
-            } else {
-                $table->construct_cell('&nbsp;', array('class' => 'align_center', 'width' => 150));
-            }
-
-            $table->construct_row();
-        }
-    }
-
-    $table->output("Inactive Extensions");
 
     $page->output_footer();
     exit;
 }
 
 /* ====================================================================
-   Settings Page â€” Extension-level settings
+   Studio Settings — tabs: General, Theme Settings, Developer Settings
    ==================================================================== */
 
-if ($action === 'settings') {
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
-    $page->add_breadcrumb_item("Settings");
-
-    // Ensure new settings exist (migration for existing installations)
-    $newSettings = array(
-        'ms_dev_auto_sync'     => array('title' => 'Auto Sync (Dev Mode)', 'description' => 'Automatically sync theme files to the database when changes are detected.', 'optionscode' => 'yesno', 'value' => '0', 'disporder' => 3, 'gid' => 0),
-        'ms_dev_sync_interval' => array('title' => 'Auto Sync Interval (seconds)', 'description' => 'How often to check for file changes.', 'optionscode' => 'numeric', 'value' => '2', 'disporder' => 4, 'gid' => 0),
-        'ms_loading_bar'       => array('title' => 'Page Loading Bar', 'description' => 'Show an accent-colored progress bar at the top of the page during navigation.', 'optionscode' => 'yesno', 'value' => '1', 'disporder' => 6, 'gid' => 0),
-    );
-    foreach ($newSettings as $name => $def) {
-        $check = $db->simple_select('settings', 'name', "name='" . $db->escape_string($name) . "'");
-        if (!$db->num_rows($check)) {
-            $def['name'] = $name;
-            $db->insert_query('settings', $def);
-        }
-    }
-    rebuild_settings();
-
-    // Handle save
-    if ($mybb->request_method === 'post') {
-        verify_post_check($mybb->get_input('my_post_key'));
-
-        // Define our settings and their sanitisation
-        $settingsToSave = array(
-            'ms_enabled'           => intval($mybb->get_input('ms_enabled')),
-            'ms_max_upload_mb'     => max(1, intval($mybb->get_input('ms_max_upload_mb'))),
-            'ms_dev_auto_sync'     => intval($mybb->get_input('ms_dev_auto_sync')),
-            'ms_dev_sync_interval' => max(1, intval($mybb->get_input('ms_dev_sync_interval'))),
-            'ms_loading_bar'       => intval($mybb->get_input('ms_loading_bar')),
-        );
-
-        foreach ($settingsToSave as $name => $value) {
-            $db->update_query('settings', array('value' => $db->escape_string($value)), "name='" . $db->escape_string($name) . "'");
-        }
-
-        rebuild_settings();
-
-        flash_message('Settings saved successfully.', 'success');
-        admin_redirect("index.php?module=mystudio-settings");
-    }
-
-    // Read current values
-    $currentSettings = array();
-    $query = $db->simple_select('settings', 'name, value', "name LIKE 'ms_%'");
-    while ($row = $db->fetch_array($query)) {
-        $currentSettings[$row['name']] = $row['value'];
-    }
-
-    $page->output_header("MyStudio - Studio Settings");
-
-    $form = new Form("index.php?module=mystudio-settings", "post");
-
-    $form_container = new FormContainer("General");
-
-    $form_container->output_row(
-        "Enable MyStudio",
-        "Master switch to enable or disable MyStudio on the frontend. When disabled, themes will still be manageable from the admin panel but no MyStudio features will load on the forum.",
-        $form->generate_yes_no_radio('ms_enabled', isset($currentSettings['ms_enabled']) ? $currentSettings['ms_enabled'] : 1)
-    );
-
-    $form_container->output_row(
-        "Max Upload Size (MB)",
-        "Maximum allowed ZIP file size in megabytes for theme imports.",
-        $form->generate_numeric_field('ms_max_upload_mb', isset($currentSettings['ms_max_upload_mb']) ? $currentSettings['ms_max_upload_mb'] : 20, array('min' => 1, 'max' => 500, 'style' => 'width:80px'))
-    );
-
-    $form_container->end();
-
-    $form_container = new FormContainer("Theme Settings");
-
-    $form_container->output_row(
-        "Page Loading Bar",
-        "Show an accent-colored progress bar at the top of the page during navigation.",
-        $form->generate_yes_no_radio('ms_loading_bar', isset($currentSettings['ms_loading_bar']) ? $currentSettings['ms_loading_bar'] : 1)
-    );
-
-    $form_container->end();
-
-    $form_container = new FormContainer("Developer Settings");
-
-    $form_container->output_row(
-        "Auto Sync (Dev Mode)",
-        "When enabled, the forum will poll for file changes in the active theme directory every few seconds and automatically sync to the database. Only runs for admin users browsing the frontend. <strong>Disable in production.</strong>",
-        $form->generate_yes_no_radio('ms_dev_auto_sync', isset($currentSettings['ms_dev_auto_sync']) ? $currentSettings['ms_dev_auto_sync'] : 0)
-    );
-
-    $form_container->output_row(
-        "Auto Sync Interval (seconds)",
-        "How often to check for file changes. Lower = faster feedback, higher = less server load. Recommended: 2â€“5 seconds.",
-        $form->generate_numeric_field('ms_dev_sync_interval', isset($currentSettings['ms_dev_sync_interval']) ? $currentSettings['ms_dev_sync_interval'] : 2, array('min' => 1, 'max' => 60, 'style' => 'width:80px'))
-    );
-
-    $form_container->end();
-
-    $buttons = array($form->generate_submit_button("Save Settings"));
-    $form->output_submit_wrapper($buttons);
-
-    $form->end();
-
-    // ── Demo Data (development tools) ──
-    // One shared FormContainer; each row's submit button posts its own form
-    // (container markup is independent of which form a button belongs to).
-    $seedForm = new Form("index.php?module=mystudio-seed_data", "post");
-    $form_container = new FormContainer("Demo Data (development only)");
-
-    $form_container->output_row(
-        "Seed Dummy Data",
-        "Wipes all current content and seeds the board with the forumeze.com forum structure: 24 forums/categories, ~200 threads with replies across 26 users of every usergroup (admin, super moderators, moderators, registered, awaiting activation, banned), a poll, announcements, quotes and MyCode samples. One forum is left empty and some threads have no replies. Seeded user password: <code>TestPass123!</code>.",
-        $seedForm->generate_submit_button("Seed Dummy Data", array('onclick' => "return confirm('This deletes ALL existing forums, threads, posts and non-admin users, then seeds dummy data. Continue?');"))
-    );
-    $seedForm->end();
-
-    $revertForm = new Form("index.php?module=mystudio-revert_default", "get");
-    $form_container->output_row(
-        "Revert to Default Installation",
-        "Deletes all content and non-admin users, restoring a default MyBB installation (\"My Category\" / \"My Forum\", no posts). MyStudio stays installed. Opens a confirmation page that requires double verification. <strong>No undo — back up first.</strong>",
-        $revertForm->generate_submit_button("Revert to Default")
-    );
-    $revertForm->end();
-
-    $form_container->end();
-
-    // ── Branding (theme options: logo, favicon) ──
-    $activeSlug = $ms->getActiveThemeSlug();
-    if ($activeSlug) {
-        $allOptions = $ms->getThemeOptions($activeSlug);
-        $themeValues = $ms->getMergedThemeOptions($activeSlug);
-
-        $brandingKeys = array('logo_icon', 'logo_text', 'site_logo', 'favicon');
-        $hasBranding = false;
-        if ($allOptions) {
-            foreach ($brandingKeys as $bk) {
-                if (isset($allOptions[$bk])) { $hasBranding = true; break; }
-            }
-        }
-
-        if ($hasBranding) {
-            $brandForm = new Form("index.php?module=mystudio-manage&action=api_saveoptions", "post", "", 1);
-            echo $brandForm->generate_hidden_field('slug', $activeSlug);
-            echo $brandForm->generate_hidden_field('page_filter', 'studio_settings');
-            echo $brandForm->generate_hidden_field('redirect_to', 'index.php?module=mystudio-settings');
-
-            $form_container = new FormContainer("Branding");
-            foreach ($brandingKeys as $bk) {
-                if (isset($allOptions[$bk])) {
-                    ms_render_option_row($brandForm, $form_container, $bk, $allOptions[$bk], $themeValues, $mybb);
-                }
-            }
-            $form_container->end();
-
-            $buttons = array($brandForm->generate_submit_button("Save Branding"));
-            $brandForm->output_submit_wrapper($buttons);
-            echo $brandForm->end();
-
-            // Icon picker modal + JS (needed for logo_icon chooser)
-            $iconListJson = json_encode(ms_get_icon_list());
-            echo '<div id="ms-icon-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)">
+/**
+ * Output the icon-chooser modal + JS used by icon_chooser option rows.
+ */
+function ms_output_icon_picker_modal()
+{
+    $iconListJson = json_encode(ms_get_icon_list());
+    echo '<div id="ms-icon-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.5);backdrop-filter:blur(2px)">
 <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.3);width:640px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
   <div style="display:flex;align-items:center;justify-content:between;padding:14px 20px;border-bottom:1px solid #eee;gap:10px;flex-shrink:0">
     <i class="bi bi-grid-3x3-gap" style="font-size:18px;color:#0d9488"></i>
@@ -2452,7 +2011,7 @@ if ($action === 'settings') {
 </div>
 </div>';
 
-            echo '<style>
+    echo '<style>
 .ms-ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
 .ms-ig-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border:2px solid transparent;border-radius:8px;cursor:pointer;transition:all .15s;background:#fafafa}
 .ms-ig-item:hover{background:#e0f2fe;border-color:#7dd3fc}
@@ -2461,7 +2020,7 @@ if ($action === 'settings') {
 .ms-ig-item span{font-size:9px;color:#888;text-align:center;line-height:1.1;word-break:break-word;max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>';
 
-            echo '<script>
+    echo '<script>
 (function(){
   var icons=' . $iconListJson . ';
   var modal=document.getElementById("ms-icon-modal");
@@ -2489,9 +2048,9 @@ if ($action === 'settings') {
     countEl.textContent=count+" icon"+(count!==1?"s":"");
     grid.querySelectorAll(".ms-ig-item").forEach(function(item){
       item.addEventListener("click",function(){
-        var icon=this.getAttribute("data-icon");
-        if(onSelect) onSelect(icon);
-        close();
+var icon=this.getAttribute("data-icon");
+if(onSelect) onSelect(icon);
+close();
       });
     });
   }
@@ -2523,33 +2082,33 @@ if ($action === 'settings') {
       if(btn.dataset.bound) return;
       btn.dataset.bound="1";
       btn.addEventListener("click",function(){
-        var inputId=btn.getAttribute("data-target-input");
-        var previewId=btn.getAttribute("data-target-preview");
-        var labelId=btn.getAttribute("data-target-label");
-        var input=inputId?document.getElementById(inputId):null;
-        FmzIconModal.open(input?input.value:"",function(icon){
-          if(input) input.value=icon;
-          var prev=previewId?document.getElementById(previewId):null;
-          if(prev) prev.className="bi "+(icon||"bi-grid-3x3-gap");
-          var lbl=labelId?document.getElementById(labelId):null;
-          if(lbl) lbl.textContent=icon||"Choose icon\u2026";
-        });
+var inputId=btn.getAttribute("data-target-input");
+var previewId=btn.getAttribute("data-target-preview");
+var labelId=btn.getAttribute("data-target-label");
+var input=inputId?document.getElementById(inputId):null;
+FmzIconModal.open(input?input.value:"",function(icon){
+  if(input) input.value=icon;
+  var prev=previewId?document.getElementById(previewId):null;
+  if(prev) prev.className="bi "+(icon||"bi-grid-3x3-gap");
+  var lbl=labelId?document.getElementById(labelId):null;
+  if(lbl) lbl.textContent=icon||"Choose icon\u2026";
+});
       });
     });
     document.querySelectorAll(".ms-icon-clear-btn").forEach(function(btn){
       if(btn.dataset.bound) return;
       btn.dataset.bound="1";
       btn.addEventListener("click",function(){
-        var inputId=btn.getAttribute("data-target-input");
-        var previewId=btn.getAttribute("data-target-preview");
-        var labelId=btn.getAttribute("data-target-label");
-        var input=inputId?document.getElementById(inputId):null;
-        if(input) input.value="";
-        var prev=previewId?document.getElementById(previewId):null;
-        if(prev) prev.className="bi bi-grid-3x3-gap";
-        var lbl=labelId?document.getElementById(labelId):null;
-        if(lbl) lbl.textContent="Choose icon\u2026";
-        btn.style.display="none";
+var inputId=btn.getAttribute("data-target-input");
+var previewId=btn.getAttribute("data-target-preview");
+var labelId=btn.getAttribute("data-target-label");
+var input=inputId?document.getElementById(inputId):null;
+if(input) input.value="";
+var prev=previewId?document.getElementById(previewId):null;
+if(prev) prev.className="bi bi-grid-3x3-gap";
+var lbl=labelId?document.getElementById(labelId):null;
+if(lbl) lbl.textContent="Choose icon\u2026";
+btn.style.display="none";
       });
     });
   };
@@ -2557,8 +2116,225 @@ if ($action === 'settings') {
   document.addEventListener("DOMContentLoaded",function(){initIconPickers();});
 })();
 </script>';
+}
+
+if ($action === 'settings') {
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
+    $page->add_breadcrumb_item("Studio Settings");
+
+    // Ensure new settings exist (migration for existing installations)
+    $newSettings = array(
+        'ms_dev_auto_sync'     => array('title' => 'Auto Sync (Dev Mode)', 'description' => 'Automatically sync theme files to the database when changes are detected.', 'optionscode' => 'yesno', 'value' => '0', 'disporder' => 3, 'gid' => 0),
+        'ms_dev_sync_interval' => array('title' => 'Auto Sync Interval (seconds)', 'description' => 'How often to check for file changes.', 'optionscode' => 'numeric', 'value' => '2', 'disporder' => 4, 'gid' => 0),
+        'ms_loading_bar'       => array('title' => 'Page Loading Bar', 'description' => 'Show an accent-colored progress bar at the top of the page during navigation.', 'optionscode' => 'yesno', 'value' => '1', 'disporder' => 6, 'gid' => 0),
+    );
+    // Cheap check against the loaded settings; only touch the DB when one is missing
+    // (ms_activate() normally creates them).
+    $missingSettings = array_diff_key($newSettings, $mybb->settings);
+    if ($missingSettings) {
+        foreach ($missingSettings as $name => $def) {
+            $check = $db->simple_select('settings', 'name', "name='" . $db->escape_string($name) . "'");
+            if (!$db->num_rows($check)) {
+                $def['name'] = $name;
+                $db->insert_query('settings', array_map(array($db, 'escape_string'), $def));
+            }
+        }
+        rebuild_settings();
+    }
+
+    $activeSlug = $ms->getActiveThemeSlug();
+
+    // Handle save — each tab posts its own form with a hidden "tab" field
+    if ($mybb->request_method === 'post') {
+        verify_post_check($mybb->get_input('my_post_key'));
+
+        $tab = $mybb->get_input('tab');
+        $settingsByTab = array(
+            'general' => array(
+                'ms_enabled'       => intval($mybb->get_input('ms_enabled')),
+                'ms_max_upload_mb' => max(1, intval($mybb->get_input('ms_max_upload_mb'))),
+            ),
+            'theme' => array(
+                'ms_loading_bar'   => intval($mybb->get_input('ms_loading_bar')),
+            ),
+            'developer' => array(
+                'ms_dev_auto_sync'     => intval($mybb->get_input('ms_dev_auto_sync')),
+                'ms_dev_sync_interval' => max(1, intval($mybb->get_input('ms_dev_sync_interval'))),
+            ),
+        );
+        if (!isset($settingsByTab[$tab])) {
+            $tab = 'general';
+        }
+
+        foreach ($settingsByTab[$tab] as $name => $value) {
+            $db->update_query('settings', array('value' => $db->escape_string($value)), "name='" . $db->escape_string($name) . "'");
+        }
+        rebuild_settings();
+
+        // Theme tab also carries the active theme's options (colour + branding)
+        if ($tab === 'theme' && $activeSlug) {
+            ms_save_theme_options($ms, $activeSlug, 'studio_settings');
+        }
+
+        if (!empty($GLOBALS['ms_upload_errors'])) {
+            flash_message('Settings saved, but an image was rejected: ' . htmlspecialchars_uni(implode(' ', $GLOBALS['ms_upload_errors'])), 'error');
+            admin_redirect("index.php?module=mystudio-settings#tab_" . $tab);
+        }
+        flash_message('Settings saved successfully.', 'success');
+        admin_redirect("index.php?module=mystudio-settings#tab_" . $tab);
+    }
+
+    // Read current values
+    $currentSettings = array();
+    $query = $db->simple_select('settings', 'name, value', "name LIKE 'ms_%'");
+    while ($row = $db->fetch_array($query)) {
+        $currentSettings[$row['name']] = $row['value'];
+    }
+
+    $page->output_header("MyStudio - Studio Settings");
+
+    $page->output_tab_control(array(
+        'general'   => 'General',
+        'theme'     => 'Theme Settings',
+        'developer' => 'Developer Settings',
+    ));
+
+    /* ── General ── */
+    echo '<div id="tab_general">';
+    $form = new Form("index.php?module=mystudio-settings", "post");
+    echo $form->generate_hidden_field('tab', 'general');
+
+    $form_container = new FormContainer("General");
+    $form_container->output_row(
+        "Enable MyStudio",
+        "Master switch to enable or disable MyStudio on the frontend. When disabled, themes will still be manageable from the admin panel but no MyStudio features will load on the forum.",
+        $form->generate_yes_no_radio('ms_enabled', isset($currentSettings['ms_enabled']) ? $currentSettings['ms_enabled'] : 1)
+    );
+    $form_container->output_row(
+        "Max Upload Size (MB)",
+        "Maximum allowed ZIP file size in megabytes for theme imports.",
+        $form->generate_numeric_field('ms_max_upload_mb', isset($currentSettings['ms_max_upload_mb']) ? $currentSettings['ms_max_upload_mb'] : 20, array('min' => 1, 'max' => 500, 'style' => 'width:80px'))
+    );
+    $form_container->end();
+
+    $form->output_submit_wrapper(array($form->generate_submit_button("Save Settings")));
+    $form->end();
+    echo '</div>';
+
+    /* ── Theme Settings (appearance + branding) ── */
+    echo '<div id="tab_theme">';
+    $form = new Form("index.php?module=mystudio-settings", "post", "", 1);
+    echo $form->generate_hidden_field('tab', 'theme');
+
+    $allOptions   = $activeSlug ? $ms->getThemeOptions($activeSlug) : false;
+    $themeValues  = $activeSlug ? $ms->getMergedThemeOptions($activeSlug) : array();
+    $brandingKeys = array('logo_icon', 'logo_text', 'site_logo', 'favicon');
+
+    $form_container = new FormContainer("Appearance");
+    $form_container->output_row(
+        "Page Loading Bar",
+        "Show an accent-coloured progress bar at the top of the page during navigation.",
+        $form->generate_yes_no_radio('ms_loading_bar', isset($currentSettings['ms_loading_bar']) ? $currentSettings['ms_loading_bar'] : 1)
+    );
+    if ($allOptions) {
+        foreach ($allOptions as $key => $def) {
+            $optPage = isset($def['page']) ? $def['page'] : '';
+            if ($optPage === 'studio_settings' && !in_array($key, $brandingKeys, true)) {
+                ms_render_option_row($form, $form_container, $key, $def, $themeValues, $mybb);
+            }
         }
     }
+    $form_container->end();
+
+    $hasBranding = false;
+    if ($allOptions) {
+        $form_container = new FormContainer("Branding");
+        foreach ($brandingKeys as $bk) {
+            if (isset($allOptions[$bk])) {
+                ms_render_option_row($form, $form_container, $bk, $allOptions[$bk], $themeValues, $mybb);
+                $hasBranding = true;
+            }
+        }
+        if (!$hasBranding) {
+            $form_container->output_row('Branding', '', 'The active theme has no branding options.');
+        }
+        $form_container->end();
+    }
+
+    $form->output_submit_wrapper(array($form->generate_submit_button("Save Theme Settings")));
+    $form->end();
+    echo '</div>';
+
+    if ($hasBranding) {
+        ms_output_icon_picker_modal();
+    }
+
+    /* ── Developer Settings (auto-sync + demo data) ── */
+    echo '<div id="tab_developer">';
+    $form = new Form("index.php?module=mystudio-settings", "post");
+    echo $form->generate_hidden_field('tab', 'developer');
+
+    $form_container = new FormContainer("Auto Sync");
+    $form_container->output_row(
+        "Auto Sync (Dev Mode)",
+        "When enabled, the forum will poll for file changes in the active theme directory every few seconds and automatically sync to the database. Only runs for admin users browsing the frontend. <strong>Disable in production.</strong>",
+        $form->generate_yes_no_radio('ms_dev_auto_sync', isset($currentSettings['ms_dev_auto_sync']) ? $currentSettings['ms_dev_auto_sync'] : 0)
+    );
+    $form_container->output_row(
+        "Auto Sync Interval (seconds)",
+        "How often to check for file changes. Lower = faster feedback, higher = less server load. Recommended: 2–5 seconds.",
+        $form->generate_numeric_field('ms_dev_sync_interval', isset($currentSettings['ms_dev_sync_interval']) ? $currentSettings['ms_dev_sync_interval'] : 2, array('min' => 1, 'max' => 60, 'style' => 'width:80px'))
+    );
+    $form_container->end();
+
+    $form->output_submit_wrapper(array($form->generate_submit_button("Save Developer Settings")));
+    $form->end();
+
+    // Demo Data wipes the board: only super admins on a dev environment see (and may run) it
+    if (!ms_devseed_allowed()) {
+        $form_container = new FormContainer("Demo Data (development only)");
+        $form_container->output_row(
+            "Demo Data unavailable",
+            "",
+            "Seeding and reverting are only available to super admins on a development environment: the Board URL host must be <code>localhost</code>, <code>127.0.0.1</code> or end in <code>.local</code>, <code>.test</code> or <code>.localhost</code>, or <code>inc/config.php</code> must set <code>\$config['ms_dev_mode'] = true;</code>."
+        );
+        $form_container->end();
+    } else {
+        // FormContainer buffers its rows until end(), so each form gets its own container,
+        // ended before the form closes — otherwise the buttons render outside their <form>.
+        $seedForm = new Form("index.php?module=mystudio-seed_data", "post");
+        $form_container = new FormContainer("Demo Data (development only)");
+
+        $form_container->output_row(
+            "Seed Dummy Data",
+            "Wipes all current content and seeds the board with the forumeze.com forum structure: 24 forums/categories, ~200 threads with replies across 26 users of every usergroup (admin, super moderators, moderators, registered, awaiting activation, banned), a poll, announcements, quotes and MyCode samples. One forum is left empty and some threads have no replies. Seeded user password: <code>TestPass123!</code>.",
+            $seedForm->generate_submit_button("Seed Dummy Data", array('onclick' => "return confirm('This deletes ALL existing forums, threads, posts and non-admin users, then seeds dummy data. Continue?');"))
+        );
+        $form_container->end();
+        $seedForm->end();
+
+        // POST (a GET form would drop ?module= from the action URL). Double verification in the
+        // browser: a confirm() dialog, then a prompt that must be answered with RESET. The server
+        // re-checks both fields, so the revert never runs without them.
+        $revertForm = new Form("index.php?module=mystudio-revert_default", "post", "ms_revert_form");
+        echo $revertForm->generate_hidden_field('confirm_wipe', '0', array('id' => 'ms_revert_confirm_wipe'));
+        echo $revertForm->generate_hidden_field('confirm_text', '', array('id' => 'ms_revert_confirm_text'));
+        $revertJs = "if(!confirm('Revert to a default MyBB installation?\\n\\nThis permanently deletes ALL forums, threads, posts, polls, private messages and every user except administrators. MyStudio, its themes, files and settings are kept.\\n\\nThere is no undo. Continue?'))return false;"
+                  . "var t=prompt('Second confirmation: type RESET (in capitals) to revert the forum.');"
+                  . "if(t!=='RESET'){if(t!==null)alert('Revert cancelled: you must type RESET exactly.');return false;}"
+                  . "document.getElementById('ms_revert_confirm_wipe').value='1';"
+                  . "document.getElementById('ms_revert_confirm_text').value=t;return true;";
+        $form_container = new FormContainer("Revert to Default");
+        $form_container->output_row(
+            "Revert to Default Installation",
+            "Deletes all content and non-admin users, restoring a default MyBB installation (\"My Category\" / \"My Forum\", no posts). MyStudio stays installed with its themes, files and settings. Asks you to confirm twice: a confirmation dialog, then typing <code>RESET</code>. <strong>No undo — back up first.</strong>",
+            $revertForm->generate_submit_button("Revert to Default", array('onclick' => $revertJs))
+        );
+        $form_container->end();
+        $revertForm->end();
+    }
+
+    echo '</div>';
 
     $page->output_footer();
     exit;
@@ -2570,17 +2346,26 @@ if ($action === 'settings') {
 
 if ($action === 'seed_data') {
     if ($mybb->request_method !== 'post') {
-        admin_redirect("index.php?module=mystudio-settings");
+        admin_redirect("index.php?module=mystudio-settings#tab_developer");
     }
     verify_post_check($mybb->get_input('my_post_key'));
 
+    if (!ms_devseed_allowed()) {
+        flash_message('Demo data is only available to super admins on a development environment.', 'error');
+        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+    }
+
     $seedResult = ms_devseed_seed_data();
+    if (!$seedResult) {
+        flash_message('Demo data seeding was refused.', 'error');
+        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+    }
 
     flash_message(
         "Dummy data seeded: {$seedResult['forums']} forums, {$seedResult['threads']} threads ({$seedResult['no_reply']} without replies), {$seedResult['posts']} posts, {$seedResult['users']} users created. Seeded user password: TestPass123!",
         'success'
     );
-    admin_redirect("index.php?module=mystudio-settings");
+    admin_redirect("index.php?module=mystudio-settings#tab_developer");
     exit;
 }
 
@@ -2589,6 +2374,11 @@ if ($action === 'seed_data') {
    ==================================================================== */
 
 if ($action === 'revert_default') {
+    if (!ms_devseed_allowed()) {
+        flash_message('Demo data is only available to super admins on a development environment.', 'error');
+        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+    }
+
     if ($mybb->request_method === 'post') {
         verify_post_check($mybb->get_input('my_post_key'));
 
@@ -2601,19 +2391,22 @@ if ($action === 'revert_default') {
         }
 
         if (empty($errors)) {
-            ms_devseed_revert_default();
+            if (!ms_devseed_revert_default()) {
+                flash_message('Revert to default was refused.', 'error');
+                admin_redirect("index.php?module=mystudio-settings#tab_developer");
+            }
             flash_message('Forum reverted to a default MyBB installation (MyStudio and its settings remain installed).', 'success');
-            admin_redirect("index.php?module=mystudio-settings");
+            admin_redirect("index.php?module=mystudio-settings#tab_developer");
             exit;
         }
 
         flash_message(implode(' ', $errors), 'error');
-        admin_redirect("index.php?module=mystudio-revert_default");
+        admin_redirect("index.php?module=mystudio-settings#tab_developer");
         exit;
     }
 
     // GET: double-verification confirmation page
-    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
     $page->add_breadcrumb_item("Studio Settings", "index.php?module=mystudio-settings");
     $page->add_breadcrumb_item("Revert to Default");
 
@@ -2660,7 +2453,7 @@ if ($action === 'revert_default') {
    Manage Page (default)
    ==================================================================== */
 
-$page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+$page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
 
 $page->output_header("MyStudio - Manage");
 

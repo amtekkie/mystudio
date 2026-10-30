@@ -11,10 +11,50 @@
  *                                  no posts, only admin users) with MyStudio intact.
  *
  * WARNING: both are destructive. They are dev tools; never run in production.
+ * Both refuse to run unless ms_devseed_allowed(): super admin + dev environment
+ * (bburl host localhost / 127.0.0.1 / *.local / *.test / *.localhost, or
+ * $config['ms_dev_mode'] = true) and return false when refused. Users in
+ * cancp=1 groups are always kept.
  */
 
 if (!defined("IN_MYBB")) {
     die("Direct initialization of this file is not allowed.");
+}
+
+/* ------------------------------------------------------------------ guard */
+
+/**
+ * Dev environment: bburl host is localhost / 127.0.0.1 / *.local / *.test / *.localhost,
+ * or $config['ms_dev_mode'] = true in inc/config.php.
+ */
+function ms_devseed_is_dev_environment()
+{
+    global $mybb;
+
+    if (!empty($mybb->config['ms_dev_mode'])) {
+        return true;
+    }
+
+    $host = strtolower((string)parse_url((string)$mybb->settings['bburl'], PHP_URL_HOST));
+    if ($host === 'localhost' || $host === '127.0.0.1') {
+        return true;
+    }
+    foreach (array('.local', '.test', '.localhost') as $suffix) {
+        if ($host !== '' && substr($host, -strlen($suffix)) === $suffix) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/** Seeding/reverting is only for super admins on a dev environment. */
+function ms_devseed_allowed()
+{
+    global $mybb;
+
+    return !empty($mybb->user['uid'])
+        && is_super_admin((int)$mybb->user['uid'])
+        && ms_devseed_is_dev_environment();
 }
 
 /* ---------------------------------------------------------------- helpers */
@@ -89,12 +129,17 @@ function ms_devseed_thread_time($NOW)
 /* ------------------------------------------------- shared wipe + rebuilds */
 
 /**
- * Wipe all forum content and non-admin users. Keeps uid 1 and the acting
- * admin (so the current ACP session keeps working).
+ * Wipe all forum content and non-admin users. Keeps uid 1, the acting admin
+ * (so the current ACP session keeps working) and every user in a usergroup with
+ * cancp=1, as primary or additional group.
  */
 function ms_devseed_wipe_content()
 {
     global $db, $mybb;
+
+    if (!ms_devseed_allowed()) {
+        return false;
+    }
 
     $wipe_tables = array(
         'forums', 'threads', 'posts', 'polls', 'pollvotes', 'polloptions', 'announcements',
@@ -108,15 +153,23 @@ function ms_devseed_wipe_content()
         }
     }
 
-    // Keep uid 1 and the currently logged-in admin
+    // Keep uid 1, the currently logged-in admin and every ACP-capable user
     $keep = array(1);
     if (!empty($mybb->user['uid'])) { $keep[] = (int)$mybb->user['uid']; }
     $keep_csv = implode(',', array_unique(array_map('intval', $keep)));
 
-    $db->delete_query('users', "uid NOT IN ({$keep_csv})");
-    if ($db->table_exists('userfields')) {
-        $db->delete_query('userfields', "ufid NOT IN ({$keep_csv})");
+    $keep_where = "uid IN ({$keep_csv})";
+    $gq = $db->simple_select('usergroups', 'gid', 'cancp=1');
+    while ($g = $db->fetch_array($gq)) {
+        $gid = (int)$g['gid'];
+        $keep_where .= " OR usergroup={$gid} OR CONCAT(',', additionalgroups, ',') LIKE '%,{$gid},%'";
     }
+
+    $db->delete_query('users', "NOT ({$keep_where})");
+    if ($db->table_exists('userfields')) {
+        $db->delete_query('userfields', "ufid NOT IN (SELECT uid FROM " . TABLE_PREFIX . "users)");
+    }
+    return true;
 }
 
 function ms_devseed_recount_and_rebuild($forum_pid)
@@ -200,12 +253,18 @@ function ms_devseed_seed_data()
 {
     global $mybb, $db, $cache;
 
+    if (!ms_devseed_allowed()) {
+        return false;
+    }
+
     require_once MYBB_ROOT . 'inc/datahandlers/user.php';
 
     $NOW = time();
     $PASSWORD = 'TestPass123!';
 
-    ms_devseed_wipe_content();
+    if (!ms_devseed_wipe_content()) {
+        return false;
+    }
 
     /* ------------------------------------------------------------- users */
 
@@ -239,14 +298,18 @@ function ms_devseed_seed_data()
         array('FluxFiona',     2, ''),
     );
 
-    $users = array(1 => 'amtekkie'); // uid => username, keep admin fallback label
-    if (!empty($mybb->user['uid']) && (int)$mybb->user['uid'] !== 1) {
-        $users[(int)$mybb->user['uid']] = (string)$mybb->user['username'];
+    // uid => username: start from the users the wipe kept (admins), so re-seeding
+    // skips seed names that survived as admins (e.g. NimbleNora) instead of failing
+    $users = array();
+    $kq = $db->simple_select('users', 'uid, username');
+    while ($k = $db->fetch_array($kq)) {
+        $users[(int)$k['uid']] = (string)$k['username'];
     }
+    $created_users = 0;
 
     foreach ($user_defs as $def) {
         list($name, $gid, $addl) = $def;
-        // skip if the acting admin happens to have this username
+        // skip names already taken by a kept admin
         if (in_array($name, $users, true)) { continue; }
 
         $handler = new UserDataHandler('insert');
@@ -263,6 +326,7 @@ function ms_devseed_seed_data()
         $result = $handler->insert_user();
         $uid = isset($result['uid']) ? (int)$result['uid'] : (int)$db->insert_id();
         $users[$uid] = $name;
+        $created_users++;
 
         // backdate registration / activity
         $db->update_query('users', array(
@@ -634,7 +698,7 @@ function ms_devseed_seed_data()
     ms_devseed_recount_and_rebuild($forum_pid);
 
     return array(
-        'users'   => count($users) - 1,
+        'users'   => $created_users,
         'forums'  => count($forum_pid),
         'threads' => $tot_threads,
         'posts'   => $tot_posts,
@@ -654,7 +718,9 @@ function ms_devseed_revert_default()
 {
     global $db;
 
-    ms_devseed_wipe_content();
+    if (!ms_devseed_wipe_content()) {
+        return false;
+    }
 
     // reset admin counters (uid 1 + any other surviving admin)
     $db->update_query('users', array('postnum' => 0, 'threadnum' => 0));
@@ -673,4 +739,5 @@ function ms_devseed_revert_default()
     ms_devseed_update('forums', array('parentlist' => $cid . ',' . $fid), "fid={$fid}");
 
     ms_devseed_recount_and_rebuild(array($cid => 0, $fid => $cid));
+    return true;
 }
