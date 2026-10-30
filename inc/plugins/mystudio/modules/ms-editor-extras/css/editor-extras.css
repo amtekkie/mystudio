@@ -37,7 +37,11 @@
     padding: 4px 5px;
 }
 
-.ee-bi-icons .sceditor-button:hover div {
+:root.ee-bi-icons[data-theme="dark"] .sceditor-button div {
+    color: #aaa;
+}
+
+:root.ee-bi-icons .sceditor-button:hover div {
     color: var(--tekbb-accent, #0d9488);
 }
 
@@ -143,7 +147,7 @@
 }
 
 .ee-themed .sceditor-button:hover {
-    background: var(--glass-bg, rgba(255,255,255,0.12));
+    background: var(--tekbb-accent-subtle, rgba(13,148,136,0.1));
     border-radius: 4px;
 }
 
@@ -323,7 +327,7 @@
 .ee-upload-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(13,148,136,0.15);
+    background: var(--tekbb-accent-subtle, rgba(13,148,136,0.15));
     border: 3px dashed var(--tekbb-accent, #0d9488);
     border-radius: .5rem;
     display: flex;

@@ -11,6 +11,14 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
+/* Full editors (new thread, new reply, edit post, PM) get double height; quick reply keeps the default */
+form[name="input"][action^="newthread.php"] .sceditor-container,
+form[name="input"][action^="newreply.php"] .sceditor-container,
+form[name="input"][action^="editpost.php"] .sceditor-container,
+form[name="input"][action^="private.php"] .sceditor-container {
+  min-height: 500px;
+}
+
 /* Dark mode for the editor toolbar and container */
 :root[data-theme="dark"] .sceditor-container {
   background: var(--glass-bg-heavy) !important;
@@ -30,7 +38,8 @@
   background: var(--tekbb-accent-subtle) !important;
 }
 
-:root[data-theme="dark"] .sceditor-button div {
+/* Sprite icons only — Bootstrap Icons glyphs (editor-extras) are coloured, inverting them flips the accent */
+:root[data-theme="dark"]:not(.ee-bi-icons) .sceditor-button div {
   filter: invert(1);
 }
 

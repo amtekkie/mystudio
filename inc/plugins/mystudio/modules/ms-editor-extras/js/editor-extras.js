@@ -270,20 +270,23 @@ function syncEditorTheme(editor) {
 		styleEl.id = styleId;
 		doc.head.appendChild(styleEl);
 	}
+	// The iframe can't see the page's CSS variables, so copy the theme accent (Studio Settings → theme colour) in
+	var accent = getComputedStyle(document.documentElement).getPropertyValue('--tekbb-accent').trim() || '#0d9488';
+	var accentVar = ' :root { --ee-accent: ' + accent + '; }';
 	// SCEditor's content CSS hardcodes color:#111 on p/table, so typed text ignores the body color
 	var inheritColor = ' p, table, td, th, li { color: inherit !important; }';
 	if (isDark) {
-		styleEl.textContent = inheritColor + ' body { background: #0f172a !important; color: #e2e8f0 !important; caret-color: #e2e8f0 !important; }'
+		styleEl.textContent = accentVar + inheritColor + ' body { background: #0f172a !important; color: #e2e8f0 !important; caret-color: #e2e8f0 !important; }'
 			+ ' code { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }'
-			+ ' blockquote { background: rgba(45,212,191,0.08) !important; border-left: 4px solid rgba(45,212,191,0.5) !important; }'
-			+ ' blockquote blockquote { background: rgba(45,212,191,0.05) !important; border-left-color: rgba(45,212,191,0.3) !important; }'
-			+ ' blockquote cite { color: #2dd4bf !important; border-bottom-color: #30363d !important; }'
+			+ ' blockquote { background: color-mix(in srgb, var(--ee-accent) 8%, transparent) !important; border-left: 4px solid color-mix(in srgb, var(--ee-accent) 50%, transparent) !important; }'
+			+ ' blockquote blockquote { background: color-mix(in srgb, var(--ee-accent) 5%, transparent) !important; border-left-color: color-mix(in srgb, var(--ee-accent) 30%, transparent) !important; }'
+			+ ' blockquote cite { color: var(--ee-accent) !important; border-bottom-color: #30363d !important; }'
 			+ ' table, td, th { border-color: #475569 !important; }';
 	} else {
-		styleEl.textContent = inheritColor + ' body { background: #fff !important; color: #333 !important; caret-color: #333 !important; }'
+		styleEl.textContent = accentVar + inheritColor + ' body { background: #fff !important; color: #333 !important; caret-color: #333 !important; }'
 			+ ' code { background: #f6f8fa !important; color: #1f2328 !important; border-color: #d1d9e0 !important; }'
-			+ ' blockquote { background: rgba(13,148,136,0.06) !important; border-left: 4px solid rgba(13,148,136,0.5) !important; }'
-			+ ' blockquote cite { color: rgba(13,148,136,1) !important; }';
+			+ ' blockquote { background: color-mix(in srgb, var(--ee-accent) 6%, transparent) !important; border-left: 4px solid color-mix(in srgb, var(--ee-accent) 50%, transparent) !important; }'
+			+ ' blockquote cite { color: var(--ee-accent) !important; }';
 	}
 }
 
@@ -642,8 +645,8 @@ function initImageResize(editor) {
 		var s = doc.createElement('style');
 		s.id = styleId;
 		s.textContent =
-			'.ee-img-selected { outline: 2px solid #0d9488; outline-offset: 2px; cursor: default; }' +
-			'.ee-resize-handle { position: absolute; width: 10px; height: 10px; background: #0d9488; border: 1px solid #fff; z-index: 9999; }' +
+			'.ee-img-selected { outline: 2px solid var(--ee-accent, #0d9488); outline-offset: 2px; cursor: default; }' +
+			'.ee-resize-handle { position: absolute; width: 10px; height: 10px; background: var(--ee-accent, #0d9488); border: 1px solid #fff; z-index: 9999; }' +
 			'.ee-resize-handle-se { cursor: nwse-resize; }' +
 			'.ee-resize-handle-sw { cursor: nesw-resize; }' +
 			'.ee-resize-handle-ne { cursor: nesw-resize; }' +
@@ -1031,7 +1034,7 @@ function initTableEnhance(editor, $container) {
 			'table { border-collapse: collapse; width: 100%; margin: 8px 0; }' +
 			'table td, table th { border: 1px solid #ced4da; padding: 6px 10px; min-width: 40px; vertical-align: top; }' +
 			'table th { font-weight: bold; text-align: left; }' +
-			'table td:focus, table th:focus { outline: 2px solid #0d9488; outline-offset: -2px; }' +
+			'table td:focus, table th:focus { outline: 2px solid var(--ee-accent, #0d9488); outline-offset: -2px; }' +
 			'.ee-table-ctx { position: fixed; z-index: 99999; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.15); padding: 4px 0; min-width: 180px; }' +
 			'.ee-table-ctx-item { padding: 6px 14px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; }' +
 			'.ee-table-ctx-item:hover { background: #f1f3f5; }' +

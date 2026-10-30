@@ -34,6 +34,13 @@ $l['ms_stats_threads']     = 'Threads';
 $l['ms_stats_members']     = 'Members';
 $l['ms_stats_most_online'] = 'Most Online';
 
+// ── Statistics Page / Forum Display ──
+$l['ms_stats_top_poster']    = "Today's top poster";
+$l['ms_stats_popular_forum'] = 'Most popular forum';
+$l['ms_stats_forum_posts']   = 'posts';
+$l['ms_stats_forum_threads'] = 'threads';
+$l['ms_forumdisplay_rss']    = 'RSS';
+
 // ── Registration Placeholders ──
 $l['ms_placeholder_enter_username']   = 'Enter Username';
 $l['ms_placeholder_enter_email']      = 'Enter Email Address';
