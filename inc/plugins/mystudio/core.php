@@ -354,6 +354,17 @@ class MyStudio
             return false;
         }
 
+        // ── Packages that bring PHP (functions/, lang/, bundled modules) install code that
+        // runs on every page, so importing one is equivalent to server access: super admins only.
+        global $mybb;
+        if ((is_dir($themeRoot . '/functions') || is_dir($themeRoot . '/lang'))
+            && !is_super_admin((int) $mybb->user['uid'])) {
+            $this->errors[] = 'This theme package contains PHP code (functions/ or lang/), which would run on your server. '
+                . 'Only a super administrator can import it. Review the code first, or import a package without PHP.';
+            $this->rrmdir($tmpDir);
+            return false;
+        }
+
         // ── Read theme.json for name/slug ──
         $cfg  = json_decode(file_get_contents($themeRoot . '/theme.json'), true);
         $slug = $this->makeSlug($cfg['name']);
@@ -545,6 +556,11 @@ class MyStudio
         );
         $order = 1;
         while ($ss = $db->fetch_array($query)) {
+            // DB names become file names: never let one escape css/ or become e.g. evil.php
+            if (!$this->isSafeFileName($ss['name']) || substr(strtolower($ss['name']), -4) !== '.css') {
+                $this->errors[] = 'Skipped stylesheet "' . htmlspecialchars_uni($ss['name']) . '": not a plain .css file name.';
+                continue;
+            }
             file_put_contents($themeDir . '/css/' . $ss['name'], $ss['stylesheet']);
             $ssMeta[] = array(
                 'name'       => $ss['name'],
@@ -575,7 +591,12 @@ class MyStudio
         // Group by MyBB template groups
         $folderMap = $this->getTemplateFolderMap(array_keys($templates));
         foreach ($templates as $name => $content) {
+            if (!$this->isSafeFileName($name)) {
+                $this->errors[] = 'Skipped template "' . htmlspecialchars_uni($name) . '": its title is not a safe file name.';
+                continue;
+            }
             $folder = isset($folderMap[$name]) ? $folderMap[$name] : 'ungrouped';
+            if (!$this->isSafeFileName($folder)) $folder = 'ungrouped';
             $dir = $themeDir . '/templates/' . $folder;
             if (!is_dir($dir)) {
                 mkdir($dir, 0755, true);
@@ -1001,16 +1022,19 @@ class MyStudio
         $themeName    = htmlspecialchars($cfg['name'], ENT_XML1, 'UTF-8');
         $themeVersion = isset($cfg['version']) ? htmlspecialchars($cfg['version'], ENT_XML1, 'UTF-8') : '1839';
 
-        // Property values go into CDATA, so a "]]>" in theme.json must be escaped
+        // theme.json comes from (possibly third-party) ZIPs and these values are echoed
+        // unescaped into templates ({$theme['editortheme']}, {$theme['imgdir']}), so whitelist them
         $props = isset($cfg['properties']) ? $cfg['properties'] : array();
-        $editortheme = $this->escapeCdata(isset($props['editortheme']) ? (string) $props['editortheme'] : 'default.css');
-        $tablespace  = $this->escapeCdata(isset($props['tablespace'])  ? (string) $props['tablespace']  : '0');
-        $borderwidth = $this->escapeCdata(isset($props['borderwidth']) ? (string) $props['borderwidth'] : '0');
-        $color       = $this->escapeCdata(isset($props['color'])       ? (string) $props['color']       : '');
+        $editortheme = isset($props['editortheme']) && preg_match('/^[A-Za-z0-9_\-.]+\.css$/', $props['editortheme'])
+            ? $props['editortheme'] : 'default.css';
+        $tablespace  = (string) (isset($props['tablespace'])  ? (int) $props['tablespace']  : 0);
+        $borderwidth = (string) (isset($props['borderwidth']) ? (int) $props['borderwidth'] : 0);
+        $color       = isset($props['color']) && preg_match('/^[A-Za-z0-9_\- #]*$/', $props['color']) ? $props['color'] : '';
 
         // imgdir — use theme.json value, or auto-detect, or MyBB default
         $slug = $this->makeSlug($cfg['name']);
-        if (isset($props['imgdir']) && $props['imgdir'] !== '') {
+        if (isset($props['imgdir']) && preg_match('#^[A-Za-z0-9_\-./]+$#', $props['imgdir'])
+            && !preg_match('#(^|/)\.\.(/|$)#', $props['imgdir'])) {
             $imgdir = $props['imgdir'];
         } elseif (is_dir($themeDir . '/images')) {
             $imgdir = self::THEMES_DIR . '/' . $slug . '/images';
@@ -1046,10 +1070,16 @@ class MyStudio
         $cssDir = $themeDir . '/css';
         if (is_dir($cssDir)) {
             foreach ($stylesheets as $ss) {
-                $name       = $ss['name'];
-                $attachedto = isset($ss['attachedto']) ? $ss['attachedto'] : '';
+                $name       = isset($ss['name']) ? (string) $ss['name'] : '';
+                $attachedto = isset($ss['attachedto']) ? (string) $ss['attachedto'] : '';
+                // A plain "x.css" file name only: "../../inc/config.php" would otherwise be
+                // read and published as a public stylesheet
+                if (!$this->isSafeFileName($name) || substr(strtolower($name), -4) !== '.css') {
+                    $this->errors[] = 'Skipped stylesheet "' . htmlspecialchars_uni($name) . '": names must be plain .css file names inside css/.';
+                    continue;
+                }
                 $cssPath    = $cssDir . '/' . $name;
-                if (!file_exists($cssPath)) continue;
+                if (!is_file($cssPath)) continue;
 
                 $cssContent = file_get_contents($cssPath);
                 $cssContent = $this->escapeCdata($cssContent);
@@ -1526,6 +1556,13 @@ class MyStudio
             if ($seg === '' || $seg[0] === '.' || rtrim($seg, '. ') !== $seg) return false;
         }
         return $rel;
+    }
+
+    /** A single file name with no path parts: letters, digits, "_", "-", "." and not a dotfile. */
+    private function isSafeFileName($name)
+    {
+        return is_string($name) && $name !== '' && $name[0] !== '.' && strlen($name) <= 120
+            && preg_match('/^[A-Za-z0-9_\-.]+$/', $name) && rtrim($name, '.') === $name;
     }
 
     /** True if $path is $base or inside it (separator-aware, so themes/a never matches themes/ab). */

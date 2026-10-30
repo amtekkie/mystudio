@@ -182,7 +182,7 @@ Two safety rules:
 
 ## Share your theme
 
-**MyStudio → Import / Export → Export** downloads your theme as a ZIP. It includes the theme files, its PHP and its options form. Anyone with MyStudio can import that ZIP on their forum.
+**MyStudio → Import / Export → Export** downloads your theme as a ZIP. It includes the theme files, its PHP and its options form. Anyone with MyStudio can import that ZIP on their forum. Because a package with PHP (hooks, language files, options) runs code on the server, only a **super administrator** can import one; a theme made only of templates, CSS, JS and images can be imported by any admin with Import / Export access.
 
 ## Troubleshooting
 

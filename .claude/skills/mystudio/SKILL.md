@@ -47,7 +47,7 @@ Layout table + top rules are in `CLAUDE.md`. Detail files (read only when needed
   `templates/**/*.html`; deploys `js/`. New files need full sync.
 - Import/export use `newZip()`: `ZipArchive` if loaded, else pure-PHP `MsZipArchive` (`zip.php`; store/deflate via zlib, no ZIP64/encryption; same method subset). Define `MS_FORCE_PHP_ZIP` to test the fallback. `importFromZip` — limits (5000 entries, uncompressed ≤ 10× upload limit),
   ZIP-slip checks, `findDisallowedThemeFiles` (outside `functions/`+`lang/` only
-  `ALLOWED_EDIT_EXTENSIONS` minus `ini` + `ALLOWED_ASSET_EXTENSIONS`; no dotfiles/links), refuses a
+  `ALLOWED_EDIT_EXTENSIONS` minus `ini` + `ALLOWED_ASSET_EXTENSIONS`; no dotfiles/links), packages with `functions/` or `lang/` (PHP) need `is_super_admin`, refuses a
   slug owned by a differently named theme, stages to `themes/.{slug}.importing` then swaps →
   `relocateThemeCode` (never replaces `CORE_MODULES`; keeps an existing module's `default.json`) →
   sync. Error strings are HTML-escaped (ACP flashes raw HTML). `exportTheme` zips the theme dir
@@ -108,3 +108,8 @@ Layout table + top rules are in `CLAUDE.md`. Detail files (read only when needed
   then activate it in ACP → Modules (or add to `CORE_MODULES` only if it ships with MyStudio).
 - **New ACP action**: register in `module_meta.php` `$actions` **and** add an
   `if ($action === 'x')` block in `mystudio.php` above the Manage fallback.
+- `buildThemeXml` whitelists theme.json values that templates echo raw: `editortheme`
+  (`*.css` name), `imgdir` (path chars, no `..`), `color`; `tablespace`/`borderwidth` → int.
+  Stylesheet names (theme.json → disk read, DB → disk write in `extractThemeToDisk`) and
+  template titles must pass `isSafeFileName()` (+ `.css` for stylesheets) — otherwise a name like
+  `../../inc/config.php` would publish secrets, or a DB stylesheet `x.php` would land in `themes/`.

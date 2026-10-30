@@ -1354,7 +1354,7 @@ if ($action === 'import_export') {
     $form_container = new FormContainer("Import Theme from ZIP");
     $form_container->output_row(
         "Theme ZIP File",
-        "Upload a <code>.zip</code> theme package containing <code>theme.json</code> and <code>templates/</code>.",
+        "Upload a <code>.zip</code> theme package containing <code>theme.json</code> and <code>templates/</code>. Packages that include PHP code (<code>functions/</code> or <code>lang/</code>) run on your server, so only super administrators can import them.",
         $importForm->generate_file_upload_box('theme_zip')
     );
 
