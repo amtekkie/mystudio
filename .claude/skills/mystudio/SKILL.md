@@ -13,17 +13,20 @@ Layout table + top rules are in `CLAUDE.md`. Detail files (read only when needed
 
 - Lifecycle: `ms_install` inserts 6 `ms_*` settings with `gid=0` (`ms_enabled`,
   `ms_max_upload_mb`, `ms_dev_auto_sync`, `ms_dev_sync_interval`, `ms_show_sidebar`,
-  `ms_loading_bar`); `ms_is_installed` = `ms_enabled` row exists; `ms_uninstall` removes settings
-  and every `themes/*` with `theme.json` except `mystudio-default`; `ms_activate` orphans any
-  legacy `mystudio` settinggroup.
+  `ms_loading_bar`); `ms_is_installed` = `ms_enabled` row exists; `ms_uninstall` removes
+  `ms\_%` settings (escaped `_`) and the `ms_modules` cache but **keeps theme folders** (disk is
+  truth); `ms_activate` grants `ms_admin_permission_keys()` (manage, import_export, settings,
+  pages, modules, plugin_settings — must match `module_meta.php`) to admin group -4 via
+  `change_admin_permission`, and orphans any legacy `mystudio` settinggroup.
 - Hooks: `global_start` → `ms_global_start` (pre-sets template vars for PHP 8.3);
   `global_intermediate` → `ms_load_theme_extras` (slug from `$theme['name']`, load
-  `inc/plugins/mystudio/themes/{slug}/lang/`, `themes/{slug}/default.json` →
-  `$mybb->ms_theme_options`, include theme `hooks.php`, `loadModules`, set
-  `$mybb->ms_active_slug`); `pre_output_page` → `ms_inject_mini_plugin_assets` (module CSS/JS
-  before `</head>`, dev-sync poller for admins); `xmlhttp` → `ms_xmlhttp_action` (loads theme
-  `posting-extras.php` + modules, re-runs `xmlhttp` behind a static guard; handles
-  `ms_dev_sync_check`/`ms_dev_sync_run`).
+  `inc/plugins/mystudio/themes/{slug}/lang/`, saved `default.json` values merged over
+  `options.php` defaults (`getMergedThemeOptions`) → `$mybb->ms_theme_options`, include theme
+  `hooks.php`, `loadModules`, set `$mybb->ms_active_slug`); `pre_output_page` →
+  `ms_inject_mini_plugin_assets` (module CSS/JS with absolute `bburl` URLs before `</head>`,
+  dev-sync poller for admins); `xmlhttp` → `ms_xmlhttp_action` (resolves the member's style via
+  `ms_xmlhttp_theme_slug`, loads theme `posting-extras.php` + modules, then runs **only the
+  newly registered** `xmlhttp` handlers; handles `ms_dev_sync_check`/`ms_dev_sync_run`).
 - ACP: `ms_load_admin_mini_plugins()` includes every module `init.php` when `IN_ADMINCP`.
 
 ## `MyStudio` class (`inc/plugins/mystudio/core.php`, no hooks)
@@ -33,19 +36,35 @@ Layout table + top rules are in `CLAUDE.md`. Detail files (read only when needed
 - Sync: `syncToDatabase($slug)` — finds DB theme by **`theme.json` name** (renaming creates a new
   theme). Existing → `syncTemplatesIncremental` (UPDATE/INSERT/DELETE vs disk) + XML import with
   `no_templates` and the **existing SID patched in** (keep SID stable). New → full import.
-  Then `deployJs` (copies `js/*.js` flat to `jscripts/`, never deletes stale), clears + rebuilds
-  `cache/themes/theme{tid}/`.
+  Then `deployJs` (copies `js/*.js` flat to `jscripts/`, skips `CORE_JSCRIPTS` names, never
+  deletes stale), clears + rebuilds `cache/themes/theme{tid}/`. Slug must match
+  `^[A-Za-z0-9][A-Za-z0-9_-]*$`. `importThemeXml` treats MyBB's negative return codes as failure.
+- **Template security:** every template write (incremental sync, `updateTemplate`,
+  `writeThemeFile`/`createThemeFile` under `templates/`) runs MyBB's `check_template()` via
+  `isUnsafeTemplate()` — templates are `eval()`'d, so `{${…}}` would be RCE. Failing templates
+  are refused (editor) or skipped with an error (sync).
 - Editor save: `writeThemeFile(...,true)` → `syncSingleFile` — UPDATE-only for `css/*.css`,
   `templates/**/*.html`; deploys `js/`. New files need full sync.
-- Import/export: `importFromZip` (ZIP-slip checks → `themes/{slug}` → `relocateThemeCode` →
-  sync). `exportTheme` zips the theme dir and re-adds theme PHP as `functions/` + `lang/` and
-  the schema as `functions/options.php`. Modules are global and are **not** exported.
+- Import/export: `importFromZip` — limits (5000 entries, uncompressed ≤ 10× upload limit),
+  ZIP-slip checks, `findDisallowedThemeFiles` (outside `functions/`+`lang/` only
+  `ALLOWED_EDIT_EXTENSIONS` minus `ini` + `ALLOWED_ASSET_EXTENSIONS`; no dotfiles/links), refuses a
+  slug owned by a differently named theme, stages to `themes/.{slug}.importing` then swaps →
+  `relocateThemeCode` (never replaces `CORE_MODULES`; keeps an existing module's `default.json`) →
+  sync. Error strings are HTML-escaped (ACP flashes raw HTML). `exportTheme` zips the theme dir
+  (skipping dotfiles/links) and re-adds theme PHP as `functions/` + `lang/` and the schema as
+  `functions/options.php`. Modules are global and are **not** exported.
+- `deleteTheme` keeps a template set still referenced by another theme (ACP child themes inherit
+  the parent's `templateset`).
 - `extractThemeToDisk($tid)` — DB → disk (template group via longest `templategroups.prefix`
   match; unmatched → `templates/ungrouped/`). `buildThemeXml` round-trips only `templateset,
   editortheme, imgdir, tablespace, borderwidth, color, disporder`.
-- Editor file ops (`readThemeFile`, `writeThemeFile`, `create*`, `delete*`, `renameThemePath`):
-  `realpath` containment in `themes/{slug}`, dotfiles rejected, `ALLOWED_EDIT_EXTENSIONS`
-  (no php/phtml/phar).
+- Editor file ops (`readThemeFile`, `writeThemeFile`, `create*`, `delete*`, `renameThemePath`,
+  `getFileTree`, `getFlatFileList`): `themeBaseDir($slug)` (valid slug + `theme.json` present —
+  an empty slug must never resolve to `themes/`), `cleanRelPath()` lexical check **before any
+  mkdir** (no `..`/`.` segments, dot-segments, `:`, absolute, trailing dot/space), then `realpath`
+  containment via separator-aware `isInside()`. `ALLOWED_EDIT_EXTENSIONS` (no php/phtml/phar);
+  rename requires a safe extension for files and refuses existing targets. `rrmdir`/`rcopy`
+  never follow links.
 - `getThemeFilesHash($slug)` — md5 of path|mtime|size for dev auto-sync.
 
 ## Options
@@ -68,7 +87,7 @@ Layout table + top rules are in `CLAUDE.md`. Detail files (read only when needed
 ## Modules (`inc/plugins/mystudio/modules/{id}/`)
 
 - Discovered by `listModules()` (needs `plugin.json` with `name`; each entry has `core` and
-  `enabled`). State: `CORE_MODULES` always on; others via `setModuleEnabled()` → datacache
+  `enabled`; memoised per request in a static, reset by `setModuleEnabled`). State: `CORE_MODULES` always on; others via `setModuleEnabled()` → datacache
   `ms_modules` (`{enabled: [ids]}`), default off. `listActiveModules()` feeds `loadModules`,
   `getModuleAssets`, the ACP loader and the ACP sidebar.
 - `loadModules()` includes `init.php` with `$ms_plugin_options`, `$ms_plugin_dir`, `$ms_plugin_id`, `$ms_theme_slug` in

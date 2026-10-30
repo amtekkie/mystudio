@@ -2,6 +2,8 @@
 // Minimal AJAX endpoint — returns current user's unread PM count as JSON.
 define('IN_MYBB', 1);
 define('NO_PLUGINS', 1);
+// Polling must not refresh the session's "online" timestamp / location
+define('NO_ONLINE', 1);
 require_once __DIR__ . '/../../../../../global.php';
 
 header('Content-Type: application/json; charset=utf-8');

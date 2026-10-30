@@ -21,8 +21,14 @@ global $plugins, $db, $mybb;
 // — Store options in globals for use in functions —
 $GLOBALS['ms_pe_options'] = isset($ms_plugin_options) ? $ms_plugin_options : array();
 
-// — Auto-install: create tables if missing —
-ms_profile_extras_install();
+// — Auto-install: create tables if missing (DDL checks only run until the
+//   schema flag is stored in datacache — normal page views do no SHOW TABLES) —
+ms_pe_schema_ready();
+
+/** Max banners kept per user (older rows + their files are pruned). */
+if (!defined('MS_PE_MAX_BANNERS')) {
+    define('MS_PE_MAX_BANNERS', 12);
+}
 
 // — Hooks: Banner —
 $plugins->add_hook('member_profile_end',  'ms_profile_extras_banner');
@@ -60,6 +66,113 @@ function ms_profile_extras_install()
     }
 }
 
+/**
+ * Run ms_profile_extras_install() once per schema version; remembered in
+ * datacache 'ms_pe_schema' (datacache is preloaded, so the check is free).
+ */
+function ms_pe_schema_ready()
+{
+    global $cache;
+
+    $version = 2;
+    $schema = $cache->read('ms_pe_schema');
+    if (is_array($schema) && isset($schema['version']) && (int)$schema['version'] >= $version) {
+        return;
+    }
+
+    ms_profile_extras_install();
+    $cache->update('ms_pe_schema', array('version' => $version));
+}
+
+/** Module option with default. */
+function ms_pe_option($key, $default)
+{
+    $opts = isset($GLOBALS['ms_pe_options']) && is_array($GLOBALS['ms_pe_options']) ? $GLOBALS['ms_pe_options'] : array();
+    return (isset($opts[$key]) && $opts[$key] !== '') ? $opts[$key] : $default;
+}
+
+function ms_pe_banners_enabled()
+{
+    return (string)ms_pe_option('enable_banners', '1') !== '0';
+}
+
+/**
+ * Public URL for a stored banner value: absolute http(s) URLs (URL banners)
+ * are used as-is, local paths are prefixed with bburl.
+ */
+function ms_pe_banner_url($value)
+{
+    global $mybb;
+
+    if (preg_match('#^https?://#i', $value)) {
+        return $value;
+    }
+    return $mybb->settings['bburl'] . '/' . ltrim($value, '/');
+}
+
+/**
+ * Raw CSS for a banner (callers HTML-escape it for attribute context).
+ */
+function ms_pe_banner_css($type, $value)
+{
+    switch ($type) {
+        case 'upload':
+            $url = str_replace(
+                array("'", '"', '\\', '(', ')', "\r", "\n"),
+                array('%27', '%22', '%5C', '%28', '%29', '', ''),
+                ms_pe_banner_url($value)
+            );
+            return "background-image:url('{$url}');background-size:cover;background-position:center;";
+        case 'solid':
+        case 'gradient':
+            return "background:{$value};";
+    }
+    return '';
+}
+
+/**
+ * Delete a locally uploaded banner file (never touches URL banners or
+ * anything outside uploads/banners/).
+ */
+function ms_pe_delete_banner_file($type, $value)
+{
+    if ($type !== 'upload' || !preg_match('#^uploads/banners/banner_\d+_\d+(_[a-f0-9]+)?\.(jpe?g|png|gif|webp)$#i', $value)) {
+        return;
+    }
+    $path = realpath(MYBB_ROOT . $value);
+    $base = realpath(MYBB_ROOT . 'uploads/banners');
+    if ($path !== false && $base !== false && strpos($path, $base . DIRECTORY_SEPARATOR) === 0 && is_file($path)) {
+        @unlink($path);
+    }
+}
+
+/**
+ * Keep only the newest MS_PE_MAX_BANNERS rows for a user; delete the rest and their files.
+ */
+function ms_pe_prune_banners($uid)
+{
+    global $db;
+
+    $uid = (int)$uid;
+    $query = $db->simple_select('ms_user_banners', 'bid, type, value, is_active', "uid={$uid}", array(
+        'order_by' => 'dateline DESC, bid',
+        'order_dir' => 'DESC',
+        'limit_start' => MS_PE_MAX_BANNERS,
+        'limit' => 1000,
+    ));
+    $bids = array();
+    while ($row = $db->fetch_array($query)) {
+        if ((int)$row['is_active'] === 1) {
+            continue;
+        }
+        ms_pe_delete_banner_file($row['type'], $row['value']);
+        $bids[] = (int)$row['bid'];
+    }
+    if ($bids) {
+        $db->delete_query('ms_user_banners', 'bid IN (' . implode(',', $bids) . ')');
+    }
+}
+
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    USERCP HANDLER â€” banner AJAX actions
@@ -80,24 +193,22 @@ function ms_profile_extras_banner()
 {
     global $mybb, $db, $lang, $memprofile, $uid, $templates;
 
+    // Banners switched off in the module options: no banner, no change UI
+    if (!ms_pe_banners_enabled()) {
+        $GLOBALS['banner_style'] = '';
+        $GLOBALS['banner_change_overlay'] = '';
+        $GLOBALS['banner_change_modal']   = '';
+        ms_pe_inject_latest_posts();
+        return;
+    }
+
     // â”€â”€ Load active banner for this profile user â”€â”€
     $banner_style = '';
     $query = $db->simple_select('ms_user_banners', '*', "uid=" . (int)$uid . " AND is_active=1", array('limit' => 1));
     $banner = $db->fetch_array($query);
 
     if ($banner) {
-        switch ($banner['type']) {
-            case 'upload':
-                $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $banner['value']));
-                $banner_style = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
-                break;
-            case 'solid':
-                $banner_style = "background:" . htmlspecialchars_uni($banner['value']) . ";";
-                break;
-            case 'gradient':
-                $banner_style = "background:" . htmlspecialchars_uni($banner['value']) . ";";
-                break;
-        }
+        $banner_style = htmlspecialchars_uni(ms_pe_banner_css($banner['type'], $banner['value']));
         // Append custom text/link colors as CSS variables
         if (!empty($banner['text_color'])) {
             $banner_style .= "--banner-text-color:" . htmlspecialchars_uni($banner['text_color']) . ";";
@@ -119,23 +230,13 @@ function ms_profile_extras_banner()
 
     // â”€â”€ Build previous banners gallery â”€â”€
     $galleryItems = '';
-    $prevQuery = $db->simple_select('ms_user_banners', '*', "uid=" . (int)$uid, array('order_by' => 'dateline', 'order_dir' => 'DESC', 'limit' => 12));
+    $prevQuery = $db->simple_select('ms_user_banners', '*', "uid=" . (int)$uid, array('order_by' => 'dateline', 'order_dir' => 'DESC', 'limit' => MS_PE_MAX_BANNERS));
     while ($row = $db->fetch_array($prevQuery)) {
         $active = $row['is_active'] ? ' active' : '';
         $bid = (int)$row['bid'];
-        switch ($row['type']) {
-            case 'upload':
-                $thumbUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $row['value']));
-                $galleryItems .= '<div class="banner-gallery-item' . $active . '" data-bid="' . $bid . '" style="background-image:url(\'' . $thumbUrl . '\');background-size:cover;background-position:center"></div>';
-                break;
-            case 'solid':
-                $color = htmlspecialchars_uni($row['value']);
-                $galleryItems .= '<div class="banner-gallery-item' . $active . '" data-bid="' . $bid . '" style="background:' . $color . '"></div>';
-                break;
-            case 'gradient':
-                $grad = htmlspecialchars_uni($row['value']);
-                $galleryItems .= '<div class="banner-gallery-item' . $active . '" data-bid="' . $bid . '" style="background:' . $grad . '"></div>';
-                break;
+        $itemCss = ms_pe_banner_css($row['type'], $row['value']);
+        if ($itemCss !== '') {
+            $galleryItems .= '<div class="banner-gallery-item' . $active . '" data-bid="' . $bid . '" style="' . htmlspecialchars_uni($itemCss) . '"></div>';
         }
     }
     if (empty($galleryItems)) {
@@ -216,6 +317,26 @@ function ms_pe_inject_latest_posts()
         $fidNot = " AND p.fid NOT IN (" . implode(',', $excludeForums) . ")";
     }
 
+    // Forums where the viewer may only see their own threads
+    global $forum_cache;
+    if (!is_array($forum_cache)) {
+        cache_forums();
+    }
+    $onlyOwn = array();
+    foreach ((array)$forum_cache as $ofid => $oforum) {
+        $ofid = (int)$ofid;
+        if (in_array($ofid, $excludeForums)) {
+            continue;
+        }
+        $operms = forum_permissions($ofid);
+        if (!empty($operms['canonlyviewownthreads'])) {
+            $onlyOwn[] = $ofid;
+        }
+    }
+    if ($onlyOwn) {
+        $fidNot .= " AND (p.fid NOT IN (" . implode(',', $onlyOwn) . ") OR t.uid=" . (int)$mybb->user['uid'] . ")";
+    }
+
     $query = $db->query("
         SELECT p.pid, p.tid, p.fid, p.subject, p.dateline, p.message,
                t.subject AS thread_subject, t.tid AS thread_tid,
@@ -283,6 +404,12 @@ function ms_profile_extras_ajax()
         }
     }
 
+    // Banners switched off in the module options (removing an old one is still allowed)
+    if (!ms_pe_banners_enabled() && $action !== 'remove_banner') {
+        ms_profile_extras_json(array('error' => $lang->ms_error_banners_disabled));
+        return;
+    }
+
     switch ($action) {
         case 'save_banner':
             ms_pe_save_banner();
@@ -319,11 +446,16 @@ function ms_pe_save_banner()
             $uploadDir = MYBB_ROOT . 'uploads/banners/';
             if (!is_dir($uploadDir)) {
                 @mkdir($uploadDir, 0755, true);
-                // Prevent PHP execution in upload directory
-                $htaccess = $uploadDir . '.htaccess';
-                if (!file_exists($htaccess)) {
-                    @file_put_contents($htaccess, "<FilesMatch \"\\.(php|phtml|phar|php[3-8]|shtml)$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
-                }
+            }
+            // Prevent PHP execution in upload directory (also for dirs created elsewhere)
+            $htaccess = $uploadDir . '.htaccess';
+            if (is_dir($uploadDir) && !file_exists($htaccess)) {
+                @file_put_contents($htaccess, "<FilesMatch \"\\.(php|phtml|phar|php[3-8]|shtml)$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
+            }
+
+            if (!isset($_FILES['banner_file']['error']) || $_FILES['banner_file']['error'] !== UPLOAD_ERR_OK) {
+                ms_profile_extras_json(array('error' => $lang->ms_error_invalid_upload));
+                return;
             }
 
             $allowed = array('jpg', 'jpeg', 'png', 'gif', 'webp');
@@ -345,13 +477,17 @@ function ms_pe_save_banner()
                 }
             }
 
-            // Max 2MB
-            if ($_FILES['banner_file']['size'] > 2 * 1024 * 1024) {
-                ms_profile_extras_json(array('error' => $lang->ms_error_file_too_large_2mb));
+            // Max size from the module option banner_max_size (KB)
+            $maxKb = (int)ms_pe_option('banner_max_size', 2048);
+            if ($maxKb <= 0) {
+                $maxKb = 2048;
+            }
+            if ($_FILES['banner_file']['size'] > $maxKb * 1024) {
+                ms_profile_extras_json(array('error' => $lang->sprintf($lang->ms_error_file_too_large_kb, my_number_format($maxKb))));
                 return;
             }
 
-            $filename = 'banner_' . $uid . '_' . TIME_NOW . '.' . $ext;
+            $filename = 'banner_' . $uid . '_' . TIME_NOW . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
             $dest = $uploadDir . $filename;
 
             // Validate resolved path stays within uploads directory
@@ -422,20 +558,11 @@ function ms_pe_save_banner()
         'dateline'   => TIME_NOW,
     ));
 
+    // Keep at most MS_PE_MAX_BANNERS per user (old rows + files removed)
+    ms_pe_prune_banners($uid);
+
     // Build CSS for response
-    $css = '';
-    switch ($type) {
-        case 'upload':
-            $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $value));
-            $css = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
-            break;
-        case 'solid':
-            $css = "background:{$value};";
-            break;
-        case 'gradient':
-            $css = "background:{$value};";
-            break;
-    }
+    $css = ms_pe_banner_css($type, $value);
 
     ms_profile_extras_json(array('success' => true, 'css' => $css, 'text_color' => $textColor, 'link_color' => $linkColor));
 }
@@ -465,19 +592,7 @@ function ms_pe_update_banner_colors()
     ), "bid=" . (int)$banner['bid']);
 
     // Rebuild CSS from existing banner
-    $css = '';
-    switch ($banner['type']) {
-        case 'upload':
-            $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $banner['value']));
-            $css = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
-            break;
-        case 'solid':
-            $css = "background:{$banner['value']};";
-            break;
-        case 'gradient':
-            $css = "background:{$banner['value']};";
-            break;
-    }
+    $css = ms_pe_banner_css($banner['type'], $banner['value']);
 
     ms_profile_extras_json(array('success' => true, 'css' => $css, 'text_color' => $textColor, 'link_color' => $linkColor));
 }
@@ -487,7 +602,18 @@ function ms_pe_remove_banner()
 {
     global $mybb, $db;
     $uid = (int)$mybb->user['uid'];
-    $db->update_query('ms_user_banners', array('is_active' => 0), "uid={$uid}");
+
+    // Delete the active banner row and its uploaded file
+    $query = $db->simple_select('ms_user_banners', 'bid, type, value', "uid={$uid} AND is_active=1");
+    $bids = array();
+    while ($row = $db->fetch_array($query)) {
+        ms_pe_delete_banner_file($row['type'], $row['value']);
+        $bids[] = (int)$row['bid'];
+    }
+    if ($bids) {
+        $db->delete_query('ms_user_banners', 'bid IN (' . implode(',', $bids) . ") AND uid={$uid}");
+    }
+
     ms_profile_extras_json(array('success' => true, 'css' => ''));
 }
 
@@ -520,19 +646,7 @@ function ms_pe_activate_banner()
         'link_color' => $db->escape_string($linkColor),
     ), "bid={$bid}");
 
-    $css = '';
-    switch ($banner['type']) {
-        case 'upload':
-            $imgUrl = str_replace("'", '%27', htmlspecialchars_uni($mybb->settings['bburl'] . '/' . $banner['value']));
-            $css = "background-image:url('{$imgUrl}');background-size:cover;background-position:center;";
-            break;
-        case 'solid':
-            $css = "background:{$banner['value']};";
-            break;
-        case 'gradient':
-            $css = "background:{$banner['value']};";
-            break;
-    }
+    $css = ms_pe_banner_css($banner['type'], $banner['value']);
 
     ms_profile_extras_json(array('success' => true, 'css' => $css, 'text_color' => $textColor, 'link_color' => $linkColor));
 }

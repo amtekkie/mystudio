@@ -222,17 +222,20 @@ CSS;
         if ($enableModal) {
             $bburl = $mybb->settings['bburl'];
             global $lang;
-            $uc_posts = $lang->ms_usercard_posts;
-            $uc_rep = $lang->ms_usercard_rep;
-            $uc_joined = $lang->ms_usercard_joined;
-            $uc_profile = $lang->ms_usercard_profile;
-            $uc_pm = $lang->ms_usercard_pm;
-            $uc_rate_user = $lang->ms_usercard_rate_user;
-            $uc_failed_load = $lang->ms_error_failed_load;
-            $uc_failed_load_rep = $lang->ms_error_failed_load_rep;
+            // Lang strings go to JS via json_encode (HTML-escaped first: they are inserted with innerHTML)
+            $ucLang = array();
+            foreach (array(
+                'posts' => 'ms_usercard_posts', 'rep' => 'ms_usercard_rep', 'joined' => 'ms_usercard_joined',
+                'profile' => 'ms_usercard_profile', 'pm' => 'ms_usercard_pm', 'rate_user' => 'ms_usercard_rate_user',
+                'failed_load' => 'ms_error_failed_load', 'failed_load_rep' => 'ms_error_failed_load_rep',
+            ) as $k => $langKey) {
+                $ucLang[$k] = htmlspecialchars_uni(isset($lang->$langKey) ? $lang->$langKey : '');
+            }
+            $ucLangJson = json_encode($ucLang, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
             $js .= <<<JSEOF
 /* MyStudio Forum Display Extras — User Info Modal */
 (function(){
+  var UC={$ucLangJson};
   var modalId='msUserInfoModal';
   function ensureModal(){
     var el=document.getElementById(modalId);
@@ -270,19 +273,19 @@ CSS;
           +'</div>'
           +'<div class="px-3 py-2">'
           +'<div class="row g-2 text-center small mb-2">'
-          +'<div class="col-4"><div class="fw-semibold">'+u.postnum+'</div><div class="text-muted">{$uc_posts}</div></div>'
-          +'<div class="col-4"><div class="fw-semibold">'+u.reputation+'</div><div class="text-muted">{$uc_rep}</div></div>'
-          +'<div class="col-4"><div class="fw-semibold">'+u.regdate+'</div><div class="text-muted">{$uc_joined}</div></div>'
+          +'<div class="col-4"><div class="fw-semibold">'+u.postnum+'</div><div class="text-muted">'+UC.posts+'</div></div>'
+          +'<div class="col-4"><div class="fw-semibold">'+u.reputation+'</div><div class="text-muted">'+UC.rep+'</div></div>'
+          +'<div class="col-4"><div class="fw-semibold">'+u.regdate+'</div><div class="text-muted">'+UC.joined+'</div></div>'
           +'</div>'
           +'<div class="d-flex gap-2 mt-2 mb-1">'
-          +'<a href="'+u.profile_url+'" class="btn btn-sm btn-outline-primary flex-fill"><i class="bi bi-person me-1"></i>{$uc_profile}</a>';
-        if(u.can_pm) html+='<a href="'+u.pm_url+'" class="btn btn-sm btn-outline-success flex-fill"><i class="bi bi-envelope me-1"></i>{$uc_pm}</a>';
+          +'<a href="'+u.profile_url+'" class="btn btn-sm btn-outline-primary flex-fill"><i class="bi bi-person me-1"></i>'+UC.profile+'</a>';
+        if(u.can_pm) html+='<a href="'+u.pm_url+'" class="btn btn-sm btn-outline-success flex-fill"><i class="bi bi-envelope me-1"></i>'+UC.pm+'</a>';
         html+='</div>';
-        if(u.can_rate) html+='<a href="javascript:void(0)" data-ms-rate-uid="'+u.uid+'" class="btn btn-sm btn-outline-warning w-100 mt-1 mb-1"><i class="bi bi-star me-1"></i>{$uc_rate_user}</a>';
+        if(u.can_rate) html+='<a href="javascript:void(0)" data-ms-rate-uid="'+u.uid+'" class="btn btn-sm btn-outline-warning w-100 mt-1 mb-1"><i class="bi bi-star me-1"></i>'+UC.rate_user+'</a>';
         html+='</div>';
         body.innerHTML=html;
       })
-      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">{$uc_failed_load}</div>';});
+      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">'+UC.failed_load+'</div>';});
   });
   document.addEventListener('click',function(e){
     var rateBtn=e.target.closest('[data-ms-rate-uid]');
@@ -303,7 +306,7 @@ CSS;
         if(form){
           // Prevent the default MyBB JS submit handler, use standard form submit
           form.removeAttribute('onsubmit');
-          body.innerHTML='<div class="p-3"><h6 class="mb-3 fw-bold"><i class="bi bi-star me-1"></i>{$uc_rate_user}</h6></div>';
+          body.innerHTML='<div class="p-3"><h6 class="mb-3 fw-bold"><i class="bi bi-star me-1"></i>'+UC.rate_user+'</h6></div>';
           body.querySelector('div').appendChild(form);
         } else {
           // Error or unexpected content — show as-is
@@ -311,7 +314,7 @@ CSS;
           body.innerHTML='<div class="p-3">'+card.innerHTML+'</div>';
         }
       })
-      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">{$uc_failed_load_rep}</div>';});
+      .catch(function(){body.innerHTML='<div class="alert alert-danger m-3">'+UC.failed_load_rep+'</div>';});
   });
 })();
 JSEOF;

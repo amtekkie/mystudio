@@ -123,8 +123,19 @@ function ms_pb_eval_template($raw)
         return '';
     }
 
+    // Defence in depth: the ACP rejects unsafe content on save, but rows can also arrive
+    // via SQL/imports — never eval() content that fails MyBB's template security check.
+    if (ms_pb_check_template($raw)) {
+        return '<!-- MyStudio: page content failed the template security check and was not rendered. -->';
+    }
+
     // Step 1: Process <if> conditionals (may be nested, so loop)
     $content = ms_pb_process_conditionals($raw);
+
+    // Re-check what will actually be eval()'d: removing <if> tags can join "{" and "$..."
+    if (ms_pb_check_template($content)) {
+        return '<!-- MyStudio: page content failed the template security check and was not rendered. -->';
+    }
 
     // Step 2: Escape for PHP double-quoted string evaluation
     $content = strtr($content, array('\\' => '\\\\', '"' => '\\"'));
@@ -141,10 +152,43 @@ function ms_pb_eval_template($raw)
 }
 
 /**
+ * Frontend copy of MyBB's check_template() (admin/inc/functions.php), so the
+ * renderer does not have to load the ACP function library.
+ *
+ * @param  string $template
+ * @return bool   true when the content is unsafe to eval()
+ */
+function ms_pb_check_template($template)
+{
+    if (function_exists('check_template')) {
+        return check_template($template);
+    }
+
+    // Database credentials
+    if (preg_match('#\$config\[(([\'|"]database[\'|"])|([^\'"].*?))\]\[(([\'|"](database|hostname|password|table_prefix|username)[\'|"])|([^\'"].*?))\]#i', $template) !== 0) {
+        return true;
+    }
+
+    // ${...} complex interpolation (arbitrary expressions)
+    if (preg_match('#\$\s*\{#', $template) !== 0) {
+        return true;
+    }
+
+    // Any {$...} that is not a plain variable / property / array-key reference
+    $allowed = preg_replace('~\\{\\$+[a-zA-Z_][a-zA-Z_0-9]*((?:-\\>|\\:\\:)\\$*[a-zA-Z_][a-zA-Z_0-9]*|\\[\s*\\$*([\'"]?)[a-zA-Z_ 0-9 ]+\\2\\]\s*)*\\}~', '', $template);
+    if ($allowed === null || preg_match("~\\{\\$.+?\\}~s", $allowed) !== 0) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Process <if $condition then>...<else>...</if> blocks.
  *
- * Evaluates each condition using a safe subset of allowed variables
- * and operators. Arbitrary PHP execution is blocked.
+ * Each condition is checked against a strict whitelist grammar (variables,
+ * literals, comparison/logical operators, parentheses) before evaluation;
+ * see ms_pb_safe_eval_condition().
  *
  * @param  string $content  Raw template content
  * @return string           Content with conditionals resolved
@@ -162,7 +206,9 @@ function ms_pb_process_conditionals($content)
         $before = $content;
 
         $content = preg_replace_callback(
-            '/<if\s+(.+?)\s+then>((?:(?!<if\s).)*)(?:<else>((?:(?!<if\s).)*))?<\/if>/si',
+            // Innermost <if> first; lazy branches so <else> / the nearest </if> end them
+            // (greedy ones swallowed <else>), and the condition cannot span into a nested <if>
+            '/<if\s+((?:(?!<if\s).)+?)\s+then>((?:(?!<if\s).)*?)(?:<else>((?:(?!<if\s).)*?))?<\/if>/si',
             function ($m) {
                 $condition = trim($m[1]);
                 $thenPart  = $m[2];
@@ -188,8 +234,14 @@ function ms_pb_process_conditionals($content)
 /**
  * Safely evaluate a template conditional expression.
  *
- * Only allows access to whitelisted MyBB variables and safe operators.
- * Blocks function calls, backticks, includes, and other dangerous constructs.
+ * Whitelist, not blacklist: the condition is tokenised and may only contain
+ *   - variable references: $var / {$var}, with ->prop and ['key'] / ["key"] / [0] chains
+ *     ($GLOBALS, $config and superglobals are refused)
+ *   - string literals ('...' or "..." without $, { or \) and numbers
+ *   - comparison / logical operators: == != === !== < > <= >= && || and or xor !
+ *   - parentheses (never directly after an operand, so no calls like $f('x') or ("a"."b")())
+ * Anything else (identifiers, function calls, backticks, concatenation, ::) makes the
+ * condition false. The expression is rebuilt from the validated tokens before eval().
  *
  * @param  string $condition  The raw condition string from <if ... then>
  * @return bool               The evaluated result
@@ -198,42 +250,110 @@ function ms_pb_safe_eval_condition($condition)
 {
     global $mybb, $lang, $cache;
 
-    // Block dangerous patterns: function calls, backticks, shell execution, includes
-    $dangerous = '/(`|\\beval\\b|\\bexec\\b|\\bsystem\\b|\\bpassthru\\b|\\bshell_exec\\b|\\bpopen\\b|\\bproc_open\\b|\\binclude\\b|\\brequire\\b|\\bfile_|\\bunlink\\b|\\bmkdir\\b|\\brmdir\\b|\\bcurl_|\\bfopen\\b|\\bfwrite\\b|\\bfread\\b|\\b\\$_(?:GET|POST|REQUEST|SERVER|FILES|COOKIE|SESSION|ENV)\\b|\\bpreg_replace\\b|\\bassert\\b|\\bcall_user_func|\\bcreate_function\\b|\\bextract\\b|\\bparse_str\\b|\\bputenv\\b|\\bgetenv\\b|\\bheader\\b|\\bsetcookie\\b)/i';
-    if (preg_match($dangerous, $condition)) {
-        return false;
-    }
-
-    // Block any function call syntax: word( or word (
-    if (preg_match('/[a-zA-Z_]\w*\s*\(/', $condition)) {
-        return false;
-    }
-
-    // Only allow safe tokens: variables ($mybb, $lang, etc.), operators, strings, numbers
-    // Strip allowed patterns and see if anything dangerous remains
-    $stripped = $condition;
-    // Remove string literals (single and double quoted)
-    $stripped = preg_replace('/(["\'])(?:\\\\.|(?!\\1).)*\\1/', '', $stripped);
-    // Remove variable references ($mybb->..., $lang->..., $var)
-    $stripped = preg_replace('/\$[a-zA-Z_]\w*(?:\s*->\s*[a-zA-Z_]\w*(?:\s*\[[^\]]*\])*)*/', '', $stripped);
-    // Remove numbers
-    $stripped = preg_replace('/\b\d+(?:\.\d+)?\b/', '', $stripped);
-    // Remove safe operators and whitespace
-    $stripped = preg_replace('/[\s\(\)!&|=<>.,\-+*\/%^]+/', '', $stripped);
-
-    // If anything remains, the condition contains unsafe constructs
-    if (strlen(trim($stripped)) > 0) {
+    $expr = ms_pb_tokenize_condition($condition);
+    if ($expr === false) {
         return false;
     }
 
     $result = false;
     try {
-        eval('$result = (bool)(' . $condition . ');');
+        eval('$result = (bool)(' . $expr . ');');
     } catch (\Throwable $e) {
         $result = false;
     }
 
     return $result;
+}
+
+/**
+ * Validate a condition against the whitelist grammar.
+ *
+ * @param  string       $condition
+ * @return string|false Normalised expression ({$var} braces stripped), or false if rejected
+ */
+function ms_pb_tokenize_condition($condition)
+{
+    $var = '\$([a-zA-Z_]\w*)(?:\s*->\s*[a-zA-Z_]\w*|\s*\[\s*(?:\'[^\'\\\\]*\'|"[^"\\\\$\{]*"|\d+)\s*\])*';
+    $patterns = array(
+        'ws'     => '\s+',
+        'bvar'   => '\{\s*(' . $var . ')\s*\}',
+        'var'    => $var,
+        'string' => '\'(?:[^\'\\\\]|\\\\.)*\'|"[^"\\\\$\{`]*"',
+        'number' => '\d+(?:\.\d+)?',
+        'op'     => '===|!==|==|!=|<=|>=|&&|\|\||<|>|!|(?i:and|or|xor)\b',
+        'open'   => '\(',
+        'close'  => '\)',
+    );
+
+    $out   = array();
+    $prev  = '';   // type of the previous significant token
+    $depth = 0;
+    $pos   = 0;
+    $len   = strlen($condition);
+
+    while ($pos < $len) {
+        $matched = false;
+        foreach ($patterns as $type => $re) {
+            if (!preg_match('/\G(?:' . $re . ')/', $condition, $m, 0, $pos)) {
+                continue;
+            }
+            $tok = $m[0];
+            $pos += strlen($tok);
+            $matched = true;
+
+            if ($type === 'ws') {
+                break;
+            }
+
+            $isOperand = in_array($prev, array('var', 'string', 'number', 'close'), true);
+
+            if ($type === 'bvar' || $type === 'var') {
+                $varName = $type === 'bvar' ? $m[2] : $m[1];
+                if ($varName === 'GLOBALS' || $varName === 'config' || $varName === 'this' || $varName[0] === '_') {
+                    return false;
+                }
+                if ($isOperand) {
+                    return false;
+                }
+                $out[] = $type === 'bvar' ? $m[1] : $tok;
+                $prev = 'var';
+            } elseif ($type === 'string' || $type === 'number') {
+                if ($isOperand) {
+                    return false;
+                }
+                $out[] = $tok;
+                $prev = $type;
+            } elseif ($type === 'open') {
+                // "(" after an operand would be a call: $f(...), "sys"(...), (...)(...)
+                if ($isOperand) {
+                    return false;
+                }
+                $depth++;
+                $out[] = $tok;
+                $prev = 'open';
+            } elseif ($type === 'close') {
+                if (--$depth < 0) {
+                    return false;
+                }
+                $out[] = $tok;
+                $prev = 'close';
+            } else {
+                $out[] = $tok;
+                $prev = 'op';
+            }
+            break;
+        }
+
+        if (!$matched) {
+            return false;
+        }
+    }
+
+    if ($depth !== 0 || empty($out)) {
+        return false;
+    }
+
+    return implode(' ', $out);
 }
 /**
  * If the page content references certain global templates that

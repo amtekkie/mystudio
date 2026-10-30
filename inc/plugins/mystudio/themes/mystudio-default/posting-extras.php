@@ -15,21 +15,100 @@ if (defined('IN_MYBB')) {
     $plugins->add_hook('postbit', 'ms_pex_postbit');
     $plugins->add_hook('pre_output_page', 'ms_pex_pre_output_page');
     $plugins->add_hook('xmlhttp', 'ms_pex_xmlhttp_quicksearch');
+    // Feed / likes AJAX: xmlhttp.php?action=ms_pex&ms_action=...
+    $plugins->add_hook('xmlhttp', 'ms_pex_xmlhttp_ajax');
 }
 
 function ms_posting_extras_start()
 {
+    ms_pex_prepare_feed();
+}
+
+/**
+ * xmlhttp.php?action=ms_pex — AJAX endpoint for feed + like actions.
+ * (Used to live on portal.php, which errors when the portal is disabled.)
+ */
+function ms_pex_xmlhttp_ajax()
+{
     global $mybb;
 
-    ms_pex_ensure_like_table();
-
-    $msAction = $mybb->get_input('ms_action');
-    if (!empty($msAction)) {
-        ms_pex_ajax();
+    if ($mybb->get_input('action') !== 'ms_pex') {
         return;
     }
 
-    ms_pex_prepare_feed();
+    // xmlhttp.php does not fire global_intermediate, so the theme lang pack
+    // (normally loaded by hooks.php) is not loaded yet.
+    ms_pex_load_lang();
+
+    if ($mybb->get_input('ms_action') === '') {
+        ms_pex_json(array('error' => 'Invalid action.'));
+    }
+
+    ms_pex_ajax();
+    exit;
+}
+
+/**
+ * Load the theme's frontend lang strings if hooks.php hasn't already.
+ */
+function ms_pex_load_lang()
+{
+    global $lang;
+
+    if (isset($lang->ms_error_not_logged_in)) {
+        return;
+    }
+
+    $langFile = __DIR__ . '/lang/en/frontend.lang.php';
+    if (file_exists($langFile)) {
+        $l = array();
+        require $langFile;
+        foreach ($l as $key => $val) {
+            $lang->$key = $val;
+        }
+    }
+}
+
+/**
+ * Formatted (escaped) avatar URL for an avatar value — falls back to the
+ * board default avatar and honours the allowremoteavatars setting.
+ */
+function ms_pex_avatar_url($avatar)
+{
+    $av = format_avatar((string)$avatar);
+    return $av['image'];
+}
+
+/**
+ * Can the current user view this thread? Mirrors showthread.php: forum active,
+ * canview + canviewthreads, canonlyviewownthreads, forum (and parent) passwords.
+ *
+ * @param array $thread Must contain fid and uid.
+ */
+function ms_pex_can_view_thread($thread)
+{
+    global $mybb;
+
+    $fid = (int)$thread['fid'];
+    $forum = get_forum($fid);
+    if (!$forum || $forum['type'] !== 'f') {
+        return false;
+    }
+
+    $inactive = get_inactive_forums();
+    if ($inactive && in_array($fid, array_map('intval', explode(',', $inactive)))) {
+        return false;
+    }
+
+    $perms = forum_permissions($fid);
+    if (empty($perms['canview']) || empty($perms['canviewthreads'])) {
+        return false;
+    }
+    if (!empty($perms['canonlyviewownthreads']) && (int)$thread['uid'] !== (int)$mybb->user['uid']) {
+        return false;
+    }
+
+    return forum_password_validated($forum, true, true);
 }
 
 function ms_pex_prepare_feed()
@@ -99,13 +178,24 @@ function ms_pex_prepare_feed()
     $templates->cache['postbit_quote'] = '';
     $templates->cache['postbit_multiquote'] = '';
 
+    $feedRows = array();
     while ($thread = $db->fetch_array($query)) {
         // Check forum-level view permissions
         $fperms = forum_permissions($thread['fid']);
         if (isset($fperms['canonlyviewownthreads']) && $fperms['canonlyviewownthreads'] == 1 && (int)$thread['thread_uid'] != $uid) {
             continue;
         }
+        $feedRows[] = $thread;
+    }
 
+    // One query for the like state of every post on this page
+    $feedPids = array();
+    foreach ($feedRows as $row) {
+        $feedPids[] = !empty($row['pid']) ? (int)$row['pid'] : (int)$row['firstpost'];
+    }
+    ms_pex_prime_likes($feedPids);
+
+    foreach ($feedRows as $thread) {
         $feedItems .= ms_pex_render_thread_postbit($thread, $forum_cache);
     }
 
@@ -262,7 +352,7 @@ function ms_pex_render_page_sidebar($scriptName)
 
     if ($uid > 0) {
         // Member sidebar
-        $ms_sb_avatar = !empty($mybb->user['avatar']) ? htmlspecialchars_uni($mybb->user['avatar']) : 'images/default_avatar.png';
+        $ms_sb_avatar = ms_pex_avatar_url($mybb->user['avatar']);
         $ms_sb_username = htmlspecialchars_uni($mybb->user['username']);
         $ms_sb_profile_url = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . $uid);
         $ms_sb_formatted_name = format_name($mybb->user['username'], $mybb->user['usergroup'], $mybb->user['displaygroup']);
@@ -418,7 +508,14 @@ function ms_pex_render_forum_tree($children, $pid, $bburl, $depth)
 
     return $html;
 }
-function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
+/**
+ * Validate an optional image upload WITHOUT saving it. When valid, appends the
+ * final [img] URL to $message and returns array('dest' => path) so the caller can
+ * save it with ms_pex_store_image_upload() only after the post validated.
+ *
+ * @return array|null null = no file; array('error' => ...) or array('dest' => ...)
+ */
+function ms_pex_prepare_image_upload($fileKey, $prefix, $uid, $fperms, &$message)
 {
     global $mybb, $lang;
 
@@ -426,13 +523,21 @@ function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
         return null;
     }
 
+    if (empty($fperms['canpostattachments'])) {
+        return array('error' => $lang->ms_error_no_attach_permission);
+    }
+
+    if (!isset($_FILES[$fileKey]['error']) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($_FILES[$fileKey]['tmp_name'])) {
+        return array('error' => $lang->ms_error_upload_failed);
+    }
+
     $uploadDir = MYBB_ROOT . 'uploads/posting_extras/';
     if (!is_dir($uploadDir)) {
         @mkdir($uploadDir, 0755, true);
-        $htaccess = $uploadDir . '.htaccess';
-        if (!file_exists($htaccess)) {
-            @file_put_contents($htaccess, "<FilesMatch \"\\.php$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
-        }
+    }
+    $htaccess = $uploadDir . '.htaccess';
+    if (is_dir($uploadDir) && !file_exists($htaccess)) {
+        @file_put_contents($htaccess, "<FilesMatch \"\\.(php|phtml|phar|php[3-8]|shtml)$\">\nOrder Allow,Deny\nDeny from all\n</FilesMatch>\n");
     }
 
     $allowed = array('jpg', 'jpeg', 'png', 'gif', 'webp');
@@ -455,7 +560,7 @@ function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
         return array('error' => $lang->ms_error_image_too_large);
     }
 
-    $filename = $prefix . '_' . $uid . '_' . TIME_NOW . '.' . $ext;
+    $filename = $prefix . '_' . (int)$uid . '_' . TIME_NOW . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
     $dest = $uploadDir . $filename;
 
     $realUploadDir = realpath($uploadDir);
@@ -464,20 +569,38 @@ function ms_pex_handle_image_upload($fileKey, $prefix, $uid, &$message)
         return array('error' => $lang->ms_error_invalid_upload_dir);
     }
 
-    if (!move_uploaded_file($_FILES[$fileKey]['tmp_name'], $dest)) {
-        return array('error' => $lang->ms_error_upload_failed);
-    }
-
     $imgUrl = $mybb->settings['bburl'] . '/uploads/posting_extras/' . $filename;
     $message .= "\n[img]" . $imgUrl . "[/img]";
-    return null;
+    return array('dest' => $dest, 'key' => $fileKey);
 }
+
+/**
+ * Save a prepared upload (after the post validated). Returns true on success.
+ */
+function ms_pex_store_image_upload($prepared)
+{
+    if (!is_array($prepared) || empty($prepared['dest'])) {
+        return true;
+    }
+    return move_uploaded_file($_FILES[$prepared['key']]['tmp_name'], $prepared['dest']);
+}
+
 function ms_pex_postbit($post)
 {
-    global $mybb;
+    global $mybb, $pids;
 
     if (empty($post['pid']) || empty($post['tid'])) {
         return $post;
+    }
+
+    // showthread.php (linear mode) exposes every pid on the page as
+    // "pid IN('1','2',...)" — prime the like cache for all of them in one query.
+    static $primedFromPids = false;
+    if (!$primedFromPids) {
+        $primedFromPids = true;
+        if (is_string($pids) && preg_match_all('/\d+/', $pids, $m) && stripos($pids, 'pid IN') === 0) {
+            ms_pex_prime_likes($m[0]);
+        }
     }
 
     list($likeCount, $likedByUser) = ms_pex_get_like_state('post', (int)$post['pid'], (int)$mybb->user['uid']);
@@ -501,21 +624,20 @@ function ms_pex_parse_message($message, $smilieoff = 0)
     ));
 }
 
-function ms_pex_render_reply($post)
+function ms_pex_render_reply($post, $thread = null)
 {
     global $mybb, $lang, $templates;
     $bburl   = $mybb->settings['bburl'];
-    $uid     = (int)$mybb->user['uid'];
-    $ms_pex_reply_avatar = !empty($post['avatar']) ? htmlspecialchars_uni($post['avatar']) : 'images/default_avatar.png';
-    $ms_pex_reply_username = htmlspecialchars_uni($post['username'] ?: 'Guest');
+    $ms_pex_reply_avatar = ms_pex_avatar_url(isset($post['avatar']) ? $post['avatar'] : '');
+    $ms_pex_reply_username = htmlspecialchars_uni($post['username'] ?: $lang->guest);
     $ms_pex_reply_profile_url = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . (int)$post['uid']);
-    $ms_pex_reply_formatted = format_name(htmlspecialchars_uni($post['username'] ?: 'Guest'), $post['usergroup'], $post['displaygroup']);
+    $ms_pex_reply_formatted = format_name(htmlspecialchars_uni($post['username'] ?: $lang->guest), $post['usergroup'], $post['displaygroup']);
     $ms_pex_reply_message = ms_pex_parse_message($post['message'], isset($post['smilieoff']) ? $post['smilieoff'] : 0);
     $ms_pex_reply_time = my_date('relative', $post['dateline']);
     $ms_pex_pid = (int)$post['pid'];
 
     $ms_pex_reply_delete_btn = '';
-    if ($uid > 0 && ($uid == (int)$post['uid'] || $mybb->usergroup['canmodcp'])) {
+    if ($mybb->user['uid'] > 0 && is_array($thread) && ms_pex_delete_error($post, $thread, false) === '') {
         $ms_pex_reply_delete_btn = '<a href="javascript:void(0)" class="pex-delete-reply text-danger" data-pid="' . $ms_pex_pid . '" title="' . htmlspecialchars_uni($lang->ms_delete_reply) . '"><i class="bi bi-trash"></i></a>';
     }
 
@@ -529,16 +651,16 @@ function ms_pex_ajax()
     $action = $mybb->get_input('ms_action');
     if (empty($action)) return;
 
-    // Guests may view liker lists, but all write actions require login.
-    if ($mybb->user['uid'] <= 0 && $action !== 'load_likes') {
+    // Guests may view liker lists / replies, but all write actions require login.
+    $readOnly = array('load_replies', 'load_likes');
+    if ($mybb->user['uid'] <= 0 && !in_array($action, $readOnly)) {
         ms_pex_json(array('error' => $lang->ms_error_not_logged_in), 403);
         return;
     }
 
-    // Verify post key for write actions
-    $readOnly = array('load_replies', 'load_likes');
+    // Verify post key for write actions (POST only)
     if (!in_array($action, $readOnly)) {
-        if (!verify_post_check($mybb->get_input('my_post_key'), true)) {
+        if ($mybb->request_method !== 'post' || !verify_post_check($mybb->get_input('my_post_key'), true)) {
             ms_pex_json(array('error' => $lang->ms_error_invalid_token), 403);
             return;
         }
@@ -566,11 +688,73 @@ function ms_pex_ajax()
         case 'load_likes':
             ms_pex_load_likes();
             break;
+        default:
+            ms_pex_json(array('error' => $lang->ms_error_invalid_target));
     }
 }
+
+/**
+ * Forum-level posting guards shared by create_thread / create_reply
+ * (mirrors newthread.php / newreply.php). Returns '' when OK, else an error.
+ */
+function ms_pex_forum_post_error($fid, $perm)
+{
+    global $mybb, $lang;
+
+    $forum = get_forum($fid);
+    if (!$forum || $forum['type'] !== 'f' || !empty($forum['linkto']) || (int)$forum['open'] === 0) {
+        return $lang->ms_error_forum_closed;
+    }
+
+    $inactive = get_inactive_forums();
+    if ($inactive && in_array((int)$fid, array_map('intval', explode(',', $inactive)))) {
+        return $lang->ms_error_forum_closed;
+    }
+
+    $fperms = forum_permissions($fid);
+    if (empty($fperms['canview']) || empty($fperms[$perm]) || (int)$mybb->user['suspendposting'] === 1) {
+        return $perm === 'canpostthreads' ? $lang->ms_error_no_post_permission : $lang->ms_error_no_reply_permission;
+    }
+
+    if (!forum_password_validated($forum, true, true)) {
+        return $lang->ms_error_forum_password;
+    }
+
+    return '';
+}
+
+/**
+ * Can the current user reply to this thread? '' when OK, else an error.
+ */
+function ms_pex_reply_error($thread)
+{
+    global $mybb, $lang;
+
+    $fid = (int)$thread['fid'];
+    if ((int)$thread['visible'] !== 1 || !ms_pex_can_view_thread($thread)) {
+        return $lang->ms_error_thread_not_found;
+    }
+
+    $err = ms_pex_forum_post_error($fid, 'canpostreplys');
+    if ($err !== '') {
+        return $err;
+    }
+
+    $fperms = forum_permissions($fid);
+    if (!empty($fperms['canonlyreplyownthreads']) && (int)$thread['uid'] !== (int)$mybb->user['uid']) {
+        return $lang->ms_error_no_reply_permission;
+    }
+
+    if ((int)$thread['closed'] === 1 && !is_moderator($fid, 'canpostclosedthreads')) {
+        return $lang->ms_error_thread_closed;
+    }
+
+    return '';
+}
+
 function ms_pex_create_thread()
 {
-    global $mybb, $db, $cache, $lang;
+    global $mybb, $db, $cache, $lang, $session;
 
     $uid     = (int)$mybb->user['uid'];
     $fid     = $mybb->get_input('fid', MyBB::INPUT_INT);
@@ -586,17 +770,18 @@ function ms_pex_create_thread()
         return;
     }
 
-    // Verify user can post in this forum
-    $fperms = forum_permissions($fid);
-    if (empty($fperms['canpostthreads'])) {
-        ms_pex_json(array('error' => $lang->ms_error_no_post_permission));
+    // Same guards as newthread.php
+    $err = ms_pex_forum_post_error($fid, 'canpostthreads');
+    if ($err !== '') {
+        ms_pex_json(array('error' => $err));
         return;
     }
+    $fperms = forum_permissions($fid);
 
-    // Handle optional image upload
-    $uploadErr = ms_pex_handle_image_upload('post_image', 'post', $uid, $message);
-    if ($uploadErr !== null) {
-        ms_pex_json($uploadErr);
+    // Validate the optional image (saved only after the thread validates)
+    $upload = ms_pex_prepare_image_upload('post_image', 'post', $uid, $fperms, $message);
+    if (isset($upload['error'])) {
+        ms_pex_json($upload);
         return;
     }
 
@@ -615,12 +800,13 @@ function ms_pex_create_thread()
     $posthandler->action = 'thread';
 
     $threadData = array(
-        'fid'      => $fid,
-        'subject'  => $subject,
-        'uid'      => $uid,
-        'username' => $mybb->user['username'],
-        'message'  => $message,
-        'options'  => array(
+        'fid'       => $fid,
+        'subject'   => $subject,
+        'uid'       => $uid,
+        'username'  => $mybb->user['username'],
+        'message'   => $message,
+        'ipaddress' => isset($session->packedip) ? $session->packedip : '',
+        'options'   => array(
             'signature'      => 1,
             'disablesmilies' => 0,
         ),
@@ -631,6 +817,11 @@ function ms_pex_create_thread()
     if (!$posthandler->validate_thread()) {
         $errors = $posthandler->get_friendly_errors();
         ms_pex_json(array('error' => implode(', ', $errors)));
+        return;
+    }
+
+    if (!ms_pex_store_image_upload($upload)) {
+        ms_pex_json(array('error' => $lang->ms_error_upload_failed));
         return;
     }
 
@@ -652,10 +843,14 @@ function ms_pex_create_thread()
     ");
     $thread = $db->fetch_array($query);
 
-    if (!$thread) {
+    if (!$thread || empty($threadInfo['visible']) || (int)$threadInfo['visible'] !== 1) {
         ms_pex_json(array('success' => true, 'html' => '', 'tid' => $tid));
         return;
     }
+
+    // build_postbit() needs these outside of a showthread request (e.g. xmlhttp.php)
+    require_once MYBB_ROOT . 'inc/functions_post.php';
+    $lang->load('showthread');
 
     $html = ms_pex_render_thread_postbit($thread, $forum_cache);
 
@@ -663,7 +858,7 @@ function ms_pex_create_thread()
 }
 function ms_pex_create_reply()
 {
-    global $mybb, $db, $lang;
+    global $mybb, $db, $lang, $session;
 
     $uid     = (int)$mybb->user['uid'];
     $tid     = $mybb->get_input('tid', MyBB::INPUT_INT);
@@ -679,25 +874,24 @@ function ms_pex_create_reply()
         return;
     }
 
-    // Get thread info
-    $query = $db->simple_select('threads', 'tid, fid, subject, closed', "tid={$tid} AND visible='1'", array('limit' => 1));
-    $thread = $db->fetch_array($query);
+    $thread = get_thread($tid);
     if (!$thread) {
         ms_pex_json(array('error' => $lang->ms_error_thread_not_found));
         return;
     }
 
-    // Check permissions
-    $fperms = forum_permissions($thread['fid']);
-    if (empty($fperms['canpostreplys'])) {
-        ms_pex_json(array('error' => $lang->ms_error_no_reply_permission));
+    // Same guards as newreply.php
+    $err = ms_pex_reply_error($thread);
+    if ($err !== '') {
+        ms_pex_json(array('error' => $err));
         return;
     }
+    $fperms = forum_permissions((int)$thread['fid']);
 
-    // Handle optional image upload
-    $uploadErr = ms_pex_handle_image_upload('reply_image', 'reply', $uid, $message);
-    if ($uploadErr !== null) {
-        ms_pex_json($uploadErr);
+    // Validate the optional image (saved only after the reply validates)
+    $upload = ms_pex_prepare_image_upload('reply_image', 'reply', $uid, $fperms, $message);
+    if (isset($upload['error'])) {
+        ms_pex_json($upload);
         return;
     }
 
@@ -707,14 +901,15 @@ function ms_pex_create_reply()
     $posthandler->action = 'post';
 
     $postData = array(
-        'tid'      => $tid,
-        'replyto'  => 0,
-        'fid'      => (int)$thread['fid'],
-        'subject'  => $lang->ms_reply_prefix . ' ' . $thread['subject'],
-        'uid'      => $uid,
-        'username' => $mybb->user['username'],
-        'message'  => $message,
-        'options'  => array(
+        'tid'       => $tid,
+        'replyto'   => 0,
+        'fid'       => (int)$thread['fid'],
+        'subject'   => $lang->ms_reply_prefix . ' ' . $thread['subject'],
+        'uid'       => $uid,
+        'username'  => $mybb->user['username'],
+        'message'   => $message,
+        'ipaddress' => isset($session->packedip) ? $session->packedip : '',
+        'options'   => array(
             'signature'      => 1,
             'disablesmilies' => 0,
         ),
@@ -728,6 +923,11 @@ function ms_pex_create_reply()
         return;
     }
 
+    if (!ms_pex_store_image_upload($upload)) {
+        ms_pex_json(array('error' => $lang->ms_error_upload_failed));
+        return;
+    }
+
     $postInfo = $posthandler->insert_post();
     $pid = (int)$postInfo['pid'];
 
@@ -737,6 +937,7 @@ function ms_pex_create_reply()
         'uid'          => $uid,
         'message'      => $message,
         'dateline'     => TIME_NOW,
+        'visible'      => isset($postInfo['visible']) ? (int)$postInfo['visible'] : 1,
         'username'     => $mybb->user['username'],
         'usergroup'    => $mybb->user['usergroup'],
         'displaygroup' => $mybb->user['displaygroup'],
@@ -744,7 +945,7 @@ function ms_pex_create_reply()
         'smilieoff'    => 0,
     );
 
-    $html = ms_pex_render_reply($reply);
+    $html = ms_pex_render_reply($reply, $thread);
     ms_pex_json(array('success' => true, 'html' => $html, 'pid' => $pid));
 }
 function ms_pex_load_replies()
@@ -757,19 +958,18 @@ function ms_pex_load_replies()
         return;
     }
 
-    // Get thread & verify visibility
-    $tQuery = $db->simple_select('threads', 'tid, fid, firstpost', "tid={$tid} AND visible='1'", array('limit' => 1));
-    $thread = $db->fetch_array($tQuery);
-    if (!$thread) {
+    // Get thread & verify visibility + forum permissions (incl. password, own-threads-only)
+    $thread = get_thread($tid);
+    if (!$thread || (int)$thread['visible'] !== 1 || !ms_pex_can_view_thread($thread)) {
         ms_pex_json(array('error' => $lang->ms_error_thread_not_found));
         return;
     }
 
     $firstPost = (int)$thread['firstpost'];
 
-    // Get replies (excluding first post)
+    // Get replies (excluding first post). Unapproved / soft-deleted posts are never listed.
     $query = $db->query("
-        SELECT p.pid, p.uid, p.message, p.dateline, p.smilieoff,
+        SELECT p.pid, p.uid, p.message, p.dateline, p.smilieoff, p.visible,
                u.username, u.usergroup, u.displaygroup, u.avatar
         FROM " . TABLE_PREFIX . "posts p
         LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = p.uid
@@ -781,20 +981,73 @@ function ms_pex_load_replies()
     $html = '';
     $count = 0;
     while ($post = $db->fetch_array($query)) {
-        $html .= ms_pex_render_reply($post);
+        $html .= ms_pex_render_reply($post, $thread);
         $count++;
     }
 
-    // Reply compose form (logged in only)
+    // Reply compose form (only for users who may reply here)
     $composeHtml = '';
-    if ($mybb->user['uid'] > 0) {
-        $ms_pex_compose_avatar = htmlspecialchars_uni(!empty($mybb->user['avatar']) ? $mybb->user['avatar'] : 'images/default_avatar.png');
+    if ($mybb->user['uid'] > 0 && ms_pex_reply_error($thread) === '') {
+        $ms_pex_compose_avatar = ms_pex_avatar_url($mybb->user['avatar']);
         $ms_pex_compose_tid = $tid;
         eval("\$composeHtml = \"" . $templates->get("pex_reply_compose") . "\";");
     }
 
     ms_pex_json(array('success' => true, 'html' => $html . $composeHtml, 'count' => $count));
 }
+
+/**
+ * Is the current user a moderator allowed to (soft) delete here?
+ */
+function ms_pex_is_delete_mod($fid, $isThread)
+{
+    if ($isThread) {
+        return is_moderator($fid, 'candeletethreads') || is_moderator($fid, 'cansoftdeletethreads');
+    }
+    return is_moderator($fid, 'candeleteposts') || is_moderator($fid, 'cansoftdeleteposts');
+}
+
+/**
+ * Delete permission check (mirrors editpost.php deletepost). Moderators of the
+ * forum may always delete; owners need the usergroup permission, an open
+ * thread, a visible post and must be within the edit time limit.
+ *
+ * @return string '' when allowed, else an error message.
+ */
+function ms_pex_delete_error($post, $thread, $isThread)
+{
+    global $mybb, $lang;
+
+    $fid = (int)$thread['fid'];
+    if (ms_pex_is_delete_mod($fid, $isThread)) {
+        return '';
+    }
+
+    if ((int)$mybb->user['uid'] <= 0 || (int)$post['uid'] !== (int)$mybb->user['uid']) {
+        return $lang->ms_error_permission_denied;
+    }
+
+    $fperms = forum_permissions($fid);
+    if ($isThread ? empty($fperms['candeletethreads']) : empty($fperms['candeleteposts'])) {
+        return $lang->ms_error_permission_denied;
+    }
+
+    if ((int)$thread['closed'] === 1) {
+        return $lang->ms_error_thread_closed;
+    }
+
+    if (isset($post['visible']) && (int)$post['visible'] !== 1) {
+        return $lang->ms_error_permission_denied;
+    }
+
+    $limit = (int)$mybb->usergroup['edittimelimit'];
+    if ($limit > 0 && (int)$post['dateline'] < (TIME_NOW - $limit * 60)) {
+        return $lang->ms_error_delete_time_limit;
+    }
+
+    return '';
+}
+
 function ms_pex_delete_thread()
 {
     global $mybb, $db, $lang;
@@ -802,29 +1055,63 @@ function ms_pex_delete_thread()
     $uid = (int)$mybb->user['uid'];
     $tid = $mybb->get_input('tid', MyBB::INPUT_INT);
 
-    $query = $db->simple_select('threads', 'uid, fid', "tid={$tid}", array('limit' => 1));
-    $thread = $db->fetch_array($query);
-    if (!$thread) {
+    $thread = $tid > 0 ? get_thread($tid) : false;
+    if (!$thread || !ms_pex_can_view_thread($thread)) {
         ms_pex_json(array('error' => $lang->ms_error_thread_not_found));
         return;
     }
 
-    // Verify ownership or mod
-    if ((int)$thread['uid'] !== $uid && !$mybb->usergroup['canmodcp']) {
-        ms_pex_json(array('error' => $lang->ms_error_permission_denied));
+    $fid = (int)$thread['fid'];
+    $isMod = ms_pex_is_delete_mod($fid, true);
+
+    $firstPost = get_post((int)$thread['firstpost']);
+    if (!$firstPost) {
+        $firstPost = array('uid' => $thread['uid'], 'visible' => $thread['visible'], 'dateline' => $thread['dateline']);
+    }
+
+    $err = ms_pex_delete_error($firstPost, $thread, true);
+    if ($err !== '') {
+        ms_pex_json(array('error' => $err));
         return;
+    }
+
+    if ((int)$thread['visible'] === -1 && $mybb->settings['soft_delete'] == 1) {
+        ms_pex_json(array('error' => $lang->ms_error_already_deleted));
+        return;
+    }
+
+    $soft = ($mybb->settings['soft_delete'] == 1 || is_moderator($fid, 'cansoftdeletethreads'));
+
+    // A non-moderator owner may never hard-delete a thread that holds other members' replies
+    if (!$soft && !$isMod) {
+        $q = $db->simple_select('posts', 'COUNT(pid) AS cnt', "tid={$tid} AND uid != " . (int)$thread['uid']);
+        if ((int)$db->fetch_field($q, 'cnt') > 0) {
+            ms_pex_json(array('error' => $lang->ms_error_thread_has_replies));
+            return;
+        }
     }
 
     require_once MYBB_ROOT . 'inc/class_moderation.php';
     $moderation = new Moderation;
 
-    if ($mybb->settings['soft_delete'] == 1 || is_moderator((int)$thread['fid'], 'cansoftdeletethreads')) {
+    if ($soft) {
         $moderation->soft_delete_threads(array($tid));
     } else {
+        // Collect pids before the posts are gone, then drop their likes
+        $pidList = array();
+        $q = $db->simple_select('posts', 'pid', "tid={$tid}");
+        while ($r = $db->fetch_array($q)) {
+            $pidList[] = (int)$r['pid'];
+        }
         $moderation->delete_thread($tid);
+        if ($pidList && ms_pex_like_table_ready()) {
+            $db->delete_query('ms_pex_likes', "target_type='post' AND target_id IN (" . implode(',', $pidList) . ")");
+        }
     }
 
-    $db->delete_query('ms_pex_likes', "target_type='post' AND target_id IN (SELECT pid FROM " . TABLE_PREFIX . "posts WHERE tid={$tid})");
+    if ($isMod) {
+        log_moderator_action(array('fid' => $fid, 'tid' => $tid), $soft ? $lang->ms_modlog_thread_soft_deleted : $lang->ms_modlog_thread_deleted);
+    }
 
     ms_pex_json(array('success' => true));
 }
@@ -832,26 +1119,51 @@ function ms_pex_delete_reply()
 {
     global $mybb, $db, $lang;
 
-    $uid = (int)$mybb->user['uid'];
     $pid = $mybb->get_input('pid', MyBB::INPUT_INT);
 
-    $query = $db->simple_select('posts', 'uid, tid, fid', "pid={$pid}", array('limit' => 1));
-    $post = $db->fetch_array($query);
-    if (!$post) {
+    $post = $pid > 0 ? get_post($pid) : false;
+    $thread = $post ? get_thread((int)$post['tid']) : false;
+    if (!$post || !$thread || !ms_pex_can_view_thread($thread)) {
         ms_pex_json(array('error' => $lang->ms_error_reply_not_found));
         return;
     }
 
-    // Verify ownership or mod
-    if ((int)$post['uid'] !== $uid && !$mybb->usergroup['canmodcp']) {
-        ms_pex_json(array('error' => $lang->ms_error_permission_denied));
+    // The first post is the thread — thread deletion rules apply
+    if ((int)$thread['firstpost'] === $pid) {
+        ms_pex_json(array('error' => $lang->ms_error_delete_first_post));
         return;
     }
 
-    // Soft delete
+    $fid = (int)$thread['fid'];
+    $isMod = ms_pex_is_delete_mod($fid, false);
+
+    $err = ms_pex_delete_error($post, $thread, false);
+    if ($err !== '') {
+        ms_pex_json(array('error' => $err));
+        return;
+    }
+
+    if ((int)$post['visible'] === -1 && $mybb->settings['soft_delete'] == 1) {
+        ms_pex_json(array('error' => $lang->ms_error_already_deleted));
+        return;
+    }
+
     require_once MYBB_ROOT . 'inc/class_moderation.php';
     $moderation = new Moderation;
-    $moderation->soft_delete_posts(array($pid));
+
+    $soft = ($mybb->settings['soft_delete'] == 1 || is_moderator($fid, 'cansoftdeleteposts'));
+    if ($soft) {
+        $moderation->soft_delete_posts(array($pid));
+    } else {
+        $moderation->delete_post($pid);
+        if (ms_pex_like_table_ready()) {
+            $db->delete_query('ms_pex_likes', "target_type='post' AND target_id={$pid}");
+        }
+    }
+
+    if ($isMod) {
+        log_moderator_action(array('fid' => $fid, 'tid' => (int)$thread['tid'], 'pid' => $pid), $soft ? $lang->ms_modlog_post_soft_deleted : $lang->ms_modlog_post_deleted);
+    }
 
     ms_pex_json(array('success' => true));
 }
@@ -880,24 +1192,116 @@ function ms_pex_ensure_like_table()
     $done = true;
 }
 
-function ms_pex_get_like_state($targetType, $targetId, $uid = 0)
+/**
+ * Make sure the likes table exists. The SHOW TABLES check runs once; the result
+ * is remembered in datacache 'ms_pex_schema' so normal page views do no DDL checks.
+ */
+function ms_pex_like_table_ready()
 {
-    global $db;
+    global $cache;
+    static $ready = false;
+    if ($ready) {
+        return true;
+    }
 
-    ms_pex_ensure_like_table();
+    $schema = $cache->read('ms_pex_schema');
+    if (empty($schema['likes'])) {
+        ms_pex_ensure_like_table();
+        if (!is_array($schema)) {
+            $schema = array();
+        }
+        $schema['likes'] = 1;
+        $cache->update('ms_pex_schema', $schema);
+    }
 
-    $targetType = $db->escape_string($targetType);
+    $ready = true;
+    return true;
+}
+
+/**
+ * Load like counts + the viewer's own likes for many posts in ONE query and
+ * keep them in a per-request cache used by ms_pex_get_like_state().
+ */
+function ms_pex_prime_likes($pids)
+{
+    global $db, $mybb;
+
+    if (!isset($GLOBALS['ms_pex_like_cache'])) {
+        $GLOBALS['ms_pex_like_cache'] = array();
+    }
+    $likeCache = &$GLOBALS['ms_pex_like_cache'];
+
+    $need = array();
+    foreach ((array)$pids as $pid) {
+        $pid = (int)$pid;
+        if ($pid > 0 && !isset($likeCache[$pid])) {
+            $need[$pid] = $pid;
+        }
+    }
+    if (empty($need)) {
+        return;
+    }
+
+    ms_pex_like_table_ready();
+
+    foreach ($need as $pid) {
+        $likeCache[$pid] = array(0, false);
+    }
+
+    $uid = (int)$mybb->user['uid'];
+    $query = $db->query("
+        SELECT target_id, COUNT(lid) AS like_count, SUM(CASE WHEN uid={$uid} THEN 1 ELSE 0 END) AS mine
+        FROM " . TABLE_PREFIX . "ms_pex_likes
+        WHERE target_type='post' AND target_id IN (" . implode(',', $need) . ")
+        GROUP BY target_id
+    ");
+    while ($row = $db->fetch_array($query)) {
+        $likeCache[(int)$row['target_id']] = array((int)$row['like_count'], $uid > 0 && (int)$row['mine'] > 0);
+    }
+}
+
+function ms_pex_get_like_state($targetType, $targetId, $uid = 0, $fresh = false)
+{
+    global $mybb;
+
     $targetId = (int)$targetId;
-    $countQuery = $db->simple_select('ms_pex_likes', 'COUNT(lid) AS like_count', "target_type='{$targetType}' AND target_id={$targetId}");
-    $likeCount = (int)$db->fetch_field($countQuery, 'like_count');
+    if ($targetType !== 'post' || $targetId <= 0) {
+        return array(0, false);
+    }
 
-    $liked = false;
-    if ($uid > 0) {
-        $likedQuery = $db->simple_select('ms_pex_likes', 'lid', "target_type='{$targetType}' AND target_id={$targetId} AND uid=" . (int)$uid, array('limit' => 1));
-        $liked = (bool)$db->fetch_field($likedQuery, 'lid');
+    if ($fresh && isset($GLOBALS['ms_pex_like_cache'][$targetId])) {
+        unset($GLOBALS['ms_pex_like_cache'][$targetId]);
+    }
+    ms_pex_prime_likes(array($targetId));
+
+    list($likeCount, $liked) = $GLOBALS['ms_pex_like_cache'][$targetId];
+    // The cache is built for the current viewer
+    if ((int)$uid !== (int)$mybb->user['uid']) {
+        $liked = false;
     }
 
     return array($likeCount, $liked);
+}
+
+/**
+ * Fetch a post that the current user may see (visible post in a visible
+ * thread of a forum they can read). Returns the post row or false.
+ */
+function ms_pex_get_viewable_post($pid)
+{
+    $pid = (int)$pid;
+    if ($pid <= 0) {
+        return false;
+    }
+    $post = get_post($pid);
+    if (!$post || (int)$post['visible'] !== 1) {
+        return false;
+    }
+    $thread = get_thread((int)$post['tid']);
+    if (!$thread || (int)$thread['visible'] !== 1 || !ms_pex_can_view_thread($thread)) {
+        return false;
+    }
+    return $post;
 }
 
 function ms_pex_render_like_controls($targetType, $targetId, $likeCount, $likedByUser = false, $bburl = '', $postKey = '')
@@ -921,8 +1325,6 @@ function ms_pex_toggle_like()
 {
     global $mybb, $db, $lang;
 
-    ms_pex_ensure_like_table();
-
     $uid = (int)$mybb->user['uid'];
     if ($uid <= 0) {
         ms_pex_json(array('error' => $lang->ms_error_not_logged_in), 403);
@@ -931,13 +1333,14 @@ function ms_pex_toggle_like()
 
     $targetType = trim($mybb->get_input('target_type'));
     $targetId = $mybb->get_input('target_id', MyBB::INPUT_INT);
-    if ($targetType !== 'post' || $targetId <= 0) {
+    if ($targetType !== 'post' || !ms_pex_get_viewable_post($targetId)) {
         ms_pex_json(array('error' => $lang->ms_error_invalid_target));
         return;
     }
 
-    $targetType = $db->escape_string($targetType);
-    $existingQuery = $db->simple_select('ms_pex_likes', 'lid', "target_type='{$targetType}' AND target_id={$targetId} AND uid={$uid}", array('limit' => 1));
+    ms_pex_like_table_ready();
+
+    $existingQuery = $db->simple_select('ms_pex_likes', 'lid', "target_type='post' AND target_id={$targetId} AND uid={$uid}", array('limit' => 1));
     $existing = (int)$db->fetch_field($existingQuery, 'lid');
 
     if ($existing > 0) {
@@ -945,7 +1348,7 @@ function ms_pex_toggle_like()
         $liked = false;
     } else {
         $db->insert_query('ms_pex_likes', array(
-            'target_type' => $targetType,
+            'target_type' => 'post',
             'target_id'   => $targetId,
             'uid'         => $uid,
             'dateline'    => TIME_NOW,
@@ -953,7 +1356,7 @@ function ms_pex_toggle_like()
         $liked = true;
     }
 
-    list($likeCount) = ms_pex_get_like_state('post', $targetId, $uid);
+    list($likeCount) = ms_pex_get_like_state('post', $targetId, $uid, true);
     ms_pex_json(array(
         'success' => true,
         'liked' => $liked,
@@ -965,23 +1368,30 @@ function ms_pex_load_likes()
 {
     global $mybb, $db, $lang, $templates;
 
-    ms_pex_ensure_like_table();
-
     $targetType = trim($mybb->get_input('target_type'));
     $targetId = $mybb->get_input('target_id', MyBB::INPUT_INT);
-    if ($targetType !== 'post' || $targetId <= 0) {
+    if ($targetType !== 'post' || !ms_pex_get_viewable_post($targetId)) {
         ms_pex_json(array('error' => $lang->ms_error_invalid_target));
         return;
     }
 
+    ms_pex_like_table_ready();
+
     $bburl = $mybb->settings['bburl'];
-    $query = $db->query("\n        SELECT l.uid, l.dateline, u.username, u.usergroup, u.displaygroup, u.avatar\n        FROM " . TABLE_PREFIX . "ms_pex_likes l\n        LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = l.uid\n        WHERE l.target_type='" . $db->escape_string($targetType) . "' AND l.target_id={$targetId}\n        ORDER BY l.dateline DESC\n        LIMIT 50\n    ");
+    $query = $db->query("
+        SELECT l.uid, l.dateline, u.username, u.usergroup, u.displaygroup, u.avatar
+        FROM " . TABLE_PREFIX . "ms_pex_likes l
+        LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = l.uid
+        WHERE l.target_type='post' AND l.target_id={$targetId}
+        ORDER BY l.dateline DESC
+        LIMIT 50
+    ");
 
     $html = '';
     while ($row = $db->fetch_array($query)) {
-        $ms_liker_avatar = !empty($row['avatar']) ? htmlspecialchars_uni($row['avatar']) : 'images/default_avatar.png';
+        $ms_liker_avatar = ms_pex_avatar_url($row['avatar']);
         $ms_liker_profile_url = htmlspecialchars_uni($bburl . '/member.php?action=profile&uid=' . (int)$row['uid']);
-        $ms_liker_username = htmlspecialchars_uni($row['username'] ?: $mybb->lang->guest);
+        $ms_liker_username = htmlspecialchars_uni($row['username'] ?: $lang->guest);
         $ms_liker_formatted = format_name($ms_liker_username, $row['usergroup'], $row['displaygroup']);
         eval("\$html .= \"" . $templates->get("pex_like_user") . "\";");
     }
@@ -1001,6 +1411,64 @@ function ms_pex_json($data, $code = 200)
     echo json_encode($data);
     exit;
 }
+/**
+ * Quick-search flood control: max 30 requests per 60 s per member / IP.
+ * State is a small JSON file in cache/ (hashed keys, pruned every call).
+ * Fails open if the file can't be used. Admins are exempt.
+ */
+function ms_pex_quicksearch_flood_ok()
+{
+    global $mybb;
+
+    if ($mybb->usergroup['cancp'] == 1) {
+        return true;
+    }
+
+    $limit  = 30;
+    $window = 60;
+    $key = md5(((int)$mybb->user['uid'] > 0 ? 'u' . (int)$mybb->user['uid'] : 'ip' . get_ip()));
+
+    $fh = @fopen(MYBB_ROOT . 'cache/ms_quicksearch_flood.json', 'c+');
+    if (!$fh) {
+        return true;
+    }
+    if (!flock($fh, LOCK_EX)) {
+        fclose($fh);
+        return true;
+    }
+
+    $data = json_decode((string)stream_get_contents($fh), true);
+    if (!is_array($data)) {
+        $data = array();
+    }
+    $cut = TIME_NOW - $window;
+    foreach ($data as $k => $entry) {
+        if (!is_array($entry) || (int)$entry[0] < $cut) {
+            unset($data[$k]);
+        }
+    }
+
+    $ok = true;
+    if (isset($data[$key])) {
+        if ((int)$data[$key][1] >= $limit) {
+            $ok = false;
+        } else {
+            $data[$key][1] = (int)$data[$key][1] + 1;
+        }
+    } else {
+        $data[$key] = array(TIME_NOW, 1);
+    }
+
+    ftruncate($fh, 0);
+    rewind($fh);
+    fwrite($fh, json_encode($data));
+    fflush($fh);
+    flock($fh, LOCK_UN);
+    fclose($fh);
+
+    return $ok;
+}
+
 function ms_pex_xmlhttp_quicksearch()
 {
     global $mybb, $db, $charset;
@@ -1011,83 +1479,108 @@ function ms_pex_xmlhttp_quicksearch()
 
     header('Content-Type: application/json; charset=' . $charset);
 
+    $empty = array('threads' => array(), 'posts' => array(), 'users' => array(), 'announcements' => array());
+
     $q = trim($mybb->get_input('q'));
-    if (mb_strlen($q) < 3) {
-        echo json_encode(array('threads' => array(), 'posts' => array(), 'users' => array(), 'announcements' => array()));
+    if ($mybb->usergroup['cansearch'] != 1 || my_strlen($q) < 3) {
+        echo json_encode($empty);
+        exit;
+    }
+    if (my_strlen($q) > 100) {
+        $q = my_substr($q, 0, 100);
+    }
+
+    if (!ms_pex_quicksearch_flood_ok()) {
+        echo json_encode($empty);
         exit;
     }
 
     $bburl = $mybb->settings['bburl'];
+    $uid = (int)$mybb->user['uid'];
     $escaped = $db->escape_string_like($q);
-    $safe_q  = $db->escape_string($q);
 
-    // Build list of forums user can search
+    // Forums the user may not search: unviewable (incl. canviewthreads + passwords),
+    // inactive, and per-forum cansearch=0.
     require_once MYBB_ROOT . 'inc/functions_search.php';
-    $visible_fids = array();
-    $forums = $db->simple_select('forums', 'fid', "active=1 AND type='f'");
-    while ($f = $db->fetch_array($forums)) {
-        $perms = forum_permissions((int)$f['fid']);
-        if (!empty($perms['canview']) && !empty($perms['cansearch'])) {
-            $visible_fids[] = (int)$f['fid'];
+    $exclude = array();
+    foreach (array(get_unviewable_forums(true), get_inactive_forums(), get_unsearchable_forums()) as $list) {
+        if ($list && preg_match_all('/\d+/', (string)$list, $m)) {
+            foreach ($m[0] as $fid) {
+                $exclude[(int)$fid] = (int)$fid;
+            }
         }
     }
 
-    $result = array();
-    if (!empty($visible_fids)) {
-        $fid_list = implode(',', $visible_fids);
-        $query = $db->query("
-            SELECT t.tid, t.subject, t.replies, t.views, t.dateline, u.username
-            FROM " . TABLE_PREFIX . "threads t
-            LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = t.uid
-            WHERE t.visible = 1
-              AND t.fid IN ({$fid_list})
-              AND t.subject LIKE '%{$escaped}%'
-            ORDER BY t.dateline DESC
-            LIMIT 5
-        ");
-        $threads = array();
-        while ($row = $db->fetch_array($query)) {
-            $threads[] = array(
-                'title' => htmlspecialchars_uni($row['subject']),
-                'url'   => $bburl . '/' . get_thread_link($row['tid']),
-                'sub'   => htmlspecialchars_uni($row['username']) . ' &middot; ' . my_number_format($row['replies']) . ' replies',
-            );
-        }
-        $result['threads'] = $threads;
-        $query = $db->query("
-            SELECT p.pid, p.tid, p.message, p.dateline, t.subject, u.username
-            FROM " . TABLE_PREFIX . "posts p
-            INNER JOIN " . TABLE_PREFIX . "threads t ON t.tid = p.tid
-            LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = p.uid
-            WHERE p.visible = 1
-              AND t.visible = 1
-              AND p.fid IN ({$fid_list})
-              AND p.message LIKE '%{$escaped}%'
-            ORDER BY p.dateline DESC
-            LIMIT 5
-        ");
-        $posts = array();
-        while ($row = $db->fetch_array($query)) {
-            // Extract snippet around the match
-            $plain = strip_tags(str_replace(array('[', ']'), array('<', '>'), $row['message']));
-            $plain = preg_replace('/\s+/', ' ', $plain);
-            $pos = mb_stripos($plain, $q);
-            $start = max(0, $pos - 40);
-            $snippet = mb_substr($plain, $start, 100);
-            if ($start > 0) $snippet = '...' . $snippet;
-            if (mb_strlen($plain) > $start + 100) $snippet .= '...';
-
-            $posts[] = array(
-                'title' => htmlspecialchars_uni($snippet),
-                'url'   => $bburl . '/' . get_post_link($row['pid'], $row['tid']) . '#pid' . $row['pid'],
-                'sub'   => 'in ' . htmlspecialchars_uni($row['subject']),
-            );
-        }
-        $result['posts'] = $posts;
-    } else {
-        $result['threads'] = array();
-        $result['posts'] = array();
+    // Forums where only own threads are visible
+    global $forum_cache;
+    if (!is_array($forum_cache)) {
+        cache_forums();
     }
+    $onlyOwn = array();
+    foreach ((array)$forum_cache as $fid => $f) {
+        $fid = (int)$fid;
+        if (isset($exclude[$fid])) {
+            continue;
+        }
+        $perms = forum_permissions($fid);
+        if (!empty($perms['canonlyviewownthreads'])) {
+            $onlyOwn[] = $fid;
+        }
+    }
+
+    $fidWhere = $exclude ? ' AND t.fid NOT IN (' . implode(',', $exclude) . ')' : '';
+    if ($onlyOwn) {
+        $fidWhere .= ' AND (t.fid NOT IN (' . implode(',', $onlyOwn) . ') OR t.uid=' . $uid . ')';
+    }
+
+    $result = $empty;
+
+    $query = $db->query("
+        SELECT t.tid, t.subject, t.replies, t.views, t.dateline, u.username
+        FROM " . TABLE_PREFIX . "threads t
+        LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = t.uid
+        WHERE t.visible = 1
+          AND t.closed NOT LIKE 'moved|%'{$fidWhere}
+          AND t.subject LIKE '%{$escaped}%'
+        ORDER BY t.dateline DESC
+        LIMIT 5
+    ");
+    while ($row = $db->fetch_array($query)) {
+        $result['threads'][] = array(
+            'title' => htmlspecialchars_uni($row['subject']),
+            'url'   => $bburl . '/' . get_thread_link($row['tid']),
+            'sub'   => htmlspecialchars_uni($row['username']) . ' &middot; ' . my_number_format($row['replies']) . ' replies',
+        );
+    }
+
+    $query = $db->query("
+        SELECT p.pid, p.tid, p.message, p.dateline, t.subject, u.username
+        FROM " . TABLE_PREFIX . "posts p
+        INNER JOIN " . TABLE_PREFIX . "threads t ON t.tid = p.tid
+        LEFT JOIN " . TABLE_PREFIX . "users u ON u.uid = p.uid
+        WHERE p.visible = 1
+          AND t.visible = 1{$fidWhere}
+          AND p.message LIKE '%{$escaped}%'
+        ORDER BY p.dateline DESC
+        LIMIT 5
+    ");
+    while ($row = $db->fetch_array($query)) {
+        // Extract snippet around the match
+        $plain = strip_tags(str_replace(array('[', ']'), array('<', '>'), $row['message']));
+        $plain = preg_replace('/\s+/', ' ', $plain);
+        $pos = mb_stripos($plain, $q);
+        $start = max(0, (int)$pos - 40);
+        $snippet = mb_substr($plain, $start, 100);
+        if ($start > 0) $snippet = '...' . $snippet;
+        if (mb_strlen($plain) > $start + 100) $snippet .= '...';
+
+        $result['posts'][] = array(
+            'title' => htmlspecialchars_uni($snippet),
+            'url'   => $bburl . '/' . get_post_link($row['pid'], $row['tid']) . '#pid' . $row['pid'],
+            'sub'   => 'in ' . htmlspecialchars_uni($row['subject']),
+        );
+    }
+
     if ($mybb->usergroup['canviewprofiles'] != 0) {
         $query = $db->query("
             SELECT uid, username, avatar, postnum
@@ -1096,38 +1589,34 @@ function ms_pex_xmlhttp_quicksearch()
             ORDER BY postnum DESC
             LIMIT 5
         ");
-        $users = array();
         while ($row = $db->fetch_array($query)) {
-            $av = !empty($row['avatar']) ? htmlspecialchars_uni($row['avatar']) : $bburl . '/images/default_avatar.png';
-            $users[] = array(
+            $result['users'][] = array(
                 'title'  => htmlspecialchars_uni($row['username']),
                 'url'    => $bburl . '/' . get_profile_link($row['uid']),
-                'avatar' => $av,
+                'avatar' => ms_pex_avatar_url($row['avatar']),
                 'sub'    => my_number_format($row['postnum']) . ' posts',
             );
         }
-        $result['users'] = $users;
-    } else {
-        $result['users'] = array();
     }
+
+    // Announcements: global (fid -1) or in a forum the user can read
+    $annWhere = $exclude ? ' AND (fid = -1 OR fid NOT IN (' . implode(',', $exclude) . '))' : '';
     $query = $db->query("
         SELECT aid, subject, startdate
         FROM " . TABLE_PREFIX . "announcements
         WHERE startdate <= " . TIME_NOW . "
           AND (enddate = 0 OR enddate >= " . TIME_NOW . ")
-          AND subject LIKE '%{$escaped}%'
+          AND subject LIKE '%{$escaped}%'{$annWhere}
         ORDER BY startdate DESC
         LIMIT 3
     ");
-    $announcements = array();
     while ($row = $db->fetch_array($query)) {
-        $announcements[] = array(
+        $result['announcements'][] = array(
             'title' => htmlspecialchars_uni($row['subject']),
             'url'   => $bburl . '/announcements.php?aid=' . (int)$row['aid'],
             'sub'   => my_date('M j, Y', $row['startdate']),
         );
     }
-    $result['announcements'] = $announcements;
 
     echo json_encode($result);
     exit;

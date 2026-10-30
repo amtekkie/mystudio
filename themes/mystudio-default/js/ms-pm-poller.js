@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function poll(){
+    // Background tabs don't poll; a fresh poll runs when the tab becomes visible again
+    if(document.hidden) return;
     fetch(pollUrl, {credentials: 'same-origin'})
       .then(function(r){ if(!r.ok) throw new Error('Network response not ok'); return r.json(); })
       .then(function(data){ if(typeof data.pms_unread !== 'undefined') updateBadge(parseInt(data.pms_unread,10)||0); })
@@ -30,4 +32,5 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // first poll after 5s (server badge already rendered on load), then every 30s
   setTimeout(function(){ poll(); setInterval(poll, 30000); }, 5000);
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) poll(); });
 });

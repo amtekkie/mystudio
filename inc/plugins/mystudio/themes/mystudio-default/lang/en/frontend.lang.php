@@ -150,6 +150,18 @@ $l['ms_error_image_content']     = 'File content does not match an allowed image
 $l['ms_error_image_too_large']   = 'Image too large. Max 5MB.';
 $l['ms_error_invalid_upload_dir'] = 'Invalid upload directory.';
 $l['ms_error_upload_failed']     = 'Image upload failed.';
+$l['ms_error_forum_closed']      = 'This forum is closed or does not accept posts.';
+$l['ms_error_thread_closed']     = 'This thread is closed.';
+$l['ms_error_forum_password']    = 'This forum is password protected. Open it first and enter the password.';
+$l['ms_error_no_attach_permission'] = 'You do not have permission to upload images in this forum.';
+$l['ms_error_delete_time_limit'] = 'The time limit for deleting this post has expired.';
+$l['ms_error_thread_has_replies'] = 'This thread has replies from other members and cannot be deleted.';
+$l['ms_error_delete_first_post'] = 'This is the first post of the thread. Delete the thread instead.';
+$l['ms_error_already_deleted']   = 'This post has already been deleted.';
+$l['ms_modlog_thread_deleted']   = 'Thread deleted (feed)';
+$l['ms_modlog_thread_soft_deleted'] = 'Thread soft deleted (feed)';
+$l['ms_modlog_post_deleted']     = 'Post deleted (feed)';
+$l['ms_modlog_post_soft_deleted'] = 'Post soft deleted (feed)';
 
 // ── Reputation Modals ──
 $l['ms_rep_update']              = 'Update Reputation';
@@ -175,6 +187,8 @@ $l['ms_error_invalid_gradient']  = 'Invalid gradient value.';
 $l['ms_error_invalid_banner_type'] = 'Invalid banner type.';
 $l['ms_error_no_active_banner'] = 'No active banner to update.';
 $l['ms_error_banner_not_found'] = 'Banner not found.';
+$l['ms_error_banners_disabled'] = 'Profile banners are disabled.';
+$l['ms_error_file_too_large_kb'] = 'File too large. Max {1} KB.';
 $l['ms_view_all']               = 'View All';
 
 // ── Editor Extras ──
@@ -182,6 +196,7 @@ $l['ms_error_invalid_post_key']  = 'Invalid post key.';
 $l['ms_error_login_to_upload']   = 'You must be logged in to upload.';
 $l['ms_error_no_file_received']  = 'No file received.';
 $l['ms_error_no_upload_permission'] = 'You do not have permission to upload attachments.';
+$l['ms_error_upload_no_context'] = 'Images can only be uploaded while writing a forum post.';
 $l['ms_error_already_local']     = 'Image is already local.';
 $l['ms_error_download_failed']   = 'Failed to download image.';
 $l['ms_error_image_too_large_10mb'] = 'Image too large (max 10MB).';

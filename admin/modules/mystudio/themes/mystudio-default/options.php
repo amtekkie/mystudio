@@ -47,7 +47,7 @@ return array(
 
     'site_logo' => array(
         'title'          => 'Upload Logo Image',
-        'description'    => 'Upload a logo image. When set, this replaces the icon/text logo. Supports PNG, JPG, GIF, SVG, WebP.',
+        'description'    => 'Upload a logo image. When set, this replaces the icon/text logo. Supports PNG, JPG, GIF and WebP.',
         'type'           => 'image',
         'has_dimensions' => true,
         'default'        => '',
@@ -58,7 +58,7 @@ return array(
 
     'favicon' => array(
         'title'       => 'Favicon',
-        'description' => 'Upload a favicon (.ico, .png, .svg). Displayed in browser tabs and bookmarks.',
+        'description' => 'Upload a favicon (.ico or .png). Displayed in browser tabs and bookmarks.',
         'type'        => 'image',
         'default'     => '',
         'page'        => 'studio_settings',

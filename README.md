@@ -6,13 +6,15 @@ MyStudio gives you a proper file-based workflow for building MyBB themes. Instea
 
 It comes with a built-in Monaco code editor (the same engine behind VS Code), a ZIP-based import/export system, a module architecture for theme-scoped extensions, and a Page Builder for creating standalone pages with clean URLs. The whole thing is open source.
 
+**New to MyStudio?** The [documentation](docs/README.md) walks you through [getting started](docs/getting-started.md), [how the theme system works](docs/theme-system.md), [creating a theme](docs/create-a-theme.md) and [creating a module](docs/create-a-module.md), step by step.
+
 ## What's Included
 
 **MyStudio Plugin** handles all the heavy lifting: file-to-database syncing, theme import/export, the Admin CP interface, the editor, and the module loader.
 
 **MyStudio Default Theme** is a complete MyBB frontend theme built on Bootstrap 5.3.8 with Bootstrap Icons 1.11.3 (both self-hosted, no CDN needed). It ships with five modules:
 
-- **Editor Extras** adds Bootstrap Icons to the toolbar, image paste/drag-drop upload, emoji picker, GIF search, syntax highlighted code blocks, auto-save, word count, and @mentions to SCEditor.
+- **Editor Extras** adds Bootstrap Icons to the toolbar, image paste/drag-drop upload, emoji picker, GIF search, syntax highlighted code blocks, tables, and @mentions to SCEditor.
 - **Forum Display Extras** shows last poster avatars, a user info modal on click, subforum column layouts, card-style forum listings, and usergroup color formatting.
 - **Forum Icons** lets admins assign Bootstrap Icons or uploaded images to individual forums, with status-aware coloring (accent for new posts, muted for read).
 - **Profile Extras** adds profile banner customization (upload, solid color, or gradient) plus a status update system with privacy levels.
@@ -103,7 +105,7 @@ MyStudio adds a top-level **MyStudio** section to the Admin CP:
 
 | Page | What it does |
 |------|-------------|
-| **Studio Settings** | Opens first. Tabs: **General** (enable/disable, upload size limit), **Theme Settings** (loading bar, theme colour with 10 presets or a custom colour, branding: logo and favicon) and **Developer Settings** (auto-sync, demo data). |
+| **Studio Settings** | Opens first. Tabs: **General** (enable/disable, upload size limit), **Theme Settings** (loading bar, theme colour with 9 presets or a custom colour, branding: logo and favicon) and **Developer Settings** (auto-sync, demo data). |
 | **Manage Themes** | Lists all themes (synced and on-disk-only). Sync, edit, export, activate, deactivate, or delete. |
 | **Import / Export** | Upload a theme ZIP to import, or download any theme as a ZIP. |
 | **Page Manager** | Create and manage standalone pages (needs the Page Builder module). |

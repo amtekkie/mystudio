@@ -155,7 +155,8 @@ function ms_uninstall()
 {
     global $db, $cache;
 
-    $db->delete_query('settings',      "name LIKE 'ms_%'");
+    // "_" is a LIKE wildcard — escape it so other plugins' "ms…" settings survive
+    $db->delete_query('settings',      "name LIKE 'ms\\_%'");
     $db->delete_query('settinggroups', "name='mystudio'");
     rebuild_settings();
 
@@ -164,43 +165,27 @@ function ms_uninstall()
 
     // Page Manager tables are handled by the ms_pagebuilder plugin
 
-    // Delete all modular theme folders except mystudio-default
-    $themesDir = MYBB_ROOT . 'themes';
-    if (is_dir($themesDir)) {
-        foreach (scandir($themesDir) as $entry) {
-            if ($entry === '.' || $entry === '..' || $entry === 'mystudio-default') {
-                continue;
-            }
-            $path = $themesDir . '/' . $entry;
-            if (is_dir($path) && file_exists($path . '/theme.json')) {
-                ms_rrmdir($path);
-            }
-        }
-    }
+    // Theme folders are left on disk: they're the source of truth (and may be the
+    // only copy of a theme's JS, images and saved options). Delete them by hand if unwanted.
 }
 
-/**
- * Recursively delete a directory and its contents.
- * Used by ms_uninstall() to clean up theme folders.
- */
-function ms_rrmdir($dir)
+/** ACP permission keys for the MyStudio module (must match module_meta.php). */
+function ms_admin_permission_keys()
 {
-    if (!is_dir($dir)) return;
-    foreach (scandir($dir) as $item) {
-        if ($item === '.' || $item === '..') continue;
-        $path = $dir . '/' . $item;
-        if (is_dir($path)) {
-            ms_rrmdir($path);
-        } else {
-            @unlink($path);
-        }
-    }
-    @rmdir($dir);
+    return array('manage', 'import_export', 'settings', 'pages', 'modules', 'plugin_settings');
 }
 
 function ms_activate()
 {
     global $db;
+
+    // Grant the MyStudio ACP pages to the Administrators group defaults (-4); without
+    // this only super admins can open MyStudio. Individual admins can still be restricted.
+    if (function_exists('change_admin_permission')) {
+        foreach (ms_admin_permission_keys() as $key) {
+            change_admin_permission('mystudio', $key, 1);
+        }
+    }
 
     // Migration: remove settings group from Configuration if it exists (moved to MyStudio Settings page)
     $query = $db->simple_select('settinggroups', 'gid', "name='mystudio'");
@@ -344,13 +329,13 @@ function ms_load_theme_extras()
         }
     }
 
-    /* ── 2. Load theme option values ── */
-    $optionsFile = $themeDir . '/default.json';
-    if (file_exists($optionsFile)) {
-        $values = @json_decode(file_get_contents($optionsFile), true);
-        if (is_array($values) && !empty($values)) {
-            $mybb->ms_theme_options = $values;
-        }
+    /* ── 2. Load theme option values (saved values over schema defaults) ── */
+    require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
+    $msCore = new MyStudio();
+    // Keep saved keys that have no schema entry (themes without options.php)
+    $values = array_merge((array) $msCore->getThemeOptionValues($slug), $msCore->getMergedThemeOptions($slug));
+    if (is_array($values) && !empty($values)) {
+        $mybb->ms_theme_options = $values;
     }
 
     // Ensure it's always an array so templates don't error
@@ -365,8 +350,6 @@ function ms_load_theme_extras()
     }
 
     /* -- 4. Load built-in modules -- */
-    require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
-    $msCore = new MyStudio();
     $msCore->loadModules($slug);
 
     // Store slug for asset injection later
@@ -422,6 +405,30 @@ function ms_inject_mini_plugin_assets(&$contents)
  * GET  xmlhttp.php?action=ms_dev_sync_check   → returns { changed: bool, hash: string }
  * POST xmlhttp.php?action=ms_dev_sync_run     → performs sync, returns { success: bool, ... }
  */
+/**
+ * The theme an xmlhttp request should use: the member's chosen style when it's a
+ * MyStudio theme on disk, otherwise the board default (matches what the page showed).
+ *
+ * @param  MyStudio $msCore
+ * @return string|false
+ */
+function ms_xmlhttp_theme_slug($msCore)
+{
+    global $mybb, $db;
+
+    $style = isset($mybb->user['style']) ? (int) $mybb->user['style'] : 0;
+    if ($style > 0) {
+        $name = $db->fetch_field($db->simple_select('themes', 'name', "tid='{$style}'"), 'name');
+        if ($name) {
+            $slug = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower(trim($name))), '-');
+            if ($slug !== '' && is_file(MYBB_ROOT . 'themes/' . $slug . '/theme.json')) {
+                return $slug;
+            }
+        }
+    }
+    return $msCore->getActiveThemeSlug();
+}
+
 function ms_xmlhttp_action()
 {
     global $mybb, $plugins;
@@ -432,17 +439,19 @@ function ms_xmlhttp_action()
 
     /* ── Load module xmlhttp handlers ──
      * Modules are normally loaded on global_intermediate which xmlhttp.php
-     * doesn't fire. We load them here and then re-run the xmlhttp hook so any
-     * newly-registered handlers execute. A static guard prevents infinite
-     * recursion since this function is itself an xmlhttp hook handler.
+     * doesn't fire. We load them here and then run only the xmlhttp handlers
+     * they just registered (re-running the whole hook would fire other
+     * plugins' handlers twice). A static guard prevents recursion.
      */
     static $miniLoaded = false;
     if (!$miniLoaded) {
         $miniLoaded = true;
         require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
         $msCore = new MyStudio();
-        $slug = $msCore->getActiveThemeSlug();
+        $slug = ms_xmlhttp_theme_slug($msCore);
         if ($slug) {
+            $before = isset($plugins->hooks['xmlhttp']) ? $plugins->hooks['xmlhttp'] : array();
+
             // Load built-in posting-extras (quick-search handler)
             $pexFile = $msCore->getThemeCodeDir($slug) . '/posting-extras.php';
             if (file_exists($pexFile)) {
@@ -450,9 +459,21 @@ function ms_xmlhttp_action()
             }
 
             $msCore->loadModules($slug);
-            // Re-run xmlhttp hooks so module handlers can fire.
-            // The static guard above prevents this function from looping.
-            $plugins->run_hooks('xmlhttp');
+
+            $after = isset($plugins->hooks['xmlhttp']) ? $plugins->hooks['xmlhttp'] : array();
+            ksort($after);
+            foreach ($after as $priority => $hooks) {
+                foreach ((array) $hooks as $key => $hook) {
+                    if (isset($before[$priority][$key])) continue;
+                    if (!empty($hook['file'])) require_once $hook['file'];
+                    $none = '';
+                    if (array_key_exists('class_method', $hook)) {
+                        call_user_func_array($hook['class_method'], array(&$none));
+                    } else {
+                        $hook['function']($none);
+                    }
+                }
+            }
         }
     }
 

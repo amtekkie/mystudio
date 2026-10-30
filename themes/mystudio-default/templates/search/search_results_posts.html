@@ -28,7 +28,7 @@
 		<div class="text-center" style="min-width:60px"><a href="{$sorturl}&amp;sortby=views&amp;order={$oppsortnext}">{$lang->views}</a> {$orderarrow['views']}</div>
 	</div>
 	<div class="text-end" style="width:140px;flex-shrink:0"><span data-moderation="{$ismod}"><a href="{$sorturl}&amp;sortby=dateline&amp;order={$oppsortnext}">{$lang->posted}</a> {$orderarrow['dateline']}</span></div>
-	<div class="d-none d-md-flex align-items-center justify-content-center ps-2" style="width:36px;flex-shrink:0">{$inlinemodcol}</div>
+	{$inlinemodcol}
 </div>
 
 {$selectall}

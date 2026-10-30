@@ -36,6 +36,9 @@ msdefault_load_language();
 // Set up welcome-block badge counts (before templates are eval'd)
 msdefault_welcomeblock_badges();
 
+// Batch-load this theme's custom templates (one query instead of one per template)
+msdefault_cache_templates();
+
 /**
  * Compute welcome-block badge HTML for unread PMs and pending buddy requests.
  * Called at global_intermediate, before the welcomeblock templates are eval'd.
@@ -47,8 +50,14 @@ function msdefault_welcomeblock_badges()
     // Defaults — empty strings so template vars don't error
     $GLOBALS['ms_pm_badge']    = '';
     $GLOBALS['ms_buddy_badge'] = '';
+    $GLOBALS['ms_user_avatar'] = '';
 
     if (empty($mybb->user['uid'])) return;
+
+    // Escaped avatar URL for the welcome block (default avatar fallback,
+    // honours allowremoteavatars) — never output $mybb->user['avatar'] raw.
+    $av = format_avatar($mybb->user['avatar']);
+    $GLOBALS['ms_user_avatar'] = $av['image'];
 
     // Unread PMs badge (top-right offset)
     $unread = (int) $mybb->user['pms_unread'];
@@ -59,14 +68,55 @@ function msdefault_welcomeblock_badges()
 
     // Pending buddy requests badge (top-right offset)
     $uid = (int) $mybb->user['uid'];
-    if ($db->table_exists('buddyrequests')) {
     $query = $db->simple_select('buddyrequests', 'COUNT(*) AS cnt', "touid='{$uid}'");
     $pending = (int) $db->fetch_field($query, 'cnt');
     if ($pending > 0) {
-        $GLOBALS['ms_buddy_badge'] = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:9px;z-index:1">' 
+        $GLOBALS['ms_buddy_badge'] = '<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:9px;z-index:1">'
             . my_number_format($pending) . '</span>';
     }
-    } // end table_exists check
+}
+
+/**
+ * Pre-load the theme's custom templates in ONE query. global.php has already
+ * cached $templatelist by global_intermediate, so without this every custom
+ * template would cost its own query on first $templates->get().
+ */
+function msdefault_cache_templates()
+{
+    global $mybb, $templates;
+
+    $script = defined('THIS_SCRIPT') ? THIS_SCRIPT : basename($_SERVER['SCRIPT_NAME']);
+
+    $list = array();
+    if (!empty($mybb->user['uid'])) {
+        $list[] = 'pex_sidebar_member';
+        $list[] = 'pex_newthread_modal';
+        if ($mybb->usergroup['canmodcp'] == 1) {
+            $list[] = 'pex_sidebar_modcp';
+        }
+        if ($mybb->usergroup['cancp'] == 1) {
+            $list[] = 'pex_sidebar_admincp';
+        }
+    } else {
+        $list[] = 'pex_sidebar_guest';
+    }
+
+    if (in_array($script, array('showthread.php', 'portal.php', 'newreply.php', 'editpost.php'), true)) {
+        $list[] = 'pex_like_controls';
+    }
+    if ($script === 'portal.php') {
+        $list[] = 'pex_empty_state';
+    }
+    if ($script === 'member.php') {
+        $list = array_merge($list, array(
+            'member_profile_avatar_modal', 'member_profile_banner_modal',
+            'member_profile_latest_posts', 'member_profile_latest_posts_row',
+            'member_profile_rate_modal', 'member_profile_stat_reputation_modal',
+            'member_profile_stat_referrals_modal',
+        ));
+    }
+
+    $templates->cache(implode(',', $list));
 }
 
 /**
@@ -298,8 +348,8 @@ function msdefault_profile_avatar_modal()
     // Modal HTML
     $postKey  = htmlspecialchars_uni($mybb->post_code);
     $bburl    = $mybb->settings['bburl'];
-    $curAvatar = htmlspecialchars_uni($mybb->user['avatar'] ?: 'images/default_avatar.png');
-    $removeUrl = htmlspecialchars_uni($bburl . '/usercp.php?action=avatar&remove=1&my_post_key=' . $mybb->post_code);
+    $curAvatarArr = format_avatar($mybb->user['avatar']);
+    $curAvatar = $curAvatarArr['image'];
 
     $changeAvatarLang = isset($lang->change_avatar) ? $lang->change_avatar : 'Change Avatar';
     $uploadLang       = isset($lang->avatar_upload) ? $lang->avatar_upload : 'Upload Avatar';
@@ -310,7 +360,6 @@ function msdefault_profile_avatar_modal()
     // Set template variables
     $ms_avatar_post_key     = $postKey;
     $ms_avatar_cur          = $curAvatar;
-    $ms_avatar_remove_url   = $removeUrl;
     $ms_avatar_change_lang  = $changeAvatarLang;
     $ms_avatar_upload_lang  = $uploadLang;
     $ms_avatar_url_lang     = $urlLang;

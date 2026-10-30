@@ -191,7 +191,10 @@ function initEditorExtras($textarea) {
 	}
 
 	if (EE.pasteFix) initPasteFix(editor);
-	if (EE.imageUpload) initImageUpload(editor, $container);
+	// Uploads need a post to attach to (new thread/reply or edit) — not PMs, signatures etc.
+	uploadForm = $textarea.closest('form')[0] || null;
+	var ctx = uploadParams();
+	if (EE.imageUpload && (ctx.pid || ((ctx.tid || ctx.fid) && ctx.posthash))) initImageUpload(editor, $container);
 	if (EE.imageResize) initImageResize(editor);
 
 	if (EE.emoji) {
@@ -232,14 +235,17 @@ function syncEditorTheme(editor) {
 		styleEl.id = styleId;
 		doc.head.appendChild(styleEl);
 	}
+	// SCEditor's content CSS hardcodes color:#111 on p/table, so typed text ignores the body color
+	var inheritColor = ' p, table, td, th, li { color: inherit !important; }';
 	if (isDark) {
-		styleEl.textContent = 'body { background: #0f172a !important; color: #e2e8f0 !important; caret-color: #e2e8f0 !important; }'
+		styleEl.textContent = inheritColor + ' body { background: #0f172a !important; color: #e2e8f0 !important; caret-color: #e2e8f0 !important; }'
 			+ ' code { background: #161b22 !important; color: #e6edf3 !important; border-color: #30363d !important; }'
 			+ ' blockquote { background: rgba(45,212,191,0.08) !important; border-left: 4px solid rgba(45,212,191,0.5) !important; }'
 			+ ' blockquote blockquote { background: rgba(45,212,191,0.05) !important; border-left-color: rgba(45,212,191,0.3) !important; }'
-			+ ' blockquote cite { color: #2dd4bf !important; border-bottom-color: #30363d !important; }';
+			+ ' blockquote cite { color: #2dd4bf !important; border-bottom-color: #30363d !important; }'
+			+ ' table, td, th { border-color: #475569 !important; }';
 	} else {
-		styleEl.textContent = 'body { background: #fff !important; color: #333 !important; caret-color: #333 !important; }'
+		styleEl.textContent = inheritColor + ' body { background: #fff !important; color: #333 !important; caret-color: #333 !important; }'
 			+ ' code { background: #f6f8fa !important; color: #1f2328 !important; border-color: #d1d9e0 !important; }'
 			+ ' blockquote { background: rgba(13,148,136,0.06) !important; border-left: 4px solid rgba(13,148,136,0.5) !important; }'
 			+ ' blockquote cite { color: rgba(13,148,136,1) !important; }';
@@ -349,6 +355,23 @@ function rgbToHex(rgb) {
 }
 
 /* ── 2. Image Paste & Drag-Drop ── */
+var uploadForm; // set by initEditorExtras(); no initialiser so a later declaration can't reset it
+
+// pid/tid/fid come from hidden inputs or the form action (editpost.php?pid=…, newreply.php?tid=…)
+function uploadParams() {
+	var p = { pid: '', tid: '', fid: '', posthash: '' };
+	if (!uploadForm) return p;
+	var action = uploadForm.getAttribute('action') || '';
+	['pid', 'tid', 'fid'].forEach(function(k) {
+		var input = uploadForm.querySelector('input[name="' + k + '"]');
+		var m = action.match(new RegExp('[?&]' + k + '=(\\d+)'));
+		p[k] = (input && input.value) || (m ? m[1] : '');
+	});
+	var hash = uploadForm.querySelector('input[name="posthash"]');
+	p.posthash = hash ? hash.value : '';
+	return p;
+}
+
 function initImageUpload(editor, $container) {
 	var body = editor.getBody();
 	var doc = body.ownerDocument;
@@ -381,7 +404,7 @@ function initImageUpload(editor, $container) {
 				var src = $(this).attr('src') || '';
 				// Skip data URIs, local attachment URLs, and empty
 				if (!src || src.indexOf('data:') === 0) return;
-				if (typeof mybb_url !== 'undefined' && src.indexOf(mybb_url) === 0) return;
+				if (typeof rootpath !== 'undefined' && rootpath && src.indexOf(rootpath) === 0) return;
 				// Check if it's an external URL
 				if (/^https?:\/\//i.test(src)) {
 					externalImgs.push(src);
@@ -433,26 +456,6 @@ function initImageUpload(editor, $container) {
 			proxyAndInsert(editor, url);
 		}
 	});
-
-	// --- Also intercept external images inserted via the editor's own image dialog ---
-	// Watch for new img elements with external src
-	var imgObserver = new MutationObserver(function(mutations) {
-		mutations.forEach(function(m) {
-			for (var i = 0; i < m.addedNodes.length; i++) {
-				var node = m.addedNodes[i];
-				if (node.nodeType === 1 && node.tagName === 'IMG') {
-					maybeProxyImage(node, editor);
-				}
-				if (node.nodeType === 1) {
-					var imgs = node.getElementsByTagName('img');
-					for (var j = 0; j < imgs.length; j++) {
-						maybeProxyImage(imgs[j], editor);
-					}
-				}
-			}
-		});
-	});
-	imgObserver.observe(body, { childList: true, subtree: true });
 }
 
 function handleDrop(e, editor) {
@@ -465,57 +468,6 @@ function handleDrop(e, editor) {
 	}
 }
 
-function maybeProxyImage(img, editor) {
-	var src = img.getAttribute('src') || '';
-	if (!src || src.indexOf('data:') === 0 || img.getAttribute('data-ee-local') === '1') return;
-	// Skip local attachment URLs
-	var bburl = (window.mybb_url || '');
-	if (bburl && src.indexOf(bburl) === 0) return;
-	if (src.indexOf('attachment.php') !== -1) return;
-	if (!/^https?:\/\//i.test(src)) return;
-	// Mark it so we don't re-process
-	img.setAttribute('data-ee-local', '1');
-	img.style.opacity = '0.5';
-	proxyAndReplace(editor, img, src);
-}
-
-function proxyAndReplace(editor, imgEl, url) {
-	var maxW = EE.imageMaxWidth || 800;
-	$.ajax({
-		url: 'xmlhttp.php',
-		type: 'POST',
-		data: {
-			action: 'editorextras_proxy',
-			my_post_key: my_post_key,
-			url: url,
-			posthash: $('input[name="posthash"]').val() || '',
-			fid: $('input[name="fid"]').val() || '',
-			tid: $('input[name="tid"]').val() || ''
-		},
-		dataType: 'json',
-		success: function(r) {
-			if (r && r.success) {
-				imgEl.setAttribute('src', r.url);
-				imgEl.setAttribute('data-ee-local', '1');
-				if (!imgEl.getAttribute('width') || parseInt(imgEl.getAttribute('width')) > maxW) {
-					imgEl.setAttribute('width', maxW);
-					imgEl.removeAttribute('height');
-				}
-				imgEl.style.opacity = '';
-				imgEl.style.maxWidth = maxW + 'px';
-				if (r.posthash) updatePosthash(r.posthash);
-				updateAttachmentList(r);
-				editor.updateOriginal();
-			} else {
-				imgEl.style.opacity = '';
-			}
-		},
-		error: function() {
-			imgEl.style.opacity = '';
-		}
-	});
-}
-
 function proxyAndInsert(editor, url) {
 	var maxW = EE.imageMaxWidth || 800;
 	var placeholder = '[Uploading image...]';
@@ -524,14 +476,11 @@ function proxyAndInsert(editor, url) {
 	$.ajax({
 		url: 'xmlhttp.php',
 		type: 'POST',
-		data: {
+		data: $.extend(uploadParams(), {
 			action: 'editorextras_proxy',
 			my_post_key: my_post_key,
-			url: url,
-			posthash: $('input[name="posthash"]').val() || '',
-			fid: $('input[name="fid"]').val() || '',
-			tid: $('input[name="tid"]').val() || ''
-		},
+			url: url
+		}),
 		dataType: 'json',
 		success: function(r) {
 			var current = editor.val();
@@ -558,9 +507,8 @@ function uploadAndInsert(editor, file) {
 	formData.append('upload', file, filename);
 	formData.append('action', 'editorextras_upload');
 	formData.append('my_post_key', my_post_key);
-	formData.append('posthash', $('input[name="posthash"]').val() || '');
-	formData.append('fid', $('input[name="fid"]').val() || '');
-	formData.append('tid', $('input[name="tid"]').val() || '');
+	var ctx = uploadParams();
+	for (var k in ctx) formData.append(k, ctx[k]);
 
 	var placeholder = '[Uploading ' + filename + '...]';
 	editor.insert(placeholder);
@@ -648,6 +596,17 @@ function initImageResize(editor) {
 			'.ee-resize-info { position: absolute; background: rgba(0,0,0,.7); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 3px; pointer-events: none; z-index: 9999; white-space: nowrap; }';
 		doc.head.appendChild(s);
 	}
+
+	// Handles and the size label live inside the editor body, so drop them while
+	// SCEditor serialises (e.g. autoUpdate on blur when Submit is clicked)
+	var origGetVal = editor.getWysiwygEditorValue.bind(editor);
+	editor.getWysiwygEditorValue = function(filter) {
+		var img = selectedImg;
+		if (img) deselectImage();
+		var result = origGetVal(filter);
+		if (img && img.parentNode) selectImage(img);
+		return result;
+	};
 
 	// Click on image = select it
 	$(body).on('mousedown', 'img', function(e) {

@@ -81,13 +81,27 @@ function ms_ee_inject_config()
  */
 function ms_ee_parse_bbcode($message)
 {
-    // Table BBCode → HTML
-    $message = preg_replace('#\[table\]\s*#si', '<div class="mycode_table_wrapper"><table class="mycode_table">', $message);
-    $message = preg_replace('#\s*\[/table\]#si', '</table></div>', $message);
-    $message = preg_replace('#\[tr\]\s*#si', '<tr>', $message);
-    $message = preg_replace('#\s*\[/tr\]#si', '</tr>', $message);
-    $message = preg_replace('#\[th\](.*?)\[/th\]#si', '<th>$1</th>', $message);
-    $message = preg_replace('#\[td\](.*?)\[/td\]#si', '<td>$1</td>', $message);
+    // Table BBCode → HTML. Only complete [table]…[/table] blocks are converted and the
+    // HTML is rebuilt from matched rows/cells, so stray tags can never emit unbalanced markup.
+    $message = preg_replace_callback('#\[table\](.*?)\[/table\]#si', function ($t) {
+        $rows = '';
+        preg_match_all('#\[tr\](.*?)\[/tr\]#si', $t[1], $trs);
+        foreach ($trs[1] as $tr) {
+            preg_match_all('#\[(td|th)\](.*?)\[/\1\]#si', $tr, $cells, PREG_SET_ORDER);
+            $row = '';
+            foreach ($cells as $c) {
+                $tag = strtolower($c[1]);
+                $row .= '<' . $tag . '>' . trim($c[2]) . '</' . $tag . '>';
+            }
+            if ($row !== '') {
+                $rows .= '<tr>' . $row . '</tr>';
+            }
+        }
+        if ($rows === '') {
+            return $t[0];
+        }
+        return '<div class="mycode_table_wrapper"><table class="mycode_table">' . $rows . '</table></div>';
+    }, $message);
 
     // [icon]icon-name[/icon] → Bootstrap Icon <i> tag
     $message = preg_replace_callback(
@@ -136,23 +150,10 @@ function ms_ee_xmlhttp()
 
         require_once MYBB_ROOT . 'inc/functions_upload.php';
 
-        $fid = $mybb->get_input('fid', MyBB::INPUT_INT);
-        $forumpermissions = $fid ? forum_permissions($fid) : array('canpostattachments' => 1);
-
-        if (empty($forumpermissions['canpostattachments'])) {
-            echo json_encode(array('error' => $lang->ms_error_no_upload_permission));
+        $error = ms_ee_upload_context();
+        if ($error !== true) {
+            echo json_encode(array('error' => $error));
             exit;
-        }
-
-        // Set up globals that upload_attachment() reads
-        global $forum, $pid, $tid;
-        $pid = 0;
-        $tid = $mybb->get_input('tid', MyBB::INPUT_INT);
-        $forum = $fid ? get_forum($fid) : array('fid' => 0);
-
-        // posthash is read from $mybb->input inside upload_attachment()
-        if (!$mybb->get_input('posthash')) {
-            $mybb->input['posthash'] = md5($mybb->user['uid'] . random_str());
         }
 
         $file = $_FILES['upload'];
@@ -197,11 +198,9 @@ function ms_ee_xmlhttp()
 
         require_once MYBB_ROOT . 'inc/functions_upload.php';
 
-        $fid = $mybb->get_input('fid', MyBB::INPUT_INT);
-        $forumpermissions = $fid ? forum_permissions($fid) : array('canpostattachments' => 1);
-
-        if (empty($forumpermissions['canpostattachments'])) {
-            echo json_encode(array('error' => $lang->ms_error_no_upload_permission));
+        $error = ms_ee_upload_context();
+        if ($error !== true) {
+            echo json_encode(array('error' => $error));
             exit;
         }
 
@@ -258,16 +257,6 @@ function ms_ee_xmlhttp()
         // Write to temp file
         $tmp = tempnam(sys_get_temp_dir(), 'ee_');
         file_put_contents($tmp, $image_data);
-
-        // Set up globals for upload_attachment()
-        global $forum, $pid, $tid;
-        $pid = 0;
-        $tid = $mybb->get_input('tid', MyBB::INPUT_INT);
-        $forum = $fid ? get_forum($fid) : array('fid' => 0);
-
-        if (!$mybb->get_input('posthash')) {
-            $mybb->input['posthash'] = md5($mybb->user['uid'] . random_str());
-        }
 
         // Simulate $_FILES structure
         $file = array(
@@ -391,54 +380,112 @@ function ms_ee_fetch_url($url)
 }
 
 /**
+ * Resolve where an editor upload will be attached and check permissions.
+ * Sets the $forum/$pid/$tid globals that upload_attachment() reads.
+ * The forum is always derived server-side from pid/tid, never trusted from the client.
+ *
+ * @return true|string True on success, otherwise an error message.
+ */
+function ms_ee_upload_context()
+{
+    global $mybb, $lang, $forum, $pid, $tid;
+
+    $pid = $mybb->get_input('pid', MyBB::INPUT_INT);
+    $tid = $mybb->get_input('tid', MyBB::INPUT_INT);
+    $fid = $mybb->get_input('fid', MyBB::INPUT_INT);
+
+    if ($pid) {
+        // Editing a post: attach straight to it, as editpost.php does
+        $post = get_post($pid);
+        if (!$post) {
+            return $lang->ms_error_upload_no_context;
+        }
+        $fid = (int)$post['fid'];
+        $tid = (int)$post['tid'];
+        $forumpermissions = forum_permissions($fid);
+        if (!is_moderator($fid, 'caneditposts') && ($post['uid'] != $mybb->user['uid'] || empty($forumpermissions['caneditposts']))) {
+            return $lang->ms_error_no_upload_permission;
+        }
+    } else {
+        if ($tid) {
+            $thread = get_thread($tid);
+            if (!$thread) {
+                return $lang->ms_error_upload_no_context;
+            }
+            $fid = (int)$thread['fid'];
+        }
+        // Without a forum and posthash the attachment can never be linked to a post,
+        // and MyBB only shows unlinked attachments to their uploader (PMs, signatures…)
+        if (!$fid || !$mybb->get_input('posthash')) {
+            return $lang->ms_error_upload_no_context;
+        }
+        $forumpermissions = forum_permissions($fid);
+    }
+
+    $forum = get_forum($fid);
+    if (!$forum || empty($forumpermissions['canview']) || empty($forumpermissions['canpostattachments'])) {
+        return $lang->ms_error_no_upload_permission;
+    }
+
+    return true;
+}
+
+/**
  * Fetch URL and return raw binary data (for image proxy).
- * Validates against SSRF by blocking private/reserved IP ranges.
+ * SSRF-safe: every hop (including redirects) is resolved, checked against
+ * private/reserved ranges and pinned to the vetted IP. Requires cURL.
  */
 function ms_ee_fetch_url_raw($url)
 {
-    // SSRF protection: block private/reserved IP ranges and localhost
-    $host = parse_url($url, PHP_URL_HOST);
-    if (!$host) {
-        return false;
-    }
-    $lower_host = strtolower($host);
-    if (in_array($lower_host, array('localhost', 'localhost.localdomain', '[::1]'))) {
-        return false;
-    }
-    // Resolve hostname to IP and check against private/reserved ranges
-    $ip = gethostbyname($host);
-    if ($ip === $host && !filter_var($host, FILTER_VALIDATE_IP)) {
-        // DNS resolution failed
-        return false;
-    }
-    if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+    if (!function_exists('curl_init')) {
         return false;
     }
 
-    if (function_exists('curl_init')) {
+    for ($hop = 0; $hop <= 3; $hop++) {
+        $parts = parse_url($url);
+        if (!$parts || empty($parts['host']) || !isset($parts['scheme'])) {
+            return false;
+        }
+        $scheme = strtolower($parts['scheme']);
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return false;
+        }
+
+        // IPv4 only: IPv6 literals are rejected rather than range-checked
+        $host = $parts['host'];
+        if (strpos($host, ':') !== false || strpos($host, '[') !== false) {
+            return false;
+        }
+        $ip = filter_var($host, FILTER_VALIDATE_IP) ? $host : gethostbyname($host);
+        if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+            return false;
+        }
+        $port = isset($parts['port']) ? (int)$parts['port'] : ($scheme === 'https' ? 443 : 80);
+
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_MAXREDIRS, 3);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'MyBB/EditorExtras');
+        curl_setopt_array($ch, array(
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 15,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,
+            CURLOPT_MAXFILESIZE    => 10 * 1024 * 1024,
+            CURLOPT_USERAGENT      => 'MyBB/EditorExtras',
+            // Pin the vetted IP so cURL cannot re-resolve the host to an internal address
+            CURLOPT_RESOLVE        => array($host . ':' . $port . ':' . $ip),
+        ));
         $response = curl_exec($ch);
         $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $redirect = curl_getinfo($ch, CURLINFO_REDIRECT_URL);
         curl_close($ch);
+
+        if ($http_code >= 300 && $http_code < 400 && $redirect) {
+            $url = $redirect;
+            continue;
+        }
         return ($http_code >= 200 && $http_code < 300) ? $response : false;
-    } elseif (ini_get('allow_url_fopen')) {
-        $ctx = stream_context_create(array(
-            'http' => array(
-                'timeout' => 15,
-                'user_agent' => 'MyBB/EditorExtras',
-                'follow_location' => true,
-                'max_redirects' => 3,
-            )
-        ));
-        $response = @file_get_contents($url, false, $ctx);
-        return $response !== false ? $response : false;
     }
     return false;
 }
@@ -506,7 +553,8 @@ function ms_ee_save_as_attachment($file, $mybb, $db)
         if ($thumb_w > 0 && $thumb_h > 0) {
             $thumbname = str_replace('.attach', '_thumb.' . $ext, $filename_internal);
             $thumb_result = generate_thumbnail($filepath, $upload_path . '/' . $month_dir, $thumbname, $thumb_h, $thumb_w);
-            if ($thumb_result) {
+            // generate_thumbnail() always returns an array; code 4 (image too small) has no filename
+            if (!empty($thumb_result['filename'])) {
                 $thumbnail = $month_dir . '/' . $thumbname;
             }
         }

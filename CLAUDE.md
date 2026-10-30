@@ -24,13 +24,16 @@ MyStudio, themes or modules. Code wins over docs; fix the skill file in the same
    templates/CSS — a **new** template/CSS file needs a full `syncToDatabase()`.
 2. Never put PHP in `themes/`. Imported ZIPs in the legacy layout (`functions/`, `lang/`) are
    relocated by `MyStudio::relocateThemeCode()`; export re-packs them.
-3. `ms_*` settings use `gid=0` (no settinggroup — `ms_activate()` deletes it). Plugin owns no tables.
+3. `ms_*` settings use `gid=0` (no settinggroup — `ms_activate()` deletes it). The core plugin owns
+   no tables; modules do (`ms_pages`, `ms_forum_icons`, `ms_user_banners`, `ms_pex_likes`).
 4. Modules: `MyStudio::CORE_MODULES` (the 5 shipped ones) are always on. Any other module is
    off until activated in ACP → MyStudio → Modules (state in datacache `ms_modules`). Only
    `listActiveModules()` load, inject assets or show in the ACP sidebar.
 5. Resolve the admin dir with `MyStudio::getAdminPath()` — never hardcode `admin/`.
 6. `$db->insert_query`/`update_query` do **not** escape in this MyBB build — `escape_string` first.
-7. Editor file ops: keep `realpath` containment + the PHP extension block.
+7. Editor file ops: keep `themeBaseDir`/`cleanRelPath` + `realpath` containment + the PHP
+   extension block. Anything that writes template content (sync, editor, Page Builder) must pass
+   MyBB's `check_template()` — templates are `eval()`'d.
 8. ACP UI: stock MyBB primitives only (no custom icons/inline styling).
 9. `.gitignore` is an allowlist — new tracked paths must be added there.
 

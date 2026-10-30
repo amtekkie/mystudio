@@ -64,11 +64,19 @@ function mystudio_meta()
     return true;
 }
 
-function mystudio_action_handler($action)
+/**
+ * Action => array('active' => permission key / sidebar item, 'file' => ...).
+ * mystudio.php re-checks the permission for its resolved action against this map,
+ * because a request can name a different action via &action= than the module param.
+ */
+function mystudio_action_map()
 {
-    global $page, $plugins;
+    global $plugins;
+    static $actions = null;
 
-    $page->active_module = "mystudio";
+    if ($actions !== null) {
+        return $actions;
+    }
 
     $actions = array(
         'manage'        => array('active' => 'manage',        'file' => 'mystudio.php'),
@@ -89,16 +97,26 @@ function mystudio_action_handler($action)
         'modules'       => array('active' => 'modules',       'file' => 'mystudio.php'),
         'plugins'       => array('active' => 'modules',       'file' => 'mystudio.php'),
         'api_toggle_plugin' => array('active' => 'modules',   'file' => 'mystudio.php'),
+        'api_save_plugin_options' => array('active' => 'plugin_settings', 'file' => 'mystudio.php'),
     );
 
     $actions = $plugins->run_hooks("admin_mystudio_action_handler", $actions);
 
+    return $actions;
+}
+
+function mystudio_action_handler($action)
+{
+    global $page;
+
+    $page->active_module = "mystudio";
+
+    $actions = mystudio_action_map();
+
     if (isset($actions[$action])) {
+        // plugin_settings stays 'plugin_settings' here so check_admin_permissions() matches;
+        // mystudio.php switches it to 'plugin_<id>' for the sidebar highlight.
         $page->active_action = $actions[$action]['active'];
-        // Dynamic active state for plugin_settings — highlight the correct plugin in the sidebar
-        if ($action === 'plugin_settings' && !empty($_GET['plugin'])) {
-            $page->active_action = 'plugin_' . preg_replace('/[^a-z0-9\-_]/', '', $_GET['plugin']);
-        }
         return $actions[$action]['file'];
     } else {
         $page->active_action = empty($action) ? "settings" : "manage";
@@ -113,9 +131,10 @@ function mystudio_admin_permissions()
     $admin_permissions = array(
         "manage"        => "Can manage themes",
         "import_export" => "Can import and export themes",
-        "options"       => "Can manage theme options",
-        "settings"      => "Can manage extension settings",
+        "settings"      => "Can manage Studio Settings",
         "pages"         => "Can manage custom pages",
+        "modules"       => "Can activate and deactivate modules",
+        "plugin_settings" => "Can manage module settings",
     );
 
     $admin_permissions = $plugins->run_hooks("admin_mystudio_permissions", $admin_permissions);

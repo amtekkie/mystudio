@@ -27,6 +27,10 @@ themes/**/.ms_last_sync
 !.claude/skills/
 !.claude/skills/**
 
+# Documentation (guides, screenshots, release notes)
+!docs/
+!docs/**
+
 # Allow gitignore and README
 !.gitignore
 !README.md

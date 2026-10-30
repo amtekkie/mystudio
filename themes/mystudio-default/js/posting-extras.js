@@ -55,7 +55,7 @@
         fd.append('target_type', targetType);
         fd.append('target_id', targetId);
 
-        ajaxPost(context.bburl + '/portal.php', fd, function(data) {
+        ajaxPost(context.bburl + '/xmlhttp.php?action=ms_pex', fd, function(data) {
             if (data.error) {
                 alert(data.error);
                 return;
@@ -92,7 +92,7 @@
             section.style.display = '';
             if (!list.getAttribute('data-loaded')) {
                 list.innerHTML = '<div class="pex-loading"></div>';
-                ajaxGet(context.bburl + '/portal.php?ms_action=load_likes&target_type=' + encodeURIComponent(targetType) + '&target_id=' + encodeURIComponent(targetId), function(data) {
+                ajaxGet(context.bburl + '/xmlhttp.php?action=ms_pex&ms_action=load_likes&target_type=' + encodeURIComponent(targetType) + '&target_id=' + encodeURIComponent(targetId), function(data) {
                     if (data.error) {
                         list.innerHTML = '<div class="text-muted small p-2">' + data.error + '</div>';
                         return;
@@ -128,7 +128,7 @@
                     // Load replies if not already loaded
                     if (!list.getAttribute('data-loaded')) {
                         list.innerHTML = '<div class="pex-loading"></div>';
-                        ajaxGet(bburl + '/portal.php?ms_action=load_replies&tid=' + tid, function(data) {
+                        ajaxGet(bburl + '/xmlhttp.php?action=ms_pex&ms_action=load_replies&tid=' + tid, function(data) {
                             if (data.error) {
                                 list.innerHTML = '<div class="text-muted small p-2">' + data.error + '</div>';
                                 return;
@@ -157,7 +157,7 @@
                 fd.append('my_post_key', postKey);
                 fd.append('tid', tid);
 
-                ajaxPost(bburl + '/portal.php', fd, function(data) {
+                ajaxPost(bburl + '/xmlhttp.php?action=ms_pex', fd, function(data) {
                     if (data.error) {
                         alert(data.error);
                         return;
@@ -203,7 +203,7 @@
                         fd.append('reply_image', imageInput.files[0]);
                     }
 
-                    ajaxPost(bburl + '/portal.php', fd, function(data) {
+                    ajaxPost(bburl + '/xmlhttp.php?action=ms_pex', fd, function(data) {
                         submitBtn.disabled = false;
                         submitBtn.textContent = 'Reply';
 
@@ -265,7 +265,7 @@
             fd.append('my_post_key', postKey);
             fd.append('pid', pid);
 
-            ajaxPost(bburl + '/portal.php', fd, function(data) {
+            ajaxPost(bburl + '/xmlhttp.php?action=ms_pex', fd, function(data) {
                 if (data.error) {
                     alert(data.error);
                     return;

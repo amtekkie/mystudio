@@ -1,0 +1,144 @@
+[align=center][size=xx-large][b]MyStudio 2.1.0[/b][/size]
+[size=large]A file-based theme studio and modern dark theme for MyBB 1.8[/size]
+
+[img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/forum-index.png[/img][/align]
+
+[hr]
+
+[size=large][b]What is MyStudio?[/b][/size]
+
+MyStudio changes how you build MyBB themes. Your theme lives as [b]ordinary files[/b] (HTML templates, CSS, JavaScript, JSON) instead of rows in a database. Edit them in the built-in code editor or your own, press save, and MyStudio syncs them into MyBB for you.
+
+It ships with [b]MyStudio Default[/b], a responsive dark theme built on Bootstrap 5, and five modules that add the features members ask for most.
+
+[hr]
+
+[size=large][b]What's new in 2.1.0[/b][/size]
+
+This release is about trust. We audited the whole plugin, theme and module code base and fixed what we found.
+
+[b]Security[/b]
+[list]
+[*]Template content now passes MyBB's own template security check on every save, sync and import, the same rule the stock Admin CP enforces.
+[*]Theme ZIP imports are locked down: only web assets may land in [i]themes/[/i], core modules can't be replaced, archives are size- and count-limited, and an import can no longer overwrite a different theme's folder.
+[*]Theme editor file operations validate every path before touching the disk.
+[*]Page Builder content is checked before it is rendered, and page conditions use a strict whitelist.
+[*]Feed posting, replies, likes, quick search and profile "latest posts" now respect forum permissions, passwords and "view own threads only" forums.
+[*]Editor image uploads attach to the right post (including when editing) and outside images are only fetched when you paste or drop them, through a hardened downloader.
+[*]Admin CP permissions are now granted properly, so every administrator, not just super admins, can use MyStudio. Demo data only runs on development sites.
+[/list]
+
+[b]Speed[/b]
+[list]
+[*]Like counts load in a single query per page instead of two per post.
+[*]Forum icons are cached and only processed where they appear.
+[*]Fewer file-system scans and database checks on every page load.
+[*]The unread-PM poller only runs for members and pauses in background tabs.
+[/list]
+
+[b]Fixes[/b]
+[list]
+[*]Typed text is no longer black on the dark editor background.
+[*]Inline moderation checkboxes no longer leave an empty column for regular members.
+[*]The likes feature works even when the portal is switched off.
+[*]Profile "Remove avatar" works again.
+[/list]
+
+[b]Documentation[/b]
+Brand-new beginner guides: getting started, how the theme system works, creating a theme, and creating a module. Links below.
+
+[hr]
+
+[size=large][b]The theme[/b][/size]
+
+A clean dark layout with a sidebar, card-style forum listings, last-poster avatars and a quick user card.
+
+[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/forum-thread-list.png[/img]
+
+[img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/thread-view.png[/img]
+[size=small][i]Threads with syntax-highlighted code, line numbers and a copy button[/i][/size][/align]
+
+It works just as well on a phone:
+
+[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/mobile-index.png[/img][/align]
+
+[hr]
+
+[size=large][b]A better post editor[/b][/size]
+
+The Editor Extras module upgrades SCEditor with a Bootstrap Icons toolbar, an emoji picker, GIF search (Tenor or GIPHY), tables, paste and drag-and-drop image upload, image resizing, @mentions and syntax-highlighted code.
+
+[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/post-editor.png[/img][/align]
+
+[hr]
+
+[size=large][b]Profiles with personality[/b][/size]
+
+Members can give their profile a banner: an uploaded image, a solid colour or a gradient. Profiles also show their latest posts.
+
+[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/profile-banner.png[/img][/align]
+
+[hr]
+
+[size=large][b]For admins[/b][/size]
+
+Pick an accent colour from nine presets or your own, upload a logo and favicon, and switch features on and off, all without touching code.
+
+[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/acp-studio-settings.png[/img]
+
+[img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/acp-modules.png[/img][/align]
+
+[hr]
+
+[size=large][b]For theme developers[/b][/size]
+
+The built-in editor runs on Monaco, the engine behind VS Code: a file tree, tabs, Emmet, and [b]Ctrl+S to save and update the forum in one step[/b].
+
+[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/acp-theme-editor.png[/img][/align]
+
+Prefer your own editor? Turn on auto-sync and the forum reloads itself a moment after you save.
+
+[b]Built for AI coding assistants.[/b] Because a theme is just files with predictable names ([i]templates/header/header.html[/i] is the [i]header[/i] template), tools like Claude Code, Copilot and Cursor can find, edit and diff your theme like any other project. The repository even ships the context files they read first.
+
+[b]Modules are plugins made simple.[/b] A folder, a [i]plugin.json[/i], an [i]init.php[/i] and an optional settings list. MyStudio builds the settings page and loads your CSS and JS for you:
+
+[code]inc/plugins/mystudio/modules/my-module/
+├── plugin.json
+├── init.php
+└── css/my-module.css[/code]
+
+[align=center][img]https://raw.githubusercontent.com/amtekkie/mystudio/main/docs/screenshots/announcement-bar-module.png[/img]
+[size=small][i]The example module from the guide: under 100 lines, settings page included[/i][/size][/align]
+
+[hr]
+
+[size=large][b]Requirements[/b][/size]
+[list]
+[*]MyBB 1.8.38 or newer
+[*]PHP 8.0+ with zip, fileinfo, json and curl
+[*]MySQL 5.7+ or MariaDB 10.3+
+[*]Apache 2.4+ or Nginx
+[/list]
+
+[size=large][b]Installing[/b][/size]
+[list=1]
+[*]Upload [i]inc/plugins/ms.php[/i], [i]inc/plugins/mystudio/[/i], [i]admin/modules/mystudio/[/i], [i]jscripts/mystudio/[/i] and [i]themes/mystudio-default/[/i].
+[*]Admin CP → Configuration → Plugins → [b]Install & Activate[/b] MyStudio.
+[*]MyStudio → Manage Themes → Options → [b]Sync from Disk[/b], then [b]Set as Default[/b].
+[/list]
+
+[b]Upgrading from 2.0?[/b] Upload the new files over the old ones, then deactivate and re-activate MyStudio once so administrators receive the new MyStudio permissions.
+
+[hr]
+
+[size=large][b]Links[/b][/size]
+[list]
+[*][b]Download & source:[/b] [url=https://github.com/amtekkie/mystudio]github.com/amtekkie/mystudio[/url]
+[*][b]Getting started:[/b] [url=https://github.com/amtekkie/mystudio/blob/main/docs/getting-started.md]docs/getting-started.md[/url]
+[*][b]How the theme system works:[/b] [url=https://github.com/amtekkie/mystudio/blob/main/docs/theme-system.md]docs/theme-system.md[/url]
+[*][b]Create a theme:[/b] [url=https://github.com/amtekkie/mystudio/blob/main/docs/create-a-theme.md]docs/create-a-theme.md[/url]
+[*][b]Create a module:[/b] [url=https://github.com/amtekkie/mystudio/blob/main/docs/create-a-module.md]docs/create-a-module.md[/url]
+[*][b]Report a bug or request a feature:[/b] [url=https://github.com/amtekkie/mystudio/issues]GitHub issues[/url]
+[/list]
+
+MyStudio is open source. Questions, bug reports and pull requests are all welcome. Let us know what you build with it!
