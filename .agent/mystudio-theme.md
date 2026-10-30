@@ -160,7 +160,10 @@ page sidebar, quick search, likes. Frontend only (skips admin).
 - `ms_pex_prepare_feed()` — query threads (visible, non-moved, respecting unviewable/inactive
   forums + `portal_announcementsfid`), render first-post via `build_postbit`, paginate 20/page,
   eval `portal` template, `output_page()` + **exit** (bypasses core portal).
-- `ms_pex_render_page_sidebar($scriptName)` — member/guest/modcp sidebar, dozens of `$ms_sb_*` globals.
+- `ms_pex_render_page_sidebar($scriptName)` — member/guest/modcp/admincp sidebar, dozens of `$ms_sb_*` globals.
+  Mod CP section gated by `canmodcp`, **Admin CP section gated by `cancp` + `hide_admin_links`** (uses
+  `$config['admin_dir']`, session 0006). Both eval'd into section templates (`pex_sidebar_modcp`,
+  `pex_sidebar_admincp`) referenced from `pex_sidebar_member`.
 - `ms_pex_render_newthread_modal()` + `ms_pex_render_forum_tree()` — recursive forum tree with
   `canview`/`canpostthreads` checks.
 - AJAX (`ms_pex_ajax`, post-key verified except `load_replies`/`load_likes`): `create_thread`,

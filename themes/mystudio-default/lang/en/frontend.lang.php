@@ -105,6 +105,7 @@ $l['ms_sidebar_trash']           = 'Trash';
 $l['ms_sidebar_tracking']        = 'Tracking';
 $l['ms_sidebar_edit_folders']    = 'Edit Folders';
 $l['ms_sidebar_modcp']           = 'Mod CP';
+$l['ms_sidebar_admincp']         = 'Admin CP';
 $l['ms_sidebar_modcp_home']      = 'Home';
 $l['ms_sidebar_mod_queue']       = 'Mod Queue';
 $l['ms_sidebar_report_center']   = 'Report Center';

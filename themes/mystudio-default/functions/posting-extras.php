@@ -240,7 +240,7 @@ function ms_pex_pre_output_page(&$page)
 
 function ms_pex_render_page_sidebar($scriptName)
 {
-    global $mybb, $lang, $templates;
+    global $mybb, $lang, $templates, $config;
 
     $bburl = $mybb->settings['bburl'];
     $uid = (int)$mybb->user['uid'];
@@ -321,6 +321,13 @@ function ms_pex_render_page_sidebar($scriptName)
             $ms_sb_modcp_warnings_active = ($mcpActive && $mcpAction === 'warninglogs') ? ' active' : '';
             $ms_sb_modcp_ipsearch_active = ($mcpActive && $mcpAction === 'ipsearch') ? ' active' : '';
             eval("\$ms_sb_modcp_section = \"" . $templates->get("pex_sidebar_modcp") . "\";");
+        }
+
+        // Admin CP link (only for admins; honours hide_admin_links / admin_dir like core global.php)
+        $ms_sb_admincp_section = '';
+        if ($mybb->usergroup['cancp'] == 1 && $mybb->config['hide_admin_links'] != 1) {
+            $ms_sb_acp_url = htmlspecialchars_uni($bburl . '/' . $config['admin_dir'] . '/index.php');
+            eval("\$ms_sb_admincp_section = \"" . $templates->get("pex_sidebar_admincp") . "\";");
         }
 
         eval("\$html = \"" . $templates->get("pex_sidebar_member") . "\";");

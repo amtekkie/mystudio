@@ -32,3 +32,4 @@ own session storage). Aim for:
 - [0003-dev-seed.md](0003-dev-seed.md) — Seeded the DB with forumeze.com structure: 26 users, 204 threads, 1000 posts; gotcha: `insert_query` no longer escapes.
 - [0004-dev-seed-feature.md](0004-dev-seed-feature.md) — Seed Dummy Data / Revert to Default buttons in Studio Settings via `inc/plugins/mystudio/devseed.php`; double-verified revert.
 - [0005-giphy-key-scrub.md](0005-giphy-key-scrub.md) — Scrubbed leaked GIPHY API key from all 18 commits (filter-branch) and force-pushed; user rotating the key.
+- [0006-sidebar-admincp.md](0006-sidebar-admincp.md) — Admin CP link in theme sidebar (role-gated); fixed lastposter avatar crop (removed !important min-width).
