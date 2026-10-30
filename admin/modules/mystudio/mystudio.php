@@ -2120,7 +2120,7 @@ btn.style.display="none";
 
 if ($action === 'settings') {
     $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-settings");
-    $page->add_breadcrumb_item("Studio Settings");
+    $page->add_breadcrumb_item("Studio Settings", "index.php?module=mystudio-settings");
 
     // Ensure new settings exist (migration for existing installations)
     $newSettings = array(
@@ -2178,10 +2178,10 @@ if ($action === 'settings') {
 
         if (!empty($GLOBALS['ms_upload_errors'])) {
             flash_message('Settings saved, but an image was rejected: ' . htmlspecialchars_uni(implode(' ', $GLOBALS['ms_upload_errors'])), 'error');
-            admin_redirect("index.php?module=mystudio-settings#tab_" . $tab);
+            admin_redirect("index.php?module=mystudio-settings&tab=" . $tab);
         }
         flash_message('Settings saved successfully.', 'success');
-        admin_redirect("index.php?module=mystudio-settings#tab_" . $tab);
+        admin_redirect("index.php?module=mystudio-settings&tab=" . $tab);
     }
 
     // Read current values
@@ -2191,150 +2191,168 @@ if ($action === 'settings') {
         $currentSettings[$row['name']] = $row['value'];
     }
 
-    $page->output_header("MyStudio - Studio Settings");
+    // Native nav tabs: each tab is its own page (&tab=…) and only the active one is rendered
+    $tabs = array(
+        'general' => array(
+            'title'       => 'General',
+            'link'        => 'index.php?module=mystudio-settings&amp;tab=general',
+            'description' => 'Turn MyStudio on or off and set the theme import size limit.',
+        ),
+        'theme' => array(
+            'title'       => 'Theme Settings',
+            'link'        => 'index.php?module=mystudio-settings&amp;tab=theme',
+            'description' => 'Appearance and branding of the active theme.',
+        ),
+        'developer' => array(
+            'title'       => 'Developer Settings',
+            'link'        => 'index.php?module=mystudio-settings&amp;tab=developer',
+            'description' => 'Auto sync of theme files and demo data tools for development.',
+        ),
+    );
+    $tab = $mybb->get_input('tab');
+    if (!isset($tabs[$tab])) {
+        $tab = 'general';
+    }
 
-    $page->output_tab_control(array(
-        'general'   => 'General',
-        'theme'     => 'Theme Settings',
-        'developer' => 'Developer Settings',
-    ));
+    $page->add_breadcrumb_item($tabs[$tab]['title']);
+    $page->output_header("MyStudio - Studio Settings");
+    $page->output_nav_tabs($tabs, $tab);
 
     /* ── General ── */
-    echo '<div id="tab_general">';
-    $form = new Form("index.php?module=mystudio-settings", "post");
-    echo $form->generate_hidden_field('tab', 'general');
+    if ($tab === 'general') {
+        $form = new Form("index.php?module=mystudio-settings", "post");
+        echo $form->generate_hidden_field('tab', 'general');
 
-    $form_container = new FormContainer("General");
-    $form_container->output_row(
-        "Enable MyStudio",
-        "Master switch to enable or disable MyStudio on the frontend. When disabled, themes will still be manageable from the admin panel but no MyStudio features will load on the forum.",
-        $form->generate_yes_no_radio('ms_enabled', isset($currentSettings['ms_enabled']) ? $currentSettings['ms_enabled'] : 1)
-    );
-    $form_container->output_row(
-        "Max Upload Size (MB)",
-        "Maximum allowed ZIP file size in megabytes for theme imports.",
-        $form->generate_numeric_field('ms_max_upload_mb', isset($currentSettings['ms_max_upload_mb']) ? $currentSettings['ms_max_upload_mb'] : 20, array('min' => 1, 'max' => 500, 'style' => 'width:80px'))
-    );
-    $form_container->end();
+        $form_container = new FormContainer("General");
+        $form_container->output_row(
+            "Enable MyStudio",
+            "Master switch to enable or disable MyStudio on the frontend. When disabled, themes will still be manageable from the admin panel but no MyStudio features will load on the forum.",
+            $form->generate_yes_no_radio('ms_enabled', isset($currentSettings['ms_enabled']) ? $currentSettings['ms_enabled'] : 1)
+        );
+        $form_container->output_row(
+            "Max Upload Size (MB)",
+            "Maximum allowed ZIP file size in megabytes for theme imports.",
+            $form->generate_numeric_field('ms_max_upload_mb', isset($currentSettings['ms_max_upload_mb']) ? $currentSettings['ms_max_upload_mb'] : 20, array('min' => 1, 'max' => 500, 'style' => 'width:80px'))
+        );
+        $form_container->end();
 
-    $form->output_submit_wrapper(array($form->generate_submit_button("Save Settings")));
-    $form->end();
-    echo '</div>';
+        $form->output_submit_wrapper(array($form->generate_submit_button("Save Settings")));
+        $form->end();
+    }
 
     /* ── Theme Settings (appearance + branding) ── */
-    echo '<div id="tab_theme">';
-    $form = new Form("index.php?module=mystudio-settings", "post", "", 1);
-    echo $form->generate_hidden_field('tab', 'theme');
+    if ($tab === 'theme') {
+        $form = new Form("index.php?module=mystudio-settings", "post", "", 1);
+        echo $form->generate_hidden_field('tab', 'theme');
 
-    $allOptions   = $activeSlug ? $ms->getThemeOptions($activeSlug) : false;
-    $themeValues  = $activeSlug ? $ms->getMergedThemeOptions($activeSlug) : array();
-    $brandingKeys = array('logo_icon', 'logo_text', 'site_logo', 'favicon');
+        $allOptions   = $activeSlug ? $ms->getThemeOptions($activeSlug) : false;
+        $themeValues  = $activeSlug ? $ms->getMergedThemeOptions($activeSlug) : array();
+        $brandingKeys = array('logo_icon', 'logo_text', 'site_logo', 'favicon');
 
-    $form_container = new FormContainer("Appearance");
-    $form_container->output_row(
-        "Page Loading Bar",
-        "Show an accent-coloured progress bar at the top of the page during navigation.",
-        $form->generate_yes_no_radio('ms_loading_bar', isset($currentSettings['ms_loading_bar']) ? $currentSettings['ms_loading_bar'] : 1)
-    );
-    if ($allOptions) {
-        foreach ($allOptions as $key => $def) {
-            $optPage = isset($def['page']) ? $def['page'] : '';
-            if ($optPage === 'studio_settings' && !in_array($key, $brandingKeys, true)) {
-                ms_render_option_row($form, $form_container, $key, $def, $themeValues, $mybb);
+        $form_container = new FormContainer("Appearance");
+        $form_container->output_row(
+            "Page Loading Bar",
+            "Show an accent-coloured progress bar at the top of the page during navigation.",
+            $form->generate_yes_no_radio('ms_loading_bar', isset($currentSettings['ms_loading_bar']) ? $currentSettings['ms_loading_bar'] : 1)
+        );
+        if ($allOptions) {
+            foreach ($allOptions as $key => $def) {
+                $optPage = isset($def['page']) ? $def['page'] : '';
+                if ($optPage === 'studio_settings' && !in_array($key, $brandingKeys, true)) {
+                    ms_render_option_row($form, $form_container, $key, $def, $themeValues, $mybb);
+                }
             }
-        }
-    }
-    $form_container->end();
-
-    $hasBranding = false;
-    if ($allOptions) {
-        $form_container = new FormContainer("Branding");
-        foreach ($brandingKeys as $bk) {
-            if (isset($allOptions[$bk])) {
-                ms_render_option_row($form, $form_container, $bk, $allOptions[$bk], $themeValues, $mybb);
-                $hasBranding = true;
-            }
-        }
-        if (!$hasBranding) {
-            $form_container->output_row('Branding', '', 'The active theme has no branding options.');
         }
         $form_container->end();
-    }
 
-    $form->output_submit_wrapper(array($form->generate_submit_button("Save Theme Settings")));
-    $form->end();
-    echo '</div>';
+        $hasBranding = false;
+        if ($allOptions) {
+            $form_container = new FormContainer("Branding");
+            foreach ($brandingKeys as $bk) {
+                if (isset($allOptions[$bk])) {
+                    ms_render_option_row($form, $form_container, $bk, $allOptions[$bk], $themeValues, $mybb);
+                    $hasBranding = true;
+                }
+            }
+            if (!$hasBranding) {
+                $form_container->output_row('Branding', '', 'The active theme has no branding options.');
+            }
+            $form_container->end();
+        }
 
-    if ($hasBranding) {
-        ms_output_icon_picker_modal();
+        $form->output_submit_wrapper(array($form->generate_submit_button("Save Theme Settings")));
+        $form->end();
+
+        if ($hasBranding) {
+            ms_output_icon_picker_modal();
+        }
     }
 
     /* ── Developer Settings (auto-sync + demo data) ── */
-    echo '<div id="tab_developer">';
-    $form = new Form("index.php?module=mystudio-settings", "post");
-    echo $form->generate_hidden_field('tab', 'developer');
+    if ($tab === 'developer') {
+        $form = new Form("index.php?module=mystudio-settings", "post");
+        echo $form->generate_hidden_field('tab', 'developer');
 
-    $form_container = new FormContainer("Auto Sync");
-    $form_container->output_row(
-        "Auto Sync (Dev Mode)",
-        "When enabled, the forum will poll for file changes in the active theme directory every few seconds and automatically sync to the database. Only runs for admin users browsing the frontend. <strong>Disable in production.</strong>",
-        $form->generate_yes_no_radio('ms_dev_auto_sync', isset($currentSettings['ms_dev_auto_sync']) ? $currentSettings['ms_dev_auto_sync'] : 0)
-    );
-    $form_container->output_row(
-        "Auto Sync Interval (seconds)",
-        "How often to check for file changes. Lower = faster feedback, higher = less server load. Recommended: 2–5 seconds.",
-        $form->generate_numeric_field('ms_dev_sync_interval', isset($currentSettings['ms_dev_sync_interval']) ? $currentSettings['ms_dev_sync_interval'] : 2, array('min' => 1, 'max' => 60, 'style' => 'width:80px'))
-    );
-    $form_container->end();
-
-    $form->output_submit_wrapper(array($form->generate_submit_button("Save Developer Settings")));
-    $form->end();
-
-    // Demo Data wipes the board: only super admins on a dev environment see (and may run) it
-    if (!ms_devseed_allowed()) {
-        $form_container = new FormContainer("Demo Data (development only)");
+        $form_container = new FormContainer("Auto Sync");
         $form_container->output_row(
-            "Demo Data unavailable",
-            "",
-            "Seeding and reverting are only available to super admins on a development environment: the Board URL host must be <code>localhost</code>, <code>127.0.0.1</code> or end in <code>.local</code>, <code>.test</code> or <code>.localhost</code>, or <code>inc/config.php</code> must set <code>\$config['ms_dev_mode'] = true;</code>."
+            "Auto Sync (Dev Mode)",
+            "When enabled, the forum will poll for file changes in the active theme directory every few seconds and automatically sync to the database. Only runs for admin users browsing the frontend. <strong>Disable in production.</strong>",
+            $form->generate_yes_no_radio('ms_dev_auto_sync', isset($currentSettings['ms_dev_auto_sync']) ? $currentSettings['ms_dev_auto_sync'] : 0)
+        );
+        $form_container->output_row(
+            "Auto Sync Interval (seconds)",
+            "How often to check for file changes. Lower = faster feedback, higher = less server load. Recommended: 2–5 seconds.",
+            $form->generate_numeric_field('ms_dev_sync_interval', isset($currentSettings['ms_dev_sync_interval']) ? $currentSettings['ms_dev_sync_interval'] : 2, array('min' => 1, 'max' => 60, 'style' => 'width:80px'))
         );
         $form_container->end();
-    } else {
-        // FormContainer buffers its rows until end(), so each form gets its own container,
-        // ended before the form closes — otherwise the buttons render outside their <form>.
-        $seedForm = new Form("index.php?module=mystudio-seed_data", "post");
-        $form_container = new FormContainer("Demo Data (development only)");
 
-        $form_container->output_row(
-            "Seed Dummy Data",
-            "Wipes all current content and seeds the board with the forumeze.com forum structure: 24 forums/categories, ~200 threads with replies across 26 users of every usergroup (admin, super moderators, moderators, registered, awaiting activation, banned), a poll, announcements, quotes and MyCode samples. One forum is left empty and some threads have no replies. Seeded user password: <code>TestPass123!</code>.",
-            $seedForm->generate_submit_button("Seed Dummy Data", array('onclick' => "return confirm('This deletes ALL existing forums, threads, posts and non-admin users, then seeds dummy data. Continue?');"))
-        );
-        $form_container->end();
-        $seedForm->end();
+        $form->output_submit_wrapper(array($form->generate_submit_button("Save Developer Settings")));
+        $form->end();
 
-        // POST (a GET form would drop ?module= from the action URL). Double verification in the
-        // browser: a confirm() dialog, then a prompt that must be answered with RESET. The server
-        // re-checks both fields, so the revert never runs without them.
-        $revertForm = new Form("index.php?module=mystudio-revert_default", "post", "ms_revert_form");
-        echo $revertForm->generate_hidden_field('confirm_wipe', '0', array('id' => 'ms_revert_confirm_wipe'));
-        echo $revertForm->generate_hidden_field('confirm_text', '', array('id' => 'ms_revert_confirm_text'));
-        $revertJs = "if(!confirm('Revert to a default MyBB installation?\\n\\nThis permanently deletes ALL forums, threads, posts, polls, private messages and every user except administrators. MyStudio, its themes, files and settings are kept.\\n\\nThere is no undo. Continue?'))return false;"
-                  . "var t=prompt('Second confirmation: type RESET (in capitals) to revert the forum.');"
-                  . "if(t!=='RESET'){if(t!==null)alert('Revert cancelled: you must type RESET exactly.');return false;}"
-                  . "document.getElementById('ms_revert_confirm_wipe').value='1';"
-                  . "document.getElementById('ms_revert_confirm_text').value=t;return true;";
-        $form_container = new FormContainer("Revert to Default");
-        $form_container->output_row(
-            "Revert to Default Installation",
-            "Deletes all content and non-admin users, restoring a default MyBB installation (\"My Category\" / \"My Forum\", no posts). MyStudio stays installed with its themes, files and settings. Asks you to confirm twice: a confirmation dialog, then typing <code>RESET</code>. <strong>No undo — back up first.</strong>",
-            $revertForm->generate_submit_button("Revert to Default", array('onclick' => $revertJs))
-        );
-        $form_container->end();
-        $revertForm->end();
+        // Demo Data wipes the board: only super admins on a dev environment see (and may run) it
+        if (!ms_devseed_allowed()) {
+            $form_container = new FormContainer("Demo Data (development only)");
+            $form_container->output_row(
+                "Demo Data unavailable",
+                "",
+                "Seeding and reverting are only available to super admins on a development environment: the Board URL host must be <code>localhost</code>, <code>127.0.0.1</code> or end in <code>.local</code>, <code>.test</code> or <code>.localhost</code>, or <code>inc/config.php</code> must set <code>\$config['ms_dev_mode'] = true;</code>."
+            );
+            $form_container->end();
+        } else {
+            // FormContainer buffers its rows until end(), so each form gets its own container,
+            // ended before the form closes — otherwise the buttons render outside their <form>.
+            $seedForm = new Form("index.php?module=mystudio-seed_data", "post");
+            $form_container = new FormContainer("Demo Data (development only)");
+
+            $form_container->output_row(
+                "Seed Dummy Data",
+                "Wipes all current content and seeds the board with the forumeze.com forum structure: 24 forums/categories, ~200 threads with replies across 26 users of every usergroup (admin, super moderators, moderators, registered, awaiting activation, banned), a poll, announcements, quotes and MyCode samples. One forum is left empty and some threads have no replies. Seeded user password: <code>TestPass123!</code>.",
+                $seedForm->generate_submit_button("Seed Dummy Data", array('onclick' => "return confirm('This deletes ALL existing forums, threads, posts and non-admin users, then seeds dummy data. Continue?');"))
+            );
+            $form_container->end();
+            $seedForm->end();
+
+            // POST (a GET form would drop ?module= from the action URL). Double verification in the
+            // browser: a confirm() dialog, then a prompt that must be answered with RESET. The server
+            // re-checks both fields, so the revert never runs without them.
+            $revertForm = new Form("index.php?module=mystudio-revert_default", "post", "ms_revert_form");
+            echo $revertForm->generate_hidden_field('confirm_wipe', '0', array('id' => 'ms_revert_confirm_wipe'));
+            echo $revertForm->generate_hidden_field('confirm_text', '', array('id' => 'ms_revert_confirm_text'));
+            $revertJs = "if(!confirm('Revert to a default MyBB installation?\\n\\nThis permanently deletes ALL forums, threads, posts, polls, private messages and every user except administrators. MyStudio, its themes, files and settings are kept.\\n\\nThere is no undo. Continue?'))return false;"
+                      . "var t=prompt('Second confirmation: type RESET (in capitals) to revert the forum.');"
+                      . "if(t!=='RESET'){if(t!==null)alert('Revert cancelled: you must type RESET exactly.');return false;}"
+                      . "document.getElementById('ms_revert_confirm_wipe').value='1';"
+                      . "document.getElementById('ms_revert_confirm_text').value=t;return true;";
+            $form_container = new FormContainer("Revert to Default");
+            $form_container->output_row(
+                "Revert to Default Installation",
+                "Deletes all content and non-admin users, restoring a default MyBB installation (\"My Category\" / \"My Forum\", no posts). MyStudio stays installed with its themes, files and settings. Asks you to confirm twice: a confirmation dialog, then typing <code>RESET</code>. <strong>No undo — back up first.</strong>",
+                $revertForm->generate_submit_button("Revert to Default", array('onclick' => $revertJs))
+            );
+            $form_container->end();
+            $revertForm->end();
+        }
     }
-
-    echo '</div>';
 
     $page->output_footer();
     exit;
@@ -2346,26 +2364,26 @@ if ($action === 'settings') {
 
 if ($action === 'seed_data') {
     if ($mybb->request_method !== 'post') {
-        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+        admin_redirect("index.php?module=mystudio-settings&tab=developer");
     }
     verify_post_check($mybb->get_input('my_post_key'));
 
     if (!ms_devseed_allowed()) {
         flash_message('Demo data is only available to super admins on a development environment.', 'error');
-        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+        admin_redirect("index.php?module=mystudio-settings&tab=developer");
     }
 
     $seedResult = ms_devseed_seed_data();
     if (!$seedResult) {
         flash_message('Demo data seeding was refused.', 'error');
-        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+        admin_redirect("index.php?module=mystudio-settings&tab=developer");
     }
 
     flash_message(
         "Dummy data seeded: {$seedResult['forums']} forums, {$seedResult['threads']} threads ({$seedResult['no_reply']} without replies), {$seedResult['posts']} posts, {$seedResult['users']} users created. Seeded user password: TestPass123!",
         'success'
     );
-    admin_redirect("index.php?module=mystudio-settings#tab_developer");
+    admin_redirect("index.php?module=mystudio-settings&tab=developer");
     exit;
 }
 
@@ -2376,7 +2394,7 @@ if ($action === 'seed_data') {
 if ($action === 'revert_default') {
     if (!ms_devseed_allowed()) {
         flash_message('Demo data is only available to super admins on a development environment.', 'error');
-        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+        admin_redirect("index.php?module=mystudio-settings&tab=developer");
     }
 
     if ($mybb->request_method === 'post') {
@@ -2393,15 +2411,15 @@ if ($action === 'revert_default') {
         if (empty($errors)) {
             if (!ms_devseed_revert_default()) {
                 flash_message('Revert to default was refused.', 'error');
-                admin_redirect("index.php?module=mystudio-settings#tab_developer");
+                admin_redirect("index.php?module=mystudio-settings&tab=developer");
             }
             flash_message('Forum reverted to a default MyBB installation (MyStudio and its settings remain installed).', 'success');
-            admin_redirect("index.php?module=mystudio-settings#tab_developer");
+            admin_redirect("index.php?module=mystudio-settings&tab=developer");
             exit;
         }
 
         flash_message(implode(' ', $errors), 'error');
-        admin_redirect("index.php?module=mystudio-settings#tab_developer");
+        admin_redirect("index.php?module=mystudio-settings&tab=developer");
         exit;
     }
 
