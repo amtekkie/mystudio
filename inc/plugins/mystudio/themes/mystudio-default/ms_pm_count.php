@@ -2,7 +2,7 @@
 // Minimal AJAX endpoint — returns current user's unread PM count as JSON.
 define('IN_MYBB', 1);
 define('NO_PLUGINS', 1);
-require_once __DIR__ . '/../../../global.php';
+require_once __DIR__ . '/../../../../../global.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');

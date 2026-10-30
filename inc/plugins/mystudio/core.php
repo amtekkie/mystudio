@@ -35,6 +35,114 @@ class MyStudio
     const THEMES_DIR = 'themes';
 
     /**
+     * Plugin-owned code (relative to MYBB_ROOT). Themes hold only templates,
+     * CSS, JS, images and JSON; all PHP lives under the plugin/admin dirs:
+     *   inc/plugins/mystudio/modules/{id}/        module runtime (init.php, assets, default.json)
+     *   inc/plugins/mystudio/themes/{slug}/       theme hooks.php + lang/
+     *   {admin}/modules/mystudio/modules/{id}/    module options.php (option schema)
+     *   {admin}/modules/mystudio/themes/{slug}/   theme options.php (option schema)
+     */
+    const PLUGIN_DIR = 'inc/plugins/mystudio';
+
+    /**
+     * Absolute path to the MyBB admin directory (with trailing slash).
+     *
+     * @return string
+     */
+    public function getAdminPath()
+    {
+        if (defined('MYBB_ADMIN_DIR')) {
+            return MYBB_ADMIN_DIR;
+        }
+        global $config;
+        $adminDir = !empty($config['admin_dir']) ? $config['admin_dir'] : 'admin';
+        return MYBB_ROOT . $adminDir . '/';
+    }
+
+    /** Absolute path to the modules directory. */
+    public function getModulesDir()
+    {
+        return MYBB_ROOT . self::PLUGIN_DIR . '/modules';
+    }
+
+    /** Absolute path to a theme's PHP code directory (hooks.php, lang/). */
+    public function getThemeCodeDir($slug)
+    {
+        return MYBB_ROOT . self::PLUGIN_DIR . '/themes/' . $slug;
+    }
+
+    /** Absolute path to a module's admin directory (options.php). */
+    public function getModuleAdminDir($moduleId)
+    {
+        return $this->getAdminPath() . 'modules/mystudio/modules/' . $moduleId;
+    }
+
+    /** Absolute path to a theme's admin directory (options.php). */
+    public function getThemeAdminDir($slug)
+    {
+        return $this->getAdminPath() . 'modules/mystudio/themes/' . $slug;
+    }
+
+    /**
+     * Move PHP out of an imported theme directory into the plugin/admin dirs.
+     * Accepts the legacy package layout (functions/, functions/modules/, lang/).
+     *
+     * @param string $themeDir Absolute path to themes/{slug}
+     * @param string $slug
+     */
+    private function relocateThemeCode($themeDir, $slug)
+    {
+        $funcDir = $themeDir . '/functions';
+        $codeDir = $this->getThemeCodeDir($slug);
+
+        if (is_dir($funcDir . '/modules')) {
+            foreach (scandir($funcDir . '/modules') as $id) {
+                if ($id === '.' || $id === '..' || $id[0] === '.') continue;
+                $src = $funcDir . '/modules/' . $id;
+                if (!is_dir($src)) continue;
+                $dst = $this->getModulesDir() . '/' . $id;
+                $this->rrmdir($dst);
+                $this->rcopy($src, $dst);
+                $this->moveModuleOptionsToAdmin($id);
+            }
+            $this->rrmdir($funcDir . '/modules');
+        }
+
+        if (file_exists($funcDir . '/options.php')) {
+            $adminDir = $this->getThemeAdminDir($slug);
+            @mkdir($adminDir, 0755, true);
+            @rename($funcDir . '/options.php', $adminDir . '/options.php');
+        }
+
+        if (is_dir($funcDir) || is_dir($themeDir . '/lang')) {
+            $this->rrmdir($codeDir);
+            if (is_dir($funcDir)) {
+                $this->rcopy($funcDir, $codeDir);
+                $this->rrmdir($funcDir);
+            }
+            if (is_dir($themeDir . '/lang')) {
+                @mkdir($codeDir, 0755, true);
+                $this->rcopy($themeDir . '/lang', $codeDir . '/lang');
+                $this->rrmdir($themeDir . '/lang');
+            }
+        }
+    }
+
+    /**
+     * Move a module's options.php (option schema) into the admin dir.
+     *
+     * @param string $moduleId
+     */
+    public function moveModuleOptionsToAdmin($moduleId)
+    {
+        $src = $this->getModulesDir() . '/' . $moduleId . '/options.php';
+        if (!file_exists($src)) return;
+        $adminDir = $this->getModuleAdminDir($moduleId);
+        @mkdir($adminDir, 0755, true);
+        @rename($src, $adminDir . '/options.php');
+    }
+
+    /**
      * Allowed file extensions for editing/creating via the editor.
      * Executable extensions (php, phtml, phar, etc.) are blocked to prevent RCE.
      */
@@ -174,6 +282,9 @@ class MyStudio
 
         $this->rrmdir($tmpDir);
 
+        // ── Move any PHP (functions/, lang/) out of the theme dir ──
+        $this->relocateThemeCode($destDir, $slug);
+
         // ── Sync to DB ──
         $tid = $this->syncToDatabase($slug, $parentTid);
         if (!$tid) {
@@ -237,6 +348,26 @@ class MyStudio
         }
 
         $this->addDirToZip($zip, $themeDir, $safeName);
+
+        // Re-pack theme PHP in the portable package layout (functions/, lang/)
+        $codeDir = $this->getThemeCodeDir($slug);
+        if (is_dir($codeDir)) {
+            foreach (scandir($codeDir) as $entry) {
+                if ($entry === '.' || $entry === '..') continue;
+                $path = $codeDir . '/' . $entry;
+                if ($entry === 'lang' && is_dir($path)) {
+                    $this->addDirToZip($zip, $path, $safeName . '/lang');
+                } elseif (is_dir($path)) {
+                    $this->addDirToZip($zip, $path, $safeName . '/functions/' . $entry);
+                } else {
+                    $zip->addFile($path, $safeName . '/functions/' . $entry);
+                }
+            }
+        }
+        $optionsFile = $this->getThemeAdminDir($slug) . '/options.php';
+        if (file_exists($optionsFile)) {
+            $zip->addFile($optionsFile, $safeName . '/functions/options.php');
+        }
         $zip->close();
 
         return $zipPath;
@@ -810,15 +941,7 @@ class MyStudio
 
     private function importThemeXml($xml, $parentTid = 1, $extraOptions = array())
     {
-        // Resolve admin directory path
-        $adminPath = '';
-        if (defined('MYBB_ADMIN_DIR')) {
-            $adminPath = MYBB_ADMIN_DIR;
-        } else {
-            global $config;
-            $adminDir = !empty($config['admin_dir']) ? $config['admin_dir'] : 'admin';
-            $adminPath = MYBB_ROOT . $adminDir . '/';
-        }
+        $adminPath = $this->getAdminPath();
 
         // Load admin functions needed by import_theme_xml (check_template, etc.)
         if (!function_exists('check_template')) {
@@ -1158,10 +1281,7 @@ class MyStudio
 
         // Use MyBB admin function if available, otherwise skip
         if (!function_exists('update_theme_stylesheet_list')) {
-            $adminDir = defined('MYBB_ADMIN_DIR')
-                ? MYBB_ADMIN_DIR
-                : (MYBB_ROOT . 'admin/');
-            $funcsFile = $adminDir . 'inc/functions_themes.php';
+            $funcsFile = $this->getAdminPath() . 'inc/functions_themes.php';
             if (file_exists($funcsFile)) {
                 @require_once $funcsFile;
             }
@@ -1524,7 +1644,7 @@ class MyStudio
     }
 
     /**
-     * Read the theme options definition from functions/options.php.
+     * Read the theme options definition from {admin}/modules/mystudio/themes/{slug}/options.php.
      *
      * The file must return an associative array of option definitions:
      *   return array(
@@ -1543,7 +1663,7 @@ class MyStudio
      */
     public function getThemeOptions($slug)
     {
-        $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions/options.php';
+        $file = $this->getThemeAdminDir($slug) . '/options.php';
         if (!file_exists($file)) return false;
 
         $options = @include $file;
@@ -1552,14 +1672,14 @@ class MyStudio
     }
 
     /**
-     * Check if a theme has a functions/ directory with any PHP files.
+     * Check if a theme has a PHP code directory (inc/plugins/mystudio/themes/{slug}) with any PHP files.
      *
      * @param  string $slug
      * @return bool
      */
     public function themeHasFunctions($slug)
     {
-        $dir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions';
+        $dir = $this->getThemeCodeDir($slug);
         if (!is_dir($dir)) return false;
 
         foreach (scandir($dir) as $e) {
@@ -1631,7 +1751,7 @@ class MyStudio
     /**
      * Load language files from the active theme's lang/ directory.
      *
-     * Expected structure: themes/{slug}/lang/{language}/*.lang.php
+     * Expected structure: inc/plugins/mystudio/themes/{slug}/lang/{language}/*.lang.php
      * Each file sets variables on the $l array (same convention as MyBB lang files):
      *   $l['my_theme_welcome'] = 'Welcome!';
      *
@@ -1641,12 +1761,12 @@ class MyStudio
      */
     public function loadThemeLang($slug, $langName)
     {
-        $langDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/lang/' . $langName;
+        $langDir = $this->getThemeCodeDir($slug) . '/lang/' . $langName;
         $strings = array();
 
         // Fallback to english if the requested language folder doesn't exist
         if (!is_dir($langDir)) {
-            $langDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/lang/english';
+            $langDir = $this->getThemeCodeDir($slug) . '/lang/english';
         }
 
         if (!is_dir($langDir)) return $strings;
@@ -1739,7 +1859,7 @@ class MyStudio
     }
 
     /**
-     * Discover mini plugins inside a theme's functions/plugins/ directory.
+     * Discover mini plugins (alias of listModules).
      *
      * Each mini plugin lives in its own sub-folder and must contain at
      * minimum a plugin.json manifest:
@@ -1767,14 +1887,14 @@ class MyStudio
 
     /**
      * List all built-in modules for a theme.
-     * Scans themes/{slug}/functions/modules/ for subdirectories with a plugin.json.
+     * Scans inc/plugins/mystudio/modules/ for subdirectories with a plugin.json.
      *
      * @param  string $slug  Theme slug
      * @return array         Array of module info arrays
      */
     public function listModules($slug)
     {
-        $modulesDir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug . '/functions/modules';
+        $modulesDir = $this->getModulesDir();
         $result = array();
         if (!is_dir($modulesDir)) return $result;
 
@@ -1796,15 +1916,102 @@ class MyStudio
                 'version'     => isset($manifest['version']) ? $manifest['version'] : '1.0.0',
                 'author'      => isset($manifest['author']) ? $manifest['author'] : '',
                 'has_init'    => file_exists($dir . '/init.php'),
-                'has_options' => file_exists($dir . '/options.php'),
+                'has_options' => file_exists($this->getModuleAdminDir($entry) . '/options.php')
+                               || file_exists($dir . '/options.php'),
                 'has_admin'   => file_exists($dir . '/admin.php'),
                 'has_js'      => is_dir($dir . '/js'),
                 'has_css'     => is_dir($dir . '/css'),
                 'dir'         => $dir,
+                'core'        => $this->isCoreModule($entry),
+                'enabled'     => $this->isModuleEnabled($entry),
             );
         }
 
         return $result;
+    }
+
+    /**
+     * Modules that ship with MyStudio. They are always enabled and cannot be
+     * switched off. Any other module is off until an admin activates it.
+     */
+    const CORE_MODULES = array(
+        'ms-editor-extras',
+        'ms-forum-display-extras',
+        'ms-forum-icons',
+        'ms-pagebuilder',
+        'ms-profile-extras',
+    );
+
+    /** Datacache key holding the list of activated (non-core) module ids. */
+    const MODULE_STATE_CACHE = 'ms_modules';
+
+    /**
+     * @param  string $moduleId
+     * @return bool
+     */
+    public function isCoreModule($moduleId)
+    {
+        return in_array($moduleId, self::CORE_MODULES, true);
+    }
+
+    /**
+     * Ids of non-core modules an admin has activated.
+     *
+     * @return array
+     */
+    public function getActivatedModuleIds()
+    {
+        global $cache;
+
+        $data = $cache->read(self::MODULE_STATE_CACHE);
+        return (is_array($data) && isset($data['enabled']) && is_array($data['enabled']))
+            ? $data['enabled'] : array();
+    }
+
+    /**
+     * Core modules are always enabled; others only once activated.
+     *
+     * @param  string $moduleId
+     * @return bool
+     */
+    public function isModuleEnabled($moduleId)
+    {
+        return $this->isCoreModule($moduleId)
+            || in_array($moduleId, $this->getActivatedModuleIds(), true);
+    }
+
+    /**
+     * Activate or deactivate a non-core module.
+     *
+     * @param  string $moduleId
+     * @param  bool   $enable
+     * @return bool   false for core modules (they cannot be toggled)
+     */
+    public function setModuleEnabled($moduleId, $enable)
+    {
+        global $cache;
+
+        if ($this->isCoreModule($moduleId)) return false;
+
+        $ids = array_diff($this->getActivatedModuleIds(), array($moduleId));
+        if ($enable) {
+            $ids[] = $moduleId;
+        }
+        $cache->update(self::MODULE_STATE_CACHE, array('enabled' => array_values($ids)));
+        return true;
+    }
+
+    /**
+     * Enabled modules only (what actually loads at runtime).
+     *
+     * @param  string $slug
+     * @return array
+     */
+    public function listActiveModules($slug)
+    {
+        return array_values(array_filter($this->listModules($slug), function ($m) {
+            return $m['enabled'];
+        }));
     }
 
     /**
@@ -1816,8 +2023,7 @@ class MyStudio
      */
     public function getMiniPluginOptionValues($slug, $pluginId)
     {
-        $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-              . '/functions/modules/' . $pluginId . '/default.json';
+        $file = $this->getModulesDir() . '/' . $pluginId . '/default.json';
         if (!file_exists($file)) return array();
         $data = @json_decode(file_get_contents($file), true);
         return is_array($data) ? $data : array();
@@ -1833,8 +2039,7 @@ class MyStudio
      */
     public function saveMiniPluginOptionValues($slug, $pluginId, $values)
     {
-        $dir = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-             . '/functions/modules/' . $pluginId;
+        $dir = $this->getModulesDir() . '/' . $pluginId;
         if (!is_dir($dir)) return false;
         $file = $dir . '/default.json';
         return file_put_contents($file, json_encode($values, JSON_PRETTY_PRINT)) !== false;
@@ -1849,8 +2054,12 @@ class MyStudio
      */
     public function getMiniPluginOptions($slug, $pluginId)
     {
-        $file = MYBB_ROOT . self::THEMES_DIR . '/' . $slug
-              . '/functions/modules/' . $pluginId . '/options.php';
+        // Schema lives in the admin dir; fall back to the module dir for
+        // modules that have not been relocated yet.
+        $file = $this->getModuleAdminDir($pluginId) . '/options.php';
+        if (!file_exists($file)) {
+            $file = $this->getModulesDir() . '/' . $pluginId . '/options.php';
+        }
         if (!file_exists($file)) return false;
         $options = @include $file;
         if (!is_array($options) || empty($options)) return false;
@@ -1888,7 +2097,7 @@ class MyStudio
      */
     public function loadModules($slug)
     {
-        $modules = $this->listModules($slug);
+        $modules = $this->listActiveModules($slug);
 
         foreach ($modules as $p) {
             if ($p['has_init']) {
@@ -1910,11 +2119,11 @@ class MyStudio
      */
     public function getModuleAssets($slug)
     {
-        $modules = $this->listModules($slug);
+        $modules = $this->listActiveModules($slug);
         $assets  = array('js' => array(), 'css' => array());
 
         foreach ($modules as $p) {
-            $webBase = self::THEMES_DIR . '/' . $slug . '/functions/modules/' . $p['id'];
+            $webBase = self::PLUGIN_DIR . '/modules/' . $p['id'];
 
             if ($p['has_css']) {
                 $cssDir = $p['dir'] . '/css';

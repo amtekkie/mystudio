@@ -344,7 +344,7 @@ function ms_pex_render_page_sidebar($scriptName)
 
 function ms_pex_render_newthread_modal($bburl)
 {
-    global $cache, $templates;
+    global $cache, $templates, $lang;
 
     $forums = $cache->read('forums');
     if (empty($forums) || !is_array($forums)) {

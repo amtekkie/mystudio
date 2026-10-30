@@ -6,11 +6,30 @@
  * Values are stored in themes/mystudio-default/default.json
  * and available in templates via {$mybb->ms_theme_options['key']}.
  *
- * Supported types: text, textarea, yesno, select, color, numeric, image
+ * Supported types: text, textarea, yesno, select, color, color_presets, numeric, image
  */
 
 return array(
-'logo_icon' => array(
+    'theme_color' => array(
+        'title'       => 'Theme Colour',
+        'description' => 'Accent colour used for links, buttons, headings and highlights.',
+        'type'        => 'color_presets',
+        'default'     => '#2dd4bf',
+        'page'        => 'studio_settings',
+        'options'     => array(
+            '#2dd4bf' => 'Default (Teal)',
+            '#55efc4' => 'Mint',
+            '#0984e3' => 'Blue',
+            '#6c5ce7' => 'Purple',
+            '#2d3436' => 'Charcoal',
+            '#d63031' => 'Red',
+            '#e84393' => 'Pink',
+            '#fdcb6e' => 'Yellow',
+            '#e17055' => 'Orange',
+        ),
+    ),
+
+    'logo_icon' => array(
         'title'       => 'Logo Icon',
         'description' => 'Choose a Bootstrap Icon for the logo. Leave empty for no icon.',
         'type'        => 'icon_chooser',
@@ -22,7 +41,7 @@ return array(
         'title'       => 'Logo Text',
         'description' => 'Custom text for the logo. Leave empty to use the board name.',
         'type'        => 'text',
-        'default'     => 'My Studio',
+        'default'     => 'MyStudio',
         'page'        => 'studio_settings',
     ),
 

@@ -8,7 +8,7 @@
  * Installation:
  *   1. Upload inc/plugins/ms.php                → MYBB_ROOT/inc/plugins/ms.php
  *   2. Upload inc/plugins/mystudio/              → MYBB_ROOT/inc/plugins/mystudio/
- *   3. Upload admin/modules/style/mystudio.php   → MYBB_ROOT/admin/modules/style/mystudio.php
+ *   3. Upload admin/modules/mystudio/            → MYBB_ROOT/admin/modules/mystudio/
  *   4. Upload jscripts/mystudio/                 → MYBB_ROOT/jscripts/mystudio/
  *   5. Activate in ACP → Configuration → Plugins
  *   6. Navigate to ACP → Templates & Style → MyStudio
@@ -47,7 +47,7 @@ function ms_info()
 
     // Link the title to the MyStudio page if the plugin is active
     if (isset($mybb->settings['ms_enabled']) && $mybb->settings['ms_enabled']) {
-        $name = '<a href="index.php?module=mystudio-manage" style="text-decoration:none;color:inherit;font-weight:bold">MyStudio</a>';
+        $name = '<a href="index.php?module=mystudio-settings" style="text-decoration:none;color:inherit;font-weight:bold">MyStudio</a>';
     }
 
     return array(
@@ -153,11 +153,14 @@ function ms_is_installed()
 
 function ms_uninstall()
 {
-    global $db;
+    global $db, $cache;
 
     $db->delete_query('settings',      "name LIKE 'ms_%'");
     $db->delete_query('settinggroups', "name='mystudio'");
     rebuild_settings();
+
+    // Forget which non-core modules were activated
+    $cache->delete('ms_modules');
 
     // Page Manager tables are handled by the ms_pagebuilder plugin
 
@@ -264,7 +267,7 @@ function ms_load_admin_mini_plugins()
     $slug = $msCore->getActiveThemeSlug();
     if (!$slug) return;
 
-    $modules = $msCore->listModules($slug);
+    $modules = $msCore->listActiveModules($slug);
 
     foreach ($modules as $p) {
         if ($p['has_init']) {
@@ -280,7 +283,7 @@ function ms_load_admin_mini_plugins()
 /**
  * Called on global_intermediate (after theme & language are loaded).
  *
- * 1. Loads language strings from themes/{slug}/lang/{language}/*.lang.php
+ * 1. Loads language strings from inc/plugins/mystudio/themes/{slug}/lang/{language}/*.lang.php
  * 2. Loads theme option values from themes/{slug}/default.json
  *
  * Language strings are merged into MyBB's $lang object.
@@ -304,6 +307,7 @@ function ms_load_theme_extras()
 
     $themeDir = MYBB_ROOT . 'themes/' . $slug;
     if (!is_dir($themeDir)) return;
+    $codeDir  = MYBB_ROOT . 'inc/plugins/mystudio/themes/' . $slug;
 
     /* ── 1. Load language files ── */
     $langName = $mybb->settings['bblanguage'] ?? 'english';
@@ -313,15 +317,15 @@ function ms_load_theme_extras()
 
     // Try full language name first, then short code fallback
     $shortCodes = array('english' => 'en', 'german' => 'de', 'french' => 'fr', 'spanish' => 'es');
-    $langDir = $themeDir . '/lang/' . $langName;
+    $langDir = $codeDir . '/lang/' . $langName;
     if (!is_dir($langDir) && isset($shortCodes[strtolower($langName)])) {
-        $langDir = $themeDir . '/lang/' . $shortCodes[strtolower($langName)];
+        $langDir = $codeDir . '/lang/' . $shortCodes[strtolower($langName)];
     }
     if (!is_dir($langDir)) {
         // Final fallback: try english, then en
-        $langDir = $themeDir . '/lang/english';
+        $langDir = $codeDir . '/lang/english';
         if (!is_dir($langDir)) {
-            $langDir = $themeDir . '/lang/en';
+            $langDir = $codeDir . '/lang/en';
         }
     }
 
@@ -355,7 +359,7 @@ function ms_load_theme_extras()
     }
 
     /* -- 3. Load theme hooks file -- */
-    $hooksFile = $themeDir . '/functions/hooks.php';
+    $hooksFile = $codeDir . '/hooks.php';
     if (file_exists($hooksFile)) {
         include_once $hooksFile;
     }
@@ -440,7 +444,7 @@ function ms_xmlhttp_action()
         $slug = $msCore->getActiveThemeSlug();
         if ($slug) {
             // Load built-in posting-extras (quick-search handler)
-            $pexFile = MYBB_ROOT . 'themes/' . $slug . '/functions/posting-extras.php';
+            $pexFile = $msCore->getThemeCodeDir($slug) . '/posting-extras.php';
             if (file_exists($pexFile)) {
                 include_once $pexFile;
             }

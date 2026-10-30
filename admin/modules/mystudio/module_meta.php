@@ -3,7 +3,8 @@
  * MyStudio — Admin Module Meta
  *
  * Registers MyStudio as a top-level navigation item in the ACP
- * with sidebar sub-menu items: Manage, Import, Export, Settings.
+ * with sidebar sub-menu items: Studio Settings, Manage Themes, Import / Export,
+ * Page Manager, per-module settings and Modules.
  */
 
 if (!defined("IN_MYBB")) {
@@ -24,6 +25,7 @@ function mystudio_meta()
     $page->extra_header .= '<link rel="stylesheet" href="../themes/mystudio-default/vendor/bootstrap-icons.min.css" />';
 
     $sub_menu = array();
+    $sub_menu['5']  = array("id" => "settings",      "title" => "<i class=\"bi bi-gear\"></i> Studio Settings", "link" => "index.php?module=mystudio-settings");
     $sub_menu['10'] = array("id" => "manage",        "title" => "<i class=\"bi bi-palette2\"></i> Manage Themes",   "link" => "index.php?module=mystudio-manage");
     $sub_menu['20'] = array("id" => "import_export", "title" => "<i class=\"bi bi-arrow-left-right\"></i> Import / Export", "link" => "index.php?module=mystudio-import_export");
 
@@ -32,7 +34,7 @@ function mystudio_meta()
     $msCore = new MyStudio();
     $pbSlug = $msCore->getActiveThemeSlug();
     if ($pbSlug) {
-        $allModules = $msCore->listModules($pbSlug);
+        $allModules = $msCore->listActiveModules($pbSlug);
         foreach ($allModules as $p) {
             if ($p['id'] === 'ms-pagebuilder') {
                 $sub_menu['45'] = array("id" => "pages", "title" => "<i class=\"bi bi-file-earmark-richtext\"></i> Page Manager", "link" => "index.php?module=mystudio-pages");
@@ -53,12 +55,11 @@ function mystudio_meta()
         }
     }
 
-    $sub_menu['75'] = array("id" => "library",       "title" => "<i class=\"bi bi-box-seam\"></i> Module Library",  "link" => "index.php?module=mystudio-library");
-    $sub_menu['80'] = array("id" => "settings",      "title" => "<i class=\"bi bi-gear\"></i> Studio Settings", "link" => "index.php?module=mystudio-settings");
+    $sub_menu['75'] = array("id" => "modules",       "title" => "<i class=\"bi bi-box-seam\"></i> Modules",  "link" => "index.php?module=mystudio-modules");
 
     $sub_menu = $plugins->run_hooks("admin_mystudio_menu", $sub_menu);
 
-    $page->add_menu_item("<i class=\"bi bi-brush\"></i> MyStudio", "mystudio", "index.php?module=mystudio-manage", 50, $sub_menu);
+    $page->add_menu_item("<i class=\"bi bi-brush\"></i> MyStudio", "mystudio", "index.php?module=mystudio-settings", 50, $sub_menu);
 
     return true;
 }
@@ -85,9 +86,9 @@ function mystudio_action_handler($action)
         'pages_delete'  => array('active' => 'pages',         'file' => 'mystudio.php'),
         'pages_components' => array('active' => 'pages',      'file' => 'mystudio.php'),
         'pages_api'     => array('active' => 'pages',         'file' => 'mystudio.php'),
-        'library'       => array('active' => 'library',        'file' => 'mystudio.php'),
-        'install_module' => array('active' => 'library',       'file' => 'mystudio.php'),
-        'uninstall_module' => array('active' => 'library',     'file' => 'mystudio.php'),
+        'modules'       => array('active' => 'modules',       'file' => 'mystudio.php'),
+        'plugins'       => array('active' => 'modules',       'file' => 'mystudio.php'),
+        'api_toggle_plugin' => array('active' => 'modules',   'file' => 'mystudio.php'),
     );
 
     $actions = $plugins->run_hooks("admin_mystudio_action_handler", $actions);
@@ -100,7 +101,7 @@ function mystudio_action_handler($action)
         }
         return $actions[$action]['file'];
     } else {
-        $page->active_action = "manage";
+        $page->active_action = empty($action) ? "settings" : "manage";
         return "mystudio.php";
     }
 }

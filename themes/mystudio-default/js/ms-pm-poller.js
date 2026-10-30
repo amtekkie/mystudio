@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function(){
-  var pollUrl = rootpath + '/themes/mystudio-default/functions/ms_pm_count.php';
+  var pollUrl = rootpath + '/inc/plugins/mystudio/themes/mystudio-default/ms_pm_count.php';
   function updateBadge(unread){
     // find the existing server-side or poller badge anywhere in the page
     var existing = document.querySelector('.ms-pm-badge');

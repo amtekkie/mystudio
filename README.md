@@ -44,7 +44,7 @@ It comes with a built-in Monaco code editor (the same engine behind VS Code), a 
 
 5. Go to **Admin CP > Themes** and set the synced theme as your board default. Do a hard refresh (Ctrl+Shift+R) in your browser.
 
-6. Optionally, configure branding under **MyStudio > Studio Settings** (logo, favicon) and enable modules under **MyStudio > Manage Extensions**.
+6. Optionally, set the theme colour and branding under **MyStudio > Studio Settings > Theme Settings**, and activate any additional modules under **MyStudio > Modules**.
 
 If you want clean URLs for the Page Builder, add these rewrite rules to your `.htaccess`:
 
@@ -56,7 +56,7 @@ RewriteRule ^([a-zA-Z0-9\-_/]+)$ misc.php?ms_page=$1 [L,QSA]
 
 ## How It Works
 
-Themes live on disk as directories inside `themes/`. Each theme has a `theme.json` manifest, a `css/` folder for stylesheets, a `templates/` folder for MyBB templates (as `.html` files), a `js/` folder for scripts, and a `functions/` folder for PHP hooks and modules.
+Themes live on disk as directories inside `themes/`. Each theme has a `theme.json` manifest, a `css/` folder for stylesheets, a `templates/` folder for MyBB templates (as `.html` files), and a `js/` folder for scripts. Themes contain no PHP: a theme's hooks and language packs live in `inc/plugins/mystudio/themes/{slug}/`, its option schema in `admin/modules/mystudio/themes/{slug}/options.php`, and modules in `inc/plugins/mystudio/modules/`.
 
 When you click **Sync** in the Admin CP (or use auto-sync during development), MyStudio reads all those files, builds a MyBB-compatible XML document, and imports it into the database using MyBB's own `import_theme_xml()`. Changed templates get an incremental update instead of a full reimport. CSS files get cached to `cache/themes/`, and JS files get deployed to `jscripts/`.
 
@@ -64,7 +64,7 @@ The sync engine also works in reverse: if you have a theme that only exists in t
 
 ### Auto-Sync (Dev Mode)
 
-For development, you can enable auto-sync in **Studio Settings**. This injects a polling script on the frontend that checks for file changes every few seconds. When it detects a change, it triggers a sync and reloads the page. This only runs for admin users and should be turned off in production.
+For development, you can enable auto-sync in **Studio Settings > Developer Settings**. This injects a polling script on the frontend that checks for file changes every few seconds. When it detects a change, it triggers a sync and reloads the page. This only runs for admin users and should be turned off in production.
 
 ## Theme Directory Layout
 
@@ -82,21 +82,18 @@ themes/my-theme/
 │       ├── headerinclude.html
 │       └── htmldoctype.html
 ├── js/                     scripts (deployed to jscripts/ on sync)
-├── functions/
-│   ├── hooks.php           frontend hook registrations
-│   ├── options.php         theme option definitions
-│   └── modules/            theme-scoped extensions
-│       └── my-module/
-│           ├── plugin.json
-│           ├── init.php
-│           ├── options.php
-│           ├── css/        auto-injected
-│           └── js/         auto-injected
-├── lang/                   language packs
-│   └── en/
-│       └── frontend.lang.php
+├── images/                 theme images and uploaded branding
 └── vendor/                 third-party assets
+
+inc/plugins/mystudio/themes/my-theme/
+├── hooks.php               frontend hook registrations
+└── lang/en/frontend.lang.php   language strings
+
+admin/modules/mystudio/themes/my-theme/
+└── options.php             theme option definitions
 ```
+
+Theme ZIPs may still use the older layout (`functions/`, `functions/modules/`, `lang/` inside the theme). Import moves those files to the plugin and admin folders above, and export packs them back into the ZIP.
 
 Templates use standard MyBB `{$variable}` syntax. The filename without `.html` becomes the template name in the database, and the subdirectory becomes the template group.
 
@@ -106,21 +103,22 @@ MyStudio adds a top-level **MyStudio** section to the Admin CP:
 
 | Page | What it does |
 |------|-------------|
+| **Studio Settings** | Opens first. Tabs: **General** (enable/disable, upload size limit), **Theme Settings** (loading bar, theme colour with 10 presets or a custom colour, branding: logo and favicon) and **Developer Settings** (auto-sync, demo data). |
 | **Manage Themes** | Lists all themes (synced and on-disk-only). Sync, edit, export, activate, deactivate, or delete. |
 | **Import / Export** | Upload a theme ZIP to import, or download any theme as a ZIP. |
 | **Page Manager** | Create and manage standalone pages (needs the Page Builder module). |
-| **Module Settings** | Per-module settings pages, shown dynamically in the sidebar for each module that has options. |
-| **Studio Settings** | General settings (enable/disable, upload size limit), theme settings (loading bar), branding (logo, favicon), and dev settings (auto-sync). |
+| **Module Settings** | Per-module settings pages, shown in the sidebar for each active module that has options. |
+| **Modules** | Lists core modules (always on) and additional modules, which you activate or deactivate here. |
 
 The **Theme Editor** is accessible from Manage Themes. It opens a full-page Monaco editor with a file tree, multi-tab editing, Emmet support, and Ctrl+S to save and sync in one step.
 
 ## Modules
 
-Modules are theme-scoped extensions that live inside `functions/modules/`. They're auto-discovered, loaded at runtime when enabled, and can register MyBB hooks, define their own options, bundle CSS/JS assets (auto-injected on frontend pages), and even provide custom admin pages.
+Modules are extensions that live in `inc/plugins/mystudio/modules/`. They're auto-discovered, loaded at runtime when active, and can register MyBB hooks, define their own options, bundle CSS/JS assets (auto-injected on frontend pages), and even provide custom admin pages.
 
 ### Creating a Module
 
-1. Create a folder: `functions/modules/my-module/`
+1. Create a folder: `inc/plugins/mystudio/modules/my-module/`
 
 2. Add a `plugin.json` manifest:
    ```json
@@ -146,11 +144,11 @@ Modules are theme-scoped extensions that live inside `functions/modules/`. They'
    }
    ```
 
-4. Optionally, add `options.php` with an array of option definitions (supported types: `text`, `textarea`, `yesno`, `select`, `radio`, `color`, `numeric`, `image`, `icon_chooser`, `nav_links`, `toolbar_builder`).
+4. Optionally, add `admin/modules/mystudio/modules/my-module/options.php` returning a list of option definitions (supported types: `text`, `textarea`, `yesno`, `select`, `radio`, `color`, `numeric`, `image`, `icon_chooser`, `nav_links`, `toolbar_builder`).
 
-5. Put any CSS/JS files in `css/` and `js/` folders. They'll be injected automatically on all frontend pages when the module is enabled.
+5. Put any CSS/JS files in `css/` and `js/` folders. They'll be injected automatically on all frontend pages when the module is active.
 
-6. Enable the module in **MyStudio > Manage Extensions**.
+6. New modules start inactive. Activate yours under **MyStudio > Modules**. The five core modules that ship with MyStudio are always on.
 
 ### Globals Available in init.php
 
@@ -162,8 +160,9 @@ The quickest way is to duplicate the default theme:
 
 1. Copy `themes/mystudio-default/` to `themes/my-theme/`.
 2. Edit `theme.json` and change the `"name"` field.
-3. Sync in Admin CP.
-4. Customize templates, CSS, and hooks.
+3. Copy `inc/plugins/mystudio/themes/mystudio-default/` and `admin/modules/mystudio/themes/mystudio-default/` to `my-theme/` if you want its hooks, language strings and options.
+4. Sync in Admin CP.
+5. Customise templates, CSS and hooks.
 
 Or start fresh with a minimal `theme.json`:
 
@@ -184,11 +183,25 @@ You can also import themes as ZIP files through the Admin CP.
 inc/plugins/
 ├── ms.php                          plugin entry point
 └── mystudio/
-    └── core.php                    MyStudio class (sync, import/export, options, modules)
+    ├── core.php                    MyStudio class (sync, import/export, options, modules)
+    ├── devseed.php                 demo data seeder
+    ├── themes/mystudio-default/
+    │   ├── hooks.php               frontend hooks
+    │   ├── posting-extras.php      portal feed, sidebar, quick search, likes
+    │   ├── ms_pm_count.php         unread PM count AJAX endpoint
+    │   └── lang/en/                language strings
+    └── modules/
+        ├── ms-editor-extras/       SCEditor enhancements
+        ├── ms-forum-display-extras/ avatars, user modal, card layout
+        ├── ms-forum-icons/         custom forum icons
+        ├── ms-pagebuilder/         standalone page builder
+        └── ms-profile-extras/      profile banners, status updates
 
 admin/modules/mystudio/
 ├── module_meta.php                 ACP menu and permissions
-└── mystudio.php                    all admin pages and API endpoints
+├── mystudio.php                    all admin pages and API endpoints
+├── themes/mystudio-default/options.php   branding options (logo, favicon)
+└── modules/{id}/options.php        module option definitions
 
 jscripts/mystudio/
 ├── editor.js                       Monaco theme editor
@@ -200,18 +213,7 @@ themes/mystudio-default/
 ├── css/                            9 stylesheets
 ├── templates/                      42 template groups
 ├── js/                             6 scripts (main, PM poller, posting extras, etc.)
-├── functions/
-│   ├── hooks.php                   frontend hooks
-│   ├── options.php                 branding options (logo, favicon)
-│   ├── posting-extras.php          portal feed, sidebar, quick search, likes
-│   ├── ms_pm_count.php             unread PM count AJAX endpoint
-│   └── modules/
-│       ├── ms-editor-extras/       SCEditor enhancements
-│       ├── ms-forum-display-extras/ avatars, user modal, card layout
-│       ├── ms-forum-icons/         custom forum icons
-│       ├── ms-pagebuilder/         standalone page builder
-│       └── ms-profile-extras/      profile banners, status updates
-├── lang/en/                        language strings
+├── images/                         branding uploads
 └── vendor/                         Bootstrap 5.3.8, Bootstrap Icons 1.11.3
 ```
 
@@ -223,7 +225,7 @@ MyStudio is open source and contributions are welcome! If you run into a bug, ha
 - **Suggest features** through GitHub issues. Describe what you'd like to see and why it would be useful.
 - **Submit pull requests** for bug fixes, new modules, or improvements. Fork the repo, make your changes on a branch, and open a PR.
 - **Write a module** and share it with the community. The module system is designed to be easy to extend.
-- **Help with translations** by adding language files under `lang/` in your theme.
+- **Help with translations** by adding language files under `inc/plugins/mystudio/themes/{slug}/lang/`.
 
 If you're not sure where to start, check the open issues or just reach out. All contributions, big or small, are appreciated.
 
