@@ -98,37 +98,17 @@ $(function() {
 
 if (typeof $.fn.sceditor === 'undefined') return;
 
-	// Re-register table BBCode formats that MyBB removes.
-	// The BBCode→HTML parser reads from the format dictionary at parse time,
-	// so late registration works for the toHtml() direction (source → WYSIWYG).
-	// HTML→BBCode is handled by our DOM patch in initTableEnhance().
-	if (EE.table && $.sceditor && $.sceditor.formats && $.sceditor.formats.bbcode) {
-		$.sceditor.formats.bbcode
-			.set('table', {
-				tags: { table: null },
-				isInline: false,
-				isHtmlInline: true,
-				skipLastLineBreak: true,
-				html: '<table>{0}</table>'
-			})
-			.set('tr', {
-				tags: { tr: null },
-				isInline: false,
-				skipLastLineBreak: true,
-				html: '<tr>{0}</tr>'
-			})
-			.set('td', {
-				tags: { td: null },
-				allowsEmpty: true,
-				isInline: false,
-				html: '<td>{0}</td>'
-			})
-			.set('th', {
-				tags: { th: null },
-				allowsEmpty: true,
-				isInline: false,
-				html: '<td>{0}</td>'
-			});
+	// Register the [table] and [icon] BBCode formats right before each editor is created.
+	// MyBB's bbcodes_sceditor.js removes table/tr/td/th in its own DOM-ready handler, which
+	// runs after ours, and SCEditor builds its HTML→BBCode tag map per instance at init.
+	// Registering at create time survives that removal and makes both directions native, so
+	// tables/icons stay visual after a source ↔ WYSIWYG toggle and after Preview reloads.
+	if ($.sceditor && $.sceditor.formats && $.sceditor.formats.bbcode && $.sceditor.create) {
+		var origCreate = $.sceditor.create;
+		$.sceditor.create = function() {
+			registerBBCodeFormats();
+			return origCreate.apply(this, arguments);
+		};
 	}
 
 	if (typeof MyBBEditor !== 'undefined' && MyBBEditor) {
@@ -165,6 +145,60 @@ if (typeof $.fn.sceditor === 'undefined') return;
 		if (++tries > 50) clearInterval(checker);
 	}, 200);
 
+// Always registered: the server renders [table] and [icon] regardless of the toolbar options,
+// so existing posts must round-trip in the editor even when the buttons are switched off.
+function registerBBCodeFormats() {
+	$.sceditor.formats.bbcode
+		.set('table', {
+			tags: { table: null },
+			isInline: false,
+			isHtmlInline: true,
+			skipLastLineBreak: true,
+			format: '[table]{0}[/table]',
+			html: '<table>{0}</table>'
+		})
+		.set('tr', {
+			tags: { tr: null },
+			isInline: false,
+			skipLastLineBreak: true,
+			format: '[tr]{0}[/tr]',
+			html: '<tr>{0}</tr>'
+		})
+		.set('td', {
+			tags: { td: null },
+			allowsEmpty: true,
+			isInline: false,
+			format: '[td]{0}[/td]',
+			html: '<td>{0}</td>'
+		})
+		.set('th', {
+			tags: { th: null },
+			allowsEmpty: true,
+			isInline: false,
+			format: '[th]{0}[/th]',
+			html: '<th>{0}</th>'
+		})
+		// A <span>, not <i>: SCEditor stops at the first format matching a tag, and <i> is italic
+		.set('icon', {
+			tags: { span: { 'data-ee-icon': null } },
+			format: function(element) {
+				var name = iconName(element.getAttribute('data-ee-icon'));
+				return name ? '[icon]' + name + '[/icon]' : '';
+			},
+			html: function(token, attrs, content) {
+				var name = iconName(content);
+				if (!name) return '[icon]' + content + '[/icon]';
+				return '<span class="bi bi-' + name + '" data-ee-icon="' + name + '" contenteditable="false"></span>';
+			}
+		});
+}
+
+// Same character set as the server-side [icon] parser
+function iconName(name) {
+	name = $.trim(name || '').toLowerCase();
+	return /^[a-z0-9\-]+$/.test(name) ? name : '';
+}
+
 function initEditorExtras($textarea) {
 	var editor = $textarea.sceditor('instance');
 	if (!editor) return;
@@ -175,6 +209,7 @@ function initEditorExtras($textarea) {
 
 	// Dark/light sync into iframe
 	syncEditorTheme(editor);
+	injectIconStyles(editor);
 	var observer = new MutationObserver(function() { syncEditorTheme(editor); });
 	observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
 
@@ -250,6 +285,19 @@ function syncEditorTheme(editor) {
 			+ ' blockquote { background: rgba(13,148,136,0.06) !important; border-left: 4px solid rgba(13,148,136,0.5) !important; }'
 			+ ' blockquote cite { color: rgba(13,148,136,1) !important; }';
 	}
+}
+
+/* ── Bootstrap Icons inside the iframe ── */
+// [icon] renders as a .bi span, which needs the page's Bootstrap Icons stylesheet
+function injectIconStyles(editor) {
+	var doc = editor.getBody().ownerDocument;
+	var link = document.querySelector('link[rel="stylesheet"][href*="bootstrap-icons"]');
+	if (!link || doc.getElementById('ee-bi-styles')) return;
+	var el = doc.createElement('link');
+	el.id = 'ee-bi-styles';
+	el.rel = 'stylesheet';
+	el.href = link.href;
+	doc.head.appendChild(el);
 }
 
 /* ── Link / Unlink Toggle ── */
@@ -374,8 +422,6 @@ function uploadParams() {
 
 function initImageUpload(editor, $container) {
 	var body = editor.getBody();
-	var doc = body.ownerDocument;
-	var maxW = EE.imageMaxWidth || 800;
 
 	// --- Paste: intercept image data and external-source HTML ---
 	$(body).on('paste', function(e) {
@@ -468,8 +514,36 @@ function handleDrop(e, editor) {
 	}
 }
 
+// MyBB only renders [img=WxH] with both sizes numeric, so read the real size from the
+// uploaded image and scale it down to the configured max width (0 = no limit)
+function imageBBCode(url, done) {
+	var maxW = EE.imageMaxWidth || 0;
+	var img = new Image();
+	img.onload = function() {
+		var w = img.naturalWidth, h = img.naturalHeight;
+		if (maxW > 0 && w > maxW && h > 0) {
+			done('[img=' + maxW + 'x' + Math.max(1, Math.round(h * maxW / w)) + ']' + url + '[/img]');
+		} else {
+			done('[img]' + url + '[/img]');
+		}
+	};
+	img.onerror = function() { done('[img]' + url + '[/img]'); };
+	img.src = url;
+}
+
+function replaceUploadPlaceholder(editor, placeholder, r) {
+	if (!(r && r.success)) {
+		editor.val(editor.val().replace(placeholder, '[Upload failed: ' + (r && r.error ? r.error : 'Unknown') + ']'));
+		return;
+	}
+	if (r.posthash) updatePosthash(r.posthash);
+	updateAttachmentList(r);
+	imageBBCode(r.url, function(bb) {
+		editor.val(editor.val().replace(placeholder, bb));
+	});
+}
+
 function proxyAndInsert(editor, url) {
-	var maxW = EE.imageMaxWidth || 800;
 	var placeholder = '[Uploading image...]';
 	editor.insert(placeholder);
 
@@ -483,15 +557,7 @@ function proxyAndInsert(editor, url) {
 		}),
 		dataType: 'json',
 		success: function(r) {
-			var current = editor.val();
-			if (r && r.success) {
-				current = current.replace(placeholder, '[img=' + maxW + 'xauto]' + r.url + '[/img]');
-				if (r.posthash) updatePosthash(r.posthash);
-				updateAttachmentList(r);
-			} else {
-				current = current.replace(placeholder, '[Upload failed: ' + (r && r.error ? r.error : 'Unknown') + ']');
-			}
-			editor.val(current);
+			replaceUploadPlaceholder(editor, placeholder, r);
 		},
 		error: function() {
 			var current = editor.val();
@@ -501,7 +567,6 @@ function proxyAndInsert(editor, url) {
 }
 
 function uploadAndInsert(editor, file) {
-	var maxW = EE.imageMaxWidth || 800;
 	var filename = file.name || ('paste_' + Date.now() + '.png');
 	var formData = new FormData();
 	formData.append('upload', file, filename);
@@ -521,15 +586,7 @@ function uploadAndInsert(editor, file) {
 		contentType: false,
 		dataType: 'json',
 		success: function(r) {
-			var current = editor.val();
-			if (r && r.success) {
-				current = current.replace(placeholder, '[img=' + maxW + 'xauto]' + r.url + '[/img]');
-				if (r.posthash) updatePosthash(r.posthash);
-				updateAttachmentList(r);
-			} else {
-				current = current.replace(placeholder, '[Upload failed: ' + (r && r.error ? r.error : 'Unknown') + ']');
-			}
-			editor.val(current);
+			replaceUploadPlaceholder(editor, placeholder, r);
 		},
 		error: function() {
 			var current = editor.val();
@@ -574,7 +631,7 @@ function updateAttachmentList(r) {
 function initImageResize(editor) {
 	var body = editor.getBody();
 	var doc = body.ownerDocument;
-	var maxW = EE.imageMaxWidth || 800;
+	var maxW = EE.imageMaxWidth || Infinity; // 0 = no limit
 	var $overlay = null;
 	var $handles = {};
 	var selectedImg = null;
@@ -653,7 +710,7 @@ function initImageResize(editor) {
 		var corners = ['se', 'sw', 'ne', 'nw', 'e', 'w'];
 		corners.forEach(function(pos) {
 			var h = doc.createElement('div');
-			h.className = 'ee-resize-handle ee-resize-handle-' + pos;
+			h.className = 'ee-resize-handle ee-resize-handle-' + pos + ' sceditor-ignore';
 			h.setAttribute('data-handle', pos);
 			body.appendChild(h);
 			$handles[pos] = h;
@@ -661,7 +718,7 @@ function initImageResize(editor) {
 
 		// Add size info label
 		var info = doc.createElement('div');
-		info.className = 'ee-resize-info';
+		info.className = 'ee-resize-info sceditor-ignore';
 		body.appendChild(info);
 		$handles._info = info;
 
@@ -902,38 +959,7 @@ function loadGifs($picker, query, provider) {
 /* ── 6. Table Support ── */
 function initTableEnhance(editor, $container) {
 
-	// MyBB removes SCEditor's built-in table BBCode formats, and the internal
-	// tag→BBCode cache is built at init before we can re-add them. So we
-	// handle table HTML ↔ BBCode conversion ourselves by patching the editor.
-
-	// --- Getter: WYSIWYG → BBCode ---
-	// Temporarily swap <table> elements for BBCode text nodes in the live DOM
-	// BEFORE SCEditor clones and runs toSource(), then restore them.
-	var origGetVal = editor.getWysiwygEditorValue.bind(editor);
-	editor.getWysiwygEditorValue = function(filter) {
-		var body = editor.getBody();
-		var doc = body.ownerDocument;
-		var tables = Array.from(body.querySelectorAll('table'));
-		var saved = [];
-
-		tables.forEach(function(tbl) {
-			var bb = domTableToBBCode(tbl);
-			var ph = doc.createTextNode(bb);
-			tbl.parentNode.replaceChild(ph, tbl);
-			saved.push({ ph: ph, tbl: tbl });
-		});
-
-		var result = origGetVal(filter);
-
-		// Restore visual tables
-		saved.forEach(function(s) {
-			if (s.ph.parentNode) {
-				s.ph.parentNode.replaceChild(s.tbl, s.ph);
-			}
-		});
-
-		return result;
-	};
+	// Table HTML ↔ BBCode conversion is native (see registerBBCodeFormats)
 
 	// --- Toolbar button (manual injection like emoji/gif) ---
 	var $toolbar = $container.find('.sceditor-toolbar');
@@ -1003,8 +1029,9 @@ function initTableEnhance(editor, $container) {
 		s.id = tblStyleId;
 		s.textContent =
 			'table { border-collapse: collapse; width: 100%; margin: 8px 0; }' +
-			'table td { border: 1px solid #ced4da; padding: 6px 10px; min-width: 40px; vertical-align: top; }' +
-			'table td:focus { outline: 2px solid #0d9488; outline-offset: -2px; }' +
+			'table td, table th { border: 1px solid #ced4da; padding: 6px 10px; min-width: 40px; vertical-align: top; }' +
+			'table th { font-weight: bold; text-align: left; }' +
+			'table td:focus, table th:focus { outline: 2px solid #0d9488; outline-offset: -2px; }' +
 			'.ee-table-ctx { position: fixed; z-index: 99999; background: #fff; border: 1px solid #dee2e6; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,.15); padding: 4px 0; min-width: 180px; }' +
 			'.ee-table-ctx-item { padding: 6px 14px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 8px; }' +
 			'.ee-table-ctx-item:hover { background: #f1f3f5; }' +
@@ -1102,7 +1129,9 @@ function initTableEnhance(editor, $container) {
 
 		removeCtxMenu(doc);
 		var menu = doc.createElement('div');
-		menu.className = 'ee-table-ctx';
+		// sceditor-ignore: the menu lives in the editor body, keep its labels out of the BBCode
+		menu.className = 'ee-table-ctx sceditor-ignore';
+		menu.setAttribute('contenteditable', 'false');
 
 		var items = [
 			{ label: '↑ Insert Row Above', icon: 'arrow-bar-up', action: function() { insertRowAt(table, row, 'before', doc); } },
@@ -1306,33 +1335,14 @@ function htmlTableToBBCode(html) {
 	var bbcode = '[table]\n';
 	$table.find('tr').each(function() {
 		bbcode += '[tr]';
-		$(this).find('td, th').each(function() {
-			bbcode += '[td]' + $(this).text().trim() + '[/td]';
+		$(this).children('td, th').each(function() {
+			var tag = this.tagName.toLowerCase();
+			bbcode += '[' + tag + ']' + $(this).text().trim() + '[/' + tag + ']';
 		});
 		bbcode += '[/tr]\n';
 	});
 	bbcode += '[/table]';
 	return bbcode;
-}
-
-// Convert a live DOM <table> element to BBCode string
-function domTableToBBCode(table) {
-	var bb = '\n[table]\n';
-	var rows = table.querySelectorAll('tr');
-	for (var i = 0; i < rows.length; i++) {
-		bb += '[tr]';
-		var cells = rows[i].children;
-		for (var j = 0; j < cells.length; j++) {
-			var tag = cells[j].tagName;
-			if (tag === 'TD' || tag === 'TH') {
-				var text = cells[j].textContent.replace(/\u00a0/g, ' ').trim();
-				bb += '[td]' + text + '[/td]';
-			}
-		}
-		bb += '[/tr]\n';
-	}
-	bb += '[/table]\n';
-	return bb;
 }
 
 /* ── 7. Bootstrap Icon Picker ── */
