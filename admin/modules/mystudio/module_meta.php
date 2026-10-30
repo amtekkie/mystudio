@@ -76,6 +76,8 @@ function mystudio_action_handler($action)
         'export'        => array('active' => 'import_export', 'file' => 'mystudio.php'),
         'plugin_settings' => array('active' => 'plugin_settings', 'file' => 'mystudio.php'),
         'settings'      => array('active' => 'settings',      'file' => 'mystudio.php'),
+        'seed_data'     => array('active' => 'settings',      'file' => 'mystudio.php'),
+        'revert_default' => array('active' => 'settings',     'file' => 'mystudio.php'),
         'editor'        => array('active' => 'manage',        'file' => 'mystudio.php'),
         'pages'         => array('active' => 'pages',         'file' => 'mystudio.php'),
         'pages_add'     => array('active' => 'pages',         'file' => 'mystudio.php'),

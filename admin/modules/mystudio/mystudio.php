@@ -13,6 +13,7 @@ if (!defined("IN_MYBB")) {
 }
 
 require_once MYBB_ROOT . 'inc/plugins/mystudio/core.php';
+require_once MYBB_ROOT . 'inc/plugins/mystudio/devseed.php';
 require_once MYBB_ADMIN_DIR . 'inc/functions_themes.php';
 
 global $mybb, $db, $page, $lang, $cache, $plugins;
@@ -2378,6 +2379,29 @@ if ($action === 'settings') {
 
     $form->end();
 
+    // ── Demo Data (development tools) ──
+    // One shared FormContainer; each row's submit button posts its own form
+    // (container markup is independent of which form a button belongs to).
+    $seedForm = new Form("index.php?module=mystudio-seed_data", "post");
+    $form_container = new FormContainer("Demo Data (development only)");
+
+    $form_container->output_row(
+        "Seed Dummy Data",
+        "Wipes all current content and seeds the board with the forumeze.com forum structure: 24 forums/categories, ~200 threads with replies across 26 users of every usergroup (admin, super moderators, moderators, registered, awaiting activation, banned), a poll, announcements, quotes and MyCode samples. One forum is left empty and some threads have no replies. Seeded user password: <code>TestPass123!</code>.",
+        $seedForm->generate_submit_button("Seed Dummy Data", array('onclick' => "return confirm('This deletes ALL existing forums, threads, posts and non-admin users, then seeds dummy data. Continue?');"))
+    );
+    $seedForm->end();
+
+    $revertForm = new Form("index.php?module=mystudio-revert_default", "get");
+    $form_container->output_row(
+        "Revert to Default Installation",
+        "Deletes all content and non-admin users, restoring a default MyBB installation (\"My Category\" / \"My Forum\", no posts). MyStudio stays installed. Opens a confirmation page that requires double verification. <strong>No undo — back up first.</strong>",
+        $revertForm->generate_submit_button("Revert to Default")
+    );
+    $revertForm->end();
+
+    $form_container->end();
+
     // ── Branding (theme options: logo, favicon) ──
     $activeSlug = $ms->getActiveThemeSlug();
     if ($activeSlug) {
@@ -2535,6 +2559,98 @@ if ($action === 'settings') {
 </script>';
         }
     }
+
+    $page->output_footer();
+    exit;
+}
+
+/* ====================================================================
+   Dev Tools: Seed Dummy Data (POST only)
+   ==================================================================== */
+
+if ($action === 'seed_data') {
+    if ($mybb->request_method !== 'post') {
+        admin_redirect("index.php?module=mystudio-settings");
+    }
+    verify_post_check($mybb->get_input('my_post_key'));
+
+    $seedResult = ms_devseed_seed_data();
+
+    flash_message(
+        "Dummy data seeded: {$seedResult['forums']} forums, {$seedResult['threads']} threads ({$seedResult['no_reply']} without replies), {$seedResult['posts']} posts, {$seedResult['users']} users created. Seeded user password: TestPass123!",
+        'success'
+    );
+    admin_redirect("index.php?module=mystudio-settings");
+    exit;
+}
+
+/* ====================================================================
+   Dev Tools: Revert to Default (GET confirm page + POST, double-gated)
+   ==================================================================== */
+
+if ($action === 'revert_default') {
+    if ($mybb->request_method === 'post') {
+        verify_post_check($mybb->get_input('my_post_key'));
+
+        $errors = array();
+        if (empty($mybb->input['confirm_wipe'])) {
+            $errors[] = 'You must tick the confirmation checkbox.';
+        }
+        if (trim($mybb->get_input('confirm_text')) !== 'RESET') {
+            $errors[] = 'You must type RESET (in capitals) to confirm.';
+        }
+
+        if (empty($errors)) {
+            ms_devseed_revert_default();
+            flash_message('Forum reverted to a default MyBB installation (MyStudio and its settings remain installed).', 'success');
+            admin_redirect("index.php?module=mystudio-settings");
+            exit;
+        }
+
+        flash_message(implode(' ', $errors), 'error');
+        admin_redirect("index.php?module=mystudio-revert_default");
+        exit;
+    }
+
+    // GET: double-verification confirmation page
+    $page->add_breadcrumb_item("MyStudio", "index.php?module=mystudio-manage");
+    $page->add_breadcrumb_item("Studio Settings", "index.php?module=mystudio-settings");
+    $page->add_breadcrumb_item("Revert to Default");
+
+    $page->output_header("MyStudio - Revert to Default");
+
+    echo '<div class="error">
+        <strong>DANGER — irreversible data loss</strong><br>
+        This permanently deletes <strong>all forums, threads, posts, polls, announcements, private messages,
+        attachments metadata, moderator assignments, bans, read markers and subscriptions</strong>, and deletes
+        <strong>every user except the admin account(s)</strong>. The board is restored to a default MyBB
+        installation state ("My Category" / "My Forum").<br><br>
+        MyStudio itself and all themes, files and settings are <strong>not</strong> touched.
+        There is <strong>no undo</strong> — take a database backup first.
+    </div>';
+
+    $revertForm = new Form("index.php?module=mystudio-revert_default", "post");
+    $form_container = new FormContainer("Confirm Revert to Default");
+
+    $form_container->output_row(
+        "I understand this cannot be undone",
+        "Tick to confirm you understand all content and non-admin users will be permanently deleted.",
+        $revertForm->generate_check_box('confirm_wipe', 1, 'I understand and want to proceed')
+    );
+
+    $form_container->output_row(
+        "Type <code>RESET</code> to confirm",
+        "As a second verification step, type the word RESET (capitals) into the box.",
+        $revertForm->generate_text_box('confirm_text', '', array('style' => 'width:120px', 'autocomplete' => 'off'))
+    );
+
+    $form_container->end();
+
+    $buttons = array(
+        $revertForm->generate_submit_button("Revert to Default Installation"),
+    );
+    $revertForm->output_submit_wrapper($buttons);
+    $revertForm->end();
 
     $page->output_footer();
     exit;

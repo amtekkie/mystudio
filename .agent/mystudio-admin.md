@@ -95,6 +95,15 @@ that runs when no block matched — the only action NOT inside an `if`.
 `api_toggle_plugin` (1611), `plugin_settings` (2020, per-extension page), `plugins` (2163,
 active/inactive tables), `settings` (2281, HTML+POST).
 
+### Dev tools (seed / revert)
+`seed_data` (POST redirect) and `revert_default` (GET confirm page + POST). Both live on the
+Studio Settings page ("Demo Data" section) and call `inc/plugins/mystudio/devseed.php`
+(`ms_devseed_seed_data()` / `ms_devseed_revert_default()`). `revert_default` is double-gated:
+confirmation checkbox + typing `RESET`, plus `verify_post_check`. Both keep uid 1 AND the acting
+admin's user row when wiping `users`. Buttons use stock MyBB ACP primitives
+(`generate_submit_button`, `class="button"` links, `class="error"` notice) — no icons/inline
+styles (user preference).
+
 ### Module Library
 `install_module` (1631, from GitHub), `uninstall_module` (1695), `library` (1722, browse
 `registry.json` from GitHub).
@@ -276,3 +285,9 @@ heredocs with injected JSON config.
 14. **Manage Extensions is broken** — `plugins` page (2179) and `api_toggle_plugin` (1619,1621)
     call `MyStudio::getMiniPluginStates`/`saveMiniPluginStates`, which are **undefined** (no
     `__call`, no parent). Fatal on view/click. See RULES.md §6 and `mystudio-plugin.md` §8 #20.
+15. **New ACP actions need two registrations**: `module_meta.php` `$actions` map + an
+    `if($action === ...)` block in mystudio.php before the Manage fallback. Example: `seed_data`,
+    `revert_default` (both highlight `settings`, added with the dev seeder — session 0004).
+16. **`insert_query`/`update_query` do NOT escape values** in this MyBB version
+    (db_mysqli.php `quote_val()` just wraps in quotes). Escape strings yourself
+    (`$db->escape_string`) before calling — devseed.php wraps this in `ms_devseed_clean()`.

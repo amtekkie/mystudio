@@ -1170,6 +1170,7 @@ a:hover { transition: color .2s ease; }
   border-radius: 0 0 var(--bs-card-inner-border-radius) var(--bs-card-inner-border-radius);
 }
 
-.ms-lastposter-info {
-  min-width: 180px!important;
-}
+/* .ms-lastposter-info sizing lives in the ms-forum-display-extras module CSS
+   (min-width:0; flex:1). Do NOT re-add a !important min-width here: the lastpost
+   cell is fixed at 200px and info (min-width) + 8px gap + 38px avatar must fit
+   inside it or .forumbit-cat's overflow:hidden crops the avatar's right edge. */
